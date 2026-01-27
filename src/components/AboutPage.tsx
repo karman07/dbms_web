@@ -1,20 +1,37 @@
 import { motion } from "framer-motion";
 import { Typewriter } from "./Typewriter";
 import { GRADIENTS } from "../constants";
-
 import { Footer } from "./Footer";
 import { 
-   
   Users, 
   BookOpen, 
   Award, 
   Target, 
   Heart,
   CheckCircle,
-
   Lightbulb,
   Shield,
+  Database,
+  Code,
+  GraduationCap
 } from "lucide-react";
+
+// Professional Logo Component
+const Logo = () => (
+  <div className="flex items-center justify-center mb-8">
+    <div className="relative">
+      <div className="w-24 h-24 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 rounded-2xl shadow-2xl flex items-center justify-center transform rotate-3 hover:rotate-0 transition-transform duration-300">
+        <Database className="w-12 h-12 text-white" />
+      </div>
+      <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+        <Code className="w-4 h-4 text-white" />
+      </div>
+      <div className="absolute -bottom-2 -left-2 w-6 h-6 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center shadow-lg">
+        <GraduationCap className="w-3 h-3 text-white" />
+      </div>
+    </div>
+  </div>
+);
 
 interface AboutPageProps {}
 
@@ -38,12 +55,21 @@ export function AboutPage({}: AboutPageProps) {
             transition={{ duration: 0.8 }}
             className="text-center"
           >
-            <h1 className={`text-5xl md:text-7xl font-extrabold mb-4 leading-tight ${GRADIENTS.gradientText} drop-shadow-lg`}>
-              About <span className="text-gray-900 dark:text-white">Course Hub</span>
+            <Logo />
+            <h1 className="text-5xl md:text-7xl font-extrabold mb-6 leading-tight">
+              <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 bg-clip-text text-transparent drop-shadow-lg">
+                About
+              </span>{" "}
+              <span className="text-gray-900 dark:text-white">Course Hub</span>
             </h1>
-            <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-4xl mx-auto leading-relaxed">
-              <Typewriter text="Empowering students worldwide with expert-led database education and practical skills for career success." delay={2000} speed={50} />
-            </p>
+            <div className="mb-8">
+              <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-4xl mx-auto leading-relaxed mb-4">
+                <Typewriter text="Empowering students worldwide with expert-led database education and practical skills for career success." delay={2000} speed={50} />
+              </p>
+              <p className="text-lg text-gray-500 dark:text-gray-400 font-medium">
+                by <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent font-semibold">Parteek Bhatia</span>
+              </p>
+            </div>
           </motion.div>
         </div>
       </div>
@@ -68,8 +94,10 @@ export function AboutPage({}: AboutPageProps) {
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              <h2 className={`text-4xl md:text-5xl font-bold mb-8 ${GRADIENTS.gradientText}`}>
-                <Typewriter text="Our Mission" delay={300} speed={120} />
+              <h2 className="text-4xl md:text-5xl font-bold mb-8">
+                <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 bg-clip-text text-transparent">
+                  <Typewriter text="Our Mission" delay={300} speed={120} />
+                </span>
               </h2>
               <p className="text-lg text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
                 To democratize high-quality database education by making expert-level instruction accessible to students worldwide, 
@@ -158,8 +186,10 @@ export function AboutPage({}: AboutPageProps) {
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className={`text-4xl md:text-5xl font-bold mb-6 ${GRADIENTS.gradientText}`}>
-              Our Impact in Numbers
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 bg-clip-text text-transparent">
+                Our Impact in Numbers
+              </span>
             </h2>
             <p className="text-xl text-gray-600 dark:text-gray-300 max-w-3xl mx-auto">
               Measurable results that demonstrate our commitment to educational excellence
@@ -192,8 +222,10 @@ export function AboutPage({}: AboutPageProps) {
       <section className="py-20 bg-gray-50 dark:bg-gray-800 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className={`text-4xl md:text-5xl font-bold mb-6 ${GRADIENTS.gradientText}`}>
-              <Typewriter text="Why Students Choose Us" delay={200} speed={120} />
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 bg-clip-text text-transparent">
+                <Typewriter text="Why Students Choose Us" delay={200} speed={120} />
+              </span>
             </h2>
           </div>
 

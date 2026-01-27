@@ -124,8 +124,13 @@ export function HomePage({ onAuthOpen }: HomePageProps) {
                 <Play className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3" />
                 Start Learning Now
               </Button>
-              <Button size="lg" className={BUTTON_STYLES.outline + " text-base sm:text-lg px-8 sm:px-10 py-4 sm:py-6 rounded-xl w-full sm:w-auto"}>
-                <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3" />
+              <Button 
+                size="lg" 
+                className={
+                  "border bg-white dark:bg-gray-900 border-black dark:border-white text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 text-base sm:text-lg px-8 sm:px-10 py-4 sm:py-6 rounded-xl w-full sm:w-auto shadow-sm transition-all duration-200"
+                }
+              >
+                <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3 text-black dark:text-white" />
                 View Curriculum
               </Button>
             </div>
@@ -371,8 +376,13 @@ export function HomePage({ onAuthOpen }: HomePageProps) {
                   whileHover={{ scale: 1.05, y: -2 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Button size="lg" className={BUTTON_STYLES.secondary + " text-lg sm:text-xl px-10 sm:px-12 py-4 sm:py-6 rounded-xl w-full sm:w-auto"}>
-                    <Mail className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3" />
+                  <Button 
+                    size="lg" 
+                    className={
+                      "border bg-white dark:bg-gray-900 border-black dark:border-white text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 text-lg sm:text-xl px-10 sm:px-12 py-4 sm:py-6 rounded-xl w-full sm:w-auto shadow-sm transition-all duration-200"
+                    }
+                  >
+                    <Mail className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3 text-black dark:text-white" />
                     Download Syllabus
                   </Button>
                 </motion.div>
