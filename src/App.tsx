@@ -1,20 +1,40 @@
-import { buttonVariants } from "@/components/ui/button";
+import { BrowserRouter as Router, Routes, Route} from "react-router-dom";
+
+import { AboutPage } from "@/components/AboutPage";
+import { ContactPage } from "@/components/ContactPage";
+import { HomePage } from "@/pages/HomePage";
+
+
+import { Footer } from "./components/Footer";
+import { Navigation } from "./components/Header";
+
+
 
 function App() {
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen space-y-20">
-      <h1 className="text-4xl font-extrabold tracking-tight lg:text-5xl">
-        Vite, React, Shadcn-ui minimal starter
-      </h1>
-      <a
-        href="https://github.com/moinulmoin/vite-react-tailwind-starter"
-        target="_blank"
-        rel="noreferrer"
-        className={buttonVariants()}
-      >
-        ⭐️ on GitHub
-      </a>
-    </main>
+    <Router>
+      <div className="min-h-screen bg-white dark:bg-gray-900">
+        <Navigation />
+        
+        <Routes>
+          <Route 
+            path="/" 
+            element={
+              <HomePage 
+                onAuthOpen={(mode) => {
+                  const event = new CustomEvent('openAuth', { detail: { mode } });
+                  window.dispatchEvent(event);
+                }} 
+              />
+            } 
+          />
+          <Route path="/about" element={<AboutPage/>} />
+          <Route path="/contact" element={<ContactPage onBack={() => window.history.back()} />} />
+        </Routes>
+        
+        <Footer />
+      </div>
+    </Router>
   );
 }
 

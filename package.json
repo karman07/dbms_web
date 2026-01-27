@@ -10,13 +10,20 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.15",
     "@radix-ui/react-slot": "^1.0.2",
+    "@types/react-router-dom": "^5.3.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "firebase": "^12.8.0",
+    "framer-motion": "^12.29.2",
     "lucide-react": "^0.378.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "tailwind-merge": "^2.3.0",
+    "react-intersection-observer": "^10.0.2",
+    "react-router-dom": "^7.13.0",
+    "react-typewriter-effect": "^1.1.0",
+    "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7"
   },
   "devDependencies": {

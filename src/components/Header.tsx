@@ -1,0 +1,182 @@
+import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Button } from "@/components/ui/button";
+import { useTheme } from "@/contexts/ThemeContext";
+import { AuthDialog } from "@/components/AuthDialog";
+
+import { COLORS, GRADIENTS, BUTTON_STYLES } from "@/constants";
+import {
+  GraduationCap,
+  Play,
+  Moon,
+  Sun,
+  Menu,
+  X,
+
+} from "lucide-react";
+
+export function Navigation() {
+  const { theme, setTheme } = useTheme();
+  const [authDialog, setAuthDialog] = useState<{ isOpen: boolean; mode: 'login' | 'signup' }>({ isOpen: false, mode: 'login' });
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const location = useLocation();
+
+  const isActive = (path: string) => location.pathname === path;
+
+  return (
+    <>
+      <motion.nav 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="fixed top-0 w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 z-50"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <Link to="/" className="flex items-center space-x-2">
+              <GraduationCap className="h-8 w-8" style={{ color: COLORS.primary }} />
+              <span className={`text-xl font-bold ${GRADIENTS.gradientText}`}>
+                Course Hub
+              </span>
+            </Link>
+            
+            <div className="hidden md:flex items-center space-x-8">
+              <Link
+                to="/"
+                className={`text-sm font-medium transition-colors ${
+                  isActive('/') ? 'text-blue-600' : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
+                }`}
+              >
+                Home
+              </Link>
+              <Link
+                to="/about"
+                className={`text-sm font-medium transition-colors ${
+                  isActive('/about') ? 'text-blue-600' : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
+                }`}
+              >
+                About
+              </Link>
+              <Link
+                to="/contact"
+                className={`text-sm font-medium transition-colors ${
+                  isActive('/contact') ? 'text-blue-600' : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
+                }`}
+              >
+                Contact
+              </Link>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                className="hidden sm:flex"
+              >
+                {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+              </Button>
+              
+              <div className="hidden md:flex items-center space-x-3">
+                <Button
+                  variant="ghost"
+                  onClick={() => setAuthDialog({ isOpen: true, mode: 'login' })}
+                  className="text-sm"
+                >
+                  Sign In
+                </Button>
+                <Button 
+                  className={BUTTON_STYLES.gradient + " rounded-xl text-sm px-4 py-2"}
+                  onClick={() => setAuthDialog({ isOpen: true, mode: 'signup' })}
+                >
+                  <Play className="w-4 h-4 mr-2" />
+                  Enroll Now
+                </Button>
+              </div>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="md:hidden"
+              >
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </Button>
+            </div>
+          </div>
+          
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="md:hidden border-t border-gray-200 dark:border-gray-700 py-4"
+            >
+              <div className="flex flex-col space-y-4">
+                <Link
+                  to="/"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`text-left px-4 py-2 text-sm font-medium transition-colors ${
+                    isActive('/') ? 'text-blue-600' : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
+                  }`}
+                >
+                  Home
+                </Link>
+                <Link
+                  to="/about"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`text-left px-4 py-2 text-sm font-medium transition-colors ${
+                    isActive('/about') ? 'text-blue-600' : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
+                  }`}
+                >
+                  About
+                </Link>
+                <Link
+                  to="/contact"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`text-left px-4 py-2 text-sm font-medium transition-colors ${
+                    isActive('/contact') ? 'text-blue-600' : 'text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white'
+                  }`}
+                >
+                  Contact
+                </Link>
+                <div className="flex items-center justify-between px-4 py-2">
+                  <Button
+                    variant="ghost"
+                    onClick={() => { setAuthDialog({ isOpen: true, mode: 'login' }); setMobileMenuOpen(false); }}
+                    className="text-sm"
+                  >
+                    Sign In
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}
+                  >
+                    {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
+                  </Button>
+                </div>
+                <div className="px-4">
+                  <Button 
+                    className={BUTTON_STYLES.gradient + " rounded-xl text-sm w-full"}
+                    onClick={() => { setAuthDialog({ isOpen: true, mode: 'signup' }); setMobileMenuOpen(false); }}
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    Enroll Now
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </div>
+      </motion.nav>
+      
+      <AuthDialog
+        isOpen={authDialog.isOpen}
+        onClose={() => setAuthDialog({ ...authDialog, isOpen: false })}
+        mode={authDialog.mode}
+        onModeChange={(mode) => setAuthDialog({ ...authDialog, mode })}
+      />
+    </>
+  );
+}
