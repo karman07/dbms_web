@@ -4,8 +4,13 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import { CompleteProfileDialog } from "./CompleteProfileDialog";
 import { BUTTON_STYLES } from "../constants";
 import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
+import { useNotification } from "@/contexts/NotificationContext";
+import authService from "@/services/auth.service";
+import { auth, googleProvider } from "@/lib/firebase";
+import { signInWithPopup } from "firebase/auth";
 
 interface AuthDialogProps {
   isOpen: boolean;
@@ -16,24 +21,127 @@ interface AuthDialogProps {
 
 export function AuthDialog({ isOpen, onClose, mode, onModeChange }: AuthDialogProps) {
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [showCompleteProfile, setShowCompleteProfile] = useState(false);
+  const notification = useNotification();
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
-    password: ''
+    password: '',
+    referralSource: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Handle form submission
-    console.log('Form submitted:', formData);
+    setLoading(true);
+
+    try {
+      if (mode === 'signup') {
+        // Register new user
+        const response = await authService.register({
+          email: formData.email,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          password: formData.password,
+          referralSource: formData.referralSource || undefined,
+        });
+
+        // Show success message about email verification
+        if (!response.user.isEmailVerified) {
+          notification.success('Account created!', 'Please check your email to verify your account.');
+        } else {
+          notification.success('Account created successfully!');
+        }
+
+        // Dispatch login success event
+        const event = new CustomEvent('loginSuccess', { detail: { user: response.user } });
+        window.dispatchEvent(event);
+
+        // Close auth dialog and show complete profile dialog
+        onClose();
+        setTimeout(() => {
+          setShowCompleteProfile(true);
+          resetForm();
+        }, 500);
+      } else {
+        // Login existing user
+        const response = await authService.login({
+          email: formData.email,
+          password: formData.password,
+        });
+
+        notification.success('Login successful!', `Welcome back, ${response.user.firstName}!`);
+
+        // Dispatch login success event
+        const event = new CustomEvent('loginSuccess', { detail: { user: response.user } });
+        window.dispatchEvent(event);
+
+        // Close dialog after short delay
+        setTimeout(() => {
+          onClose();
+          resetForm();
+        }, 1000);
+      }
+    } catch (err: any) {
+      notification.error('Authentication failed', err.message || 'An error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleGoogleAuth = () => {
-    // Handle Google authentication
-    console.log('Google auth clicked');
+  const handleGoogleAuth = async () => {
+    setLoading(true);
+
+    try {
+      // Sign in with Google via Firebase
+      const result = await signInWithPopup(auth, googleProvider);
+      const firebaseToken = await result.user.getIdToken();
+
+      // Send Firebase token to backend
+      const response = await authService.firebaseLogin({
+        firebaseToken,
+        isGoogleSignup: mode === 'signup',
+      });
+
+      notification.success('Google authentication successful!', `Welcome, ${response.user.firstName}!`);
+
+      // Dispatch login success event
+      const event = new CustomEvent('loginSuccess', { detail: { user: response.user } });
+      window.dispatchEvent(event);
+
+      // If signup, show complete profile dialog
+      if (mode === 'signup') {
+        onClose();
+        setTimeout(() => {
+          setShowCompleteProfile(true);
+        }, 500);
+      } else {
+        // Just close for login
+        setTimeout(() => {
+          onClose();
+          resetForm();
+        }, 1000);
+      }
+    } catch (err: any) {
+      notification.error('Google authentication failed', err.message || 'Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      password: '',
+      referralSource: ''
+    });
   };
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md" onClose={onClose}>
         <DialogHeader>
@@ -55,6 +163,7 @@ export function AuthDialog({ isOpen, onClose, mode, onModeChange }: AuthDialogPr
         >
           <Button
             onClick={handleGoogleAuth}
+            disabled={loading}
             variant="outline"
             className="w-full py-4 border-2 hover:bg-gray-50 dark:hover:bg-gray-800 rounded-xl text-base font-medium transition-all duration-200 flex items-center justify-center gap-3"
           >
@@ -64,7 +173,7 @@ export function AuthDialog({ isOpen, onClose, mode, onModeChange }: AuthDialogPr
               <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
               <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            Continue with Google
+            {loading ? 'Processing...' : 'Continue with Google'}
           </Button>
 
           <div className="relative my-8">
@@ -78,21 +187,43 @@ export function AuthDialog({ isOpen, onClose, mode, onModeChange }: AuthDialogPr
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {mode === 'signup' && (
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                  <Input
-                    id="name"
-                    type="text"
-                    placeholder="Enter your full name"
-                    className="pl-12 py-3 rounded-xl border-2 focus:border-blue-500 transition-all duration-200"
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    required
-                  />
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="firstName">First Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="firstName"
+                      type="text"
+                      placeholder="Enter your first name"
+                      className="pl-12 py-3 rounded-xl border-2 focus:border-blue-500 transition-all duration-200"
+                      value={formData.firstName}
+                      onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                      minLength={2}
+                      maxLength={50}
+                      required
+                    />
+                  </div>
                 </div>
-              </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                    <Input
+                      id="lastName"
+                      type="text"
+                      placeholder="Enter your last name"
+                      className="pl-12 py-3 rounded-xl border-2 focus:border-blue-500 transition-all duration-200"
+                      value={formData.lastName}
+                      onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                      minLength={2}
+                      maxLength={50}
+                      required
+                    />
+                  </div>
+                </div>
+              </>
             )}
 
             <div className="space-y-2">
@@ -122,6 +253,7 @@ export function AuthDialog({ isOpen, onClose, mode, onModeChange }: AuthDialogPr
                   className="pl-12 pr-12 py-3 rounded-xl border-2 focus:border-blue-500 transition-all duration-200"
                   value={formData.password}
                   onChange={(e) => setFormData({...formData, password: e.target.value})}
+                  minLength={6}
                   required
                 />
                 <button
@@ -132,10 +264,38 @@ export function AuthDialog({ isOpen, onClose, mode, onModeChange }: AuthDialogPr
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </button>
               </div>
+              {mode === 'signup' && (
+                <p className="text-xs text-gray-500 mt-1">Minimum 6 characters</p>
+              )}
             </div>
 
-            <Button type="submit" className={`w-full ${BUTTON_STYLES.gradient} py-4 rounded-xl text-base font-semibold transition-all duration-200 hover:shadow-lg`}>
-              {mode === 'login' ? 'Sign In' : 'Create Account'}
+            {mode === 'signup' && (
+              <div className="space-y-2">
+                <Label htmlFor="referralSource">How did you hear about us? (Optional)</Label>
+                <Input
+                  id="referralSource"
+                  type="text"
+                  placeholder="e.g., Google, Friend, Social Media"
+                  className="py-3 rounded-xl border-2 focus:border-blue-500 transition-all duration-200"
+                  value={formData.referralSource}
+                  onChange={(e) => setFormData({...formData, referralSource: e.target.value})}
+                />
+              </div>
+            )}
+
+            <Button 
+              type="submit" 
+              disabled={loading}
+              className={`w-full ${BUTTON_STYLES.gradient} py-4 rounded-xl text-base font-semibold transition-all duration-200 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              {loading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Processing...
+                </div>
+              ) : (
+                mode === 'login' ? 'Sign In' : 'Create Account'
+              )}
             </Button>
           </form>
 
@@ -153,5 +313,12 @@ export function AuthDialog({ isOpen, onClose, mode, onModeChange }: AuthDialogPr
         </motion.div>
       </DialogContent>
     </Dialog>
+    
+    <CompleteProfileDialog
+      isOpen={showCompleteProfile}
+      onClose={() => setShowCompleteProfile(false)}
+      onSkip={() => setShowCompleteProfile(false)}
+    />
+    </>
   );
 }

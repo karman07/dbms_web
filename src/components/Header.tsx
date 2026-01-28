@@ -1,9 +1,10 @@
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { useTheme } from "@/contexts/ThemeContext";
 import { AuthDialog } from "@/components/AuthDialog";
+import { User } from "@/types/user";
 
 import { COLORS, GRADIENTS, BUTTON_STYLES } from "@/constants";
 import {
@@ -13,14 +14,48 @@ import {
   Sun,
   Menu,
   X,
-
+  User as UserIcon,
+  LogOut,
 } from "lucide-react";
 
 export function Navigation() {
   const { theme, setTheme } = useTheme();
+  const navigate = useNavigate();
   const [authDialog, setAuthDialog] = useState<{ isOpen: boolean; mode: 'login' | 'signup' }>({ isOpen: false, mode: 'login' });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const location = useLocation();
+
+  useEffect(() => {
+    // Load user from localStorage
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error('Failed to parse user data:', error);
+      }
+    }
+
+    // Listen for login events
+    const handleLoginSuccess = (event: CustomEvent) => {
+      if (event.detail?.user) {
+        setUser(event.detail.user);
+      }
+    };
+
+    window.addEventListener('loginSuccess' as any, handleLoginSuccess);
+    return () => window.removeEventListener('loginSuccess' as any, handleLoginSuccess);
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    setShowUserMenu(false);
+    navigate('/');
+  };
 
   const isActive = (path: string) => location.pathname === path;
 
@@ -77,22 +112,70 @@ export function Navigation() {
                 {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
               </Button>
               
-              <div className="hidden md:flex items-center space-x-3">
-                <Button
-                  variant="ghost"
-                  onClick={() => setAuthDialog({ isOpen: true, mode: 'login' })}
-                  className="text-sm"
-                >
-                  Sign In
-                </Button>
-                <Button 
-                  className={BUTTON_STYLES.gradient + " rounded-xl text-sm px-4 py-2"}
-                  onClick={() => setAuthDialog({ isOpen: true, mode: 'signup' })}
-                >
-                  <Play className="w-4 h-4 mr-2" />
-                  Enroll Now
-                </Button>
-              </div>
+              {user ? (
+                <div className="hidden md:flex items-center space-x-3">
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowUserMenu(!showUserMenu)}
+                      className="flex items-center space-x-2 rounded-lg px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <img
+                        src={user.profilePicture || `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=random`}
+                        alt={`${user.firstName} ${user.lastName}`}
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                      <div className="text-left">
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">
+                          {user.firstName} {user.lastName}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{user.role}</p>
+                      </div>
+                    </button>
+                    
+                    {showUserMenu && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="absolute right-0 mt-2 w-56 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50"
+                      >
+                        <Link
+                          to="/profile"
+                          onClick={() => setShowUserMenu(false)}
+                          className="flex items-center px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          <UserIcon className="w-4 h-4 mr-3" />
+                          My Profile
+                        </Link>
+                        <hr className="my-2 border-gray-200 dark:border-gray-700" />
+                        <button
+                          onClick={handleLogout}
+                          className="flex items-center w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                        >
+                          <LogOut className="w-4 h-4 mr-3" />
+                          Sign Out
+                        </button>
+                      </motion.div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="hidden md:flex items-center space-x-3">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setAuthDialog({ isOpen: true, mode: 'login' })}
+                    className="text-sm"
+                  >
+                    Sign In
+                  </Button>
+                  <Button 
+                    className={BUTTON_STYLES.gradient + " rounded-xl text-sm px-4 py-2"}
+                    onClick={() => setAuthDialog({ isOpen: true, mode: 'signup' })}
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    Enroll Now
+                  </Button>
+                </div>
+              )}
               
               <Button
                 variant="ghost"
@@ -141,13 +224,23 @@ export function Navigation() {
                   Contact
                 </Link>
                 <div className="flex items-center justify-between px-4 py-2">
-                  <Button
-                    variant="ghost"
-                    onClick={() => { setAuthDialog({ isOpen: true, mode: 'login' }); setMobileMenuOpen(false); }}
-                    className="text-sm"
-                  >
-                    Sign In
-                  </Button>
+                  {user ? (
+                    <Button
+                      variant="ghost"
+                      onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
+                      className="text-sm text-red-600"
+                    >
+                      Sign Out
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      onClick={() => { setAuthDialog({ isOpen: true, mode: 'login' }); setMobileMenuOpen(false); }}
+                      className="text-sm"
+                    >
+                      Sign In
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     size="icon"
@@ -156,15 +249,17 @@ export function Navigation() {
                     {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
                   </Button>
                 </div>
-                <div className="px-4">
-                  <Button 
-                    className={BUTTON_STYLES.gradient + " rounded-xl text-sm w-full"}
-                    onClick={() => { setAuthDialog({ isOpen: true, mode: 'signup' }); setMobileMenuOpen(false); }}
-                  >
-                    <Play className="w-4 h-4 mr-2" />
-                    Enroll Now
-                  </Button>
-                </div>
+                {!user && (
+                  <div className="px-4">
+                    <Button 
+                      className={BUTTON_STYLES.gradient + " rounded-xl text-sm w-full"}
+                      onClick={() => { setAuthDialog({ isOpen: true, mode: 'signup' }); setMobileMenuOpen(false); }}
+                    >
+                      <Play className="w-4 h-4 mr-2" />
+                      Enroll Now
+                    </Button>
+                  </div>
+                )}
               </div>
             </motion.div>
           )}

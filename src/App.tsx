@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route} from "react-router-dom";
 import { AboutPage } from "@/components/AboutPage";
 import { ContactPage } from "@/components/ContactPage";
 import { HomePage } from "@/pages/HomePage";
-
+import UserProfilePage from "@/pages/UserProfilePage";
 
 import { Footer } from "./components/Footer";
 import { Navigation } from "./components/Header";
@@ -30,6 +30,7 @@ function App() {
           />
           <Route path="/about" element={<AboutPage/>} />
           <Route path="/contact" element={<ContactPage onBack={() => window.history.back()} />} />
+          <Route path="/profile" element={<UserProfilePage />} />
         </Routes>
         
         <Footer />
