@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ArrowLeft, ClipboardList, Calendar, Clock, CheckCircle } from "lucide-react";
+import { ArrowLeft, ClipboardList, Calendar, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
