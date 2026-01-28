@@ -1,16 +1,17 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import * as admin from 'firebase-admin';
-import * as path from 'path';
 
 @Injectable()
 export class FirebaseService implements OnModuleInit {
   onModuleInit() {
     if (!admin.apps.length) {
-      const serviceAccountPath = path.join(process.cwd(), 'dbms-website-ec1e6-firebase-adminsdk-fbsvc-23bb085f17.json');
-      
       admin.initializeApp({
-        credential: admin.credential.cert(serviceAccountPath),
-        projectId: 'dbms-website-ec1e6',
+        credential: admin.credential.cert({
+          projectId: process.env.FIREBASE_PROJECT_ID,
+          privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+        }),
+        projectId: process.env.FIREBASE_PROJECT_ID,
       });
     }
   }

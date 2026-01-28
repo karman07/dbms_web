@@ -42,6 +42,17 @@ lerna-debug.log*
 .env.production.local
 .env.local
 
+# Firebase credentials
+*firebase*.json
+*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!tsconfig.build.json
+!nest-cli.json
+!.eslintrc.json
+!*.postman_collection.json
+
 # temp directory
 .temp
 .tmp
