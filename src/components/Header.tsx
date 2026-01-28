@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useTheme } from "@/contexts/ThemeContext";
 import { AuthDialog } from "@/components/AuthDialog";
 import { User } from "@/types/user";
+import userService from "@/services/user.service";
 
 import { COLORS, GRADIENTS, BUTTON_STYLES } from "@/constants";
 import {
@@ -27,16 +28,38 @@ export function Navigation() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const location = useLocation();
 
-  useEffect(() => {
-    // Load user from localStorage
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (error) {
-        console.error('Failed to parse user data:', error);
-      }
+  // Get the image URL with proper base URL handling
+  const getImageUrl = (imagePath: string | undefined) => {
+    if (!imagePath) return `https://ui-avatars.com/api/?name=${user?.firstName}+${user?.lastName}&background=random`;
+    
+    // If it's already a full URL, use it as is
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return imagePath;
     }
+    
+    // If it's a relative path, construct the full URL
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+    return `${baseUrl}${imagePath}`;
+  };
+
+  useEffect(() => {
+    // Load user profile from API if authenticated
+    const loadUserProfile = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          const userData = await userService.getProfile();
+          setUser(userData);
+        } catch (error) {
+          console.error('Failed to load user profile:', error);
+          // If API fails, fall back to token validation by clearing invalid token
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+        }
+      }
+    };
+
+    loadUserProfile();
 
     // Listen for login events
     const handleLoginSuccess = (event: CustomEvent) => {
@@ -120,7 +143,7 @@ export function Navigation() {
                       className="flex items-center space-x-2 rounded-lg px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                     >
                       <img
-                        src={user.profilePicture || `https://ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&background=random`}
+                        src={getImageUrl(user.profilePicture)}
                         alt={`${user.firstName} ${user.lastName}`}
                         className="w-8 h-8 rounded-full object-cover"
                       />

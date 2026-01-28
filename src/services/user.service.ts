@@ -72,9 +72,6 @@ class UserService {
       },
     });
     
-    // Update user in localStorage
-    localStorage.setItem('user', JSON.stringify(response.data));
-    
     return response.data;
   }
 
@@ -85,9 +82,6 @@ class UserService {
    */
   async updateProfile(data: UpdateProfileDto): Promise<User> {
     const response = await axiosInstance.patch<User>('/users/profile', data);
-    
-    // Update user in localStorage
-    localStorage.setItem('user', JSON.stringify(response.data));
     
     return response.data;
   }

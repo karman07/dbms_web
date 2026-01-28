@@ -11,27 +11,25 @@ import {
   CheckCircle,
   Lightbulb,
   Shield,
-  Database,
-  Code,
-  GraduationCap
+
 } from "lucide-react";
 
 // Professional Logo Component
-const Logo = () => (
-  <div className="flex items-center justify-center mb-8">
-    <div className="relative">
-      <div className="w-24 h-24 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 rounded-2xl shadow-2xl flex items-center justify-center transform rotate-3 hover:rotate-0 transition-transform duration-300">
-        <Database className="w-12 h-12 text-white" />
-      </div>
-      <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
-        <Code className="w-4 h-4 text-white" />
-      </div>
-      <div className="absolute -bottom-2 -left-2 w-6 h-6 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center shadow-lg">
-        <GraduationCap className="w-3 h-3 text-white" />
-      </div>
-    </div>
-  </div>
-);
+// const Logo = () => (
+//   <div className="flex items-center justify-center mb-8">
+//     <div className="relative">
+//       <div className="w-24 h-24 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 rounded-2xl shadow-2xl flex items-center justify-center transform rotate-3 hover:rotate-0 transition-transform duration-300">
+//         <Database className="w-12 h-12 text-white" />
+//       </div>
+//       <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg">
+//         <Code className="w-4 h-4 text-white" />
+//       </div>
+//       <div className="absolute -bottom-2 -left-2 w-6 h-6 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center shadow-lg">
+//         <GraduationCap className="w-3 h-3 text-white" />
+//       </div>
+//     </div>
+//   </div>
+// );
 
 interface AboutPageProps {}
 
@@ -55,7 +53,7 @@ export function AboutPage({}: AboutPageProps) {
             transition={{ duration: 0.8 }}
             className="text-center"
           >
-            <Logo />
+            {/* <Logo /> */}
             <h1 className="text-5xl md:text-7xl font-extrabold mb-6 leading-tight">
               <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 bg-clip-text text-transparent drop-shadow-lg">
                 About
@@ -66,9 +64,7 @@ export function AboutPage({}: AboutPageProps) {
               <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 max-w-4xl mx-auto leading-relaxed mb-4">
                 <Typewriter text="Empowering students worldwide with expert-led database education and practical skills for career success." delay={2000} speed={50} />
               </p>
-              <p className="text-lg text-gray-500 dark:text-gray-400 font-medium">
-                by <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent font-semibold">Parteek Bhatia</span>
-              </p>
+
             </div>
           </motion.div>
         </div>

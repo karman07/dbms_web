@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
 import { useInView } from "react-intersection-observer";
+import { useNavigate } from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Typewriter } from "@/components/Typewriter";
 import { GRADIENTS, BUTTON_STYLES, fadeIn, staggerContainer, scaleIn, fadeInUp, slideIn } from "@/constants";
@@ -31,11 +33,34 @@ interface HomePageProps {
 }
 
 export function HomePage({ onAuthOpen }: HomePageProps) {
+  const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const curriculumScrollRef = useRef<HTMLElement>(null);
   const [heroRef, heroInView] = useInView({ threshold: 0.1, triggerOnce: true });
   const [featuresRef, featuresInView] = useInView({ threshold: 0.1, triggerOnce: true });
   const [curriculumRef, curriculumInView] = useInView({ threshold: 0.1, triggerOnce: true });
   const [instructorRef, instructorInView] = useInView({ threshold: 0.1, triggerOnce: true });
   const [ctaRef, ctaInView] = useInView({ threshold: 0.1, triggerOnce: true });
+
+  // Check authentication status
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    setIsAuthenticated(!!token);
+  }, []);
+
+  // Function to scroll to curriculum section
+  const scrollToCurriculum = () => {
+    curriculumScrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  // Function to handle start learning click
+  const handleStartLearning = () => {
+    if (isAuthenticated) {
+      navigate('/dashboard');
+    } else {
+      onAuthOpen('signup');
+    }
+  };
 
   const topics = [
     { icon: BookOpen, title: "Basics of DBMSs", description: "Foundation concepts and principles" },
@@ -119,7 +144,7 @@ export function HomePage({ onAuthOpen }: HomePageProps) {
               <Button 
                 size="lg" 
                 className={BUTTON_STYLES.gradient + " text-base sm:text-lg px-8 sm:px-10 py-4 sm:py-6 rounded-xl w-full sm:w-auto"}
-                onClick={() => onAuthOpen('signup')}
+                onClick={handleStartLearning}
               >
                 <Play className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3" />
                 Start Learning Now
@@ -129,6 +154,7 @@ export function HomePage({ onAuthOpen }: HomePageProps) {
                 className={
                   "border bg-white dark:bg-gray-900 border-black dark:border-white text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-800 text-base sm:text-lg px-8 sm:px-10 py-4 sm:py-6 rounded-xl w-full sm:w-auto shadow-sm transition-all duration-200"
                 }
+                onClick={scrollToCurriculum}
               >
                 <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3 text-black dark:text-white" />
                 View Curriculum
@@ -298,9 +324,10 @@ export function HomePage({ onAuthOpen }: HomePageProps) {
       </section>
 
       {/* Curriculum Section */}
-      <section ref={curriculumRef} className="py-20 bg-gray-50 dark:bg-gray-800">
+      <section ref={curriculumScrollRef} className="py-20 bg-gray-50 dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
+            ref={curriculumRef}
             variants={staggerContainer}
             initial="hidden"
             animate={curriculumInView ? "visible" : "hidden"}
@@ -366,7 +393,7 @@ export function HomePage({ onAuthOpen }: HomePageProps) {
                   <Button 
                     size="lg" 
                     className={BUTTON_STYLES.gradient + " text-lg sm:text-xl px-10 sm:px-12 py-4 sm:py-6 rounded-xl w-full sm:w-auto"}
-                    onClick={() => onAuthOpen('signup')}
+                    onClick={handleStartLearning}
                   >
                     <Play className="w-5 h-5 sm:w-6 sm:h-6 mr-2 sm:mr-3" />
                     Enroll Now - Start Learning

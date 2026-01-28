@@ -34,7 +34,18 @@ export const Typewriter = ({ text, delay = 0, speed = 50, className = '' }: Type
   return (
     <span ref={ref} className={className}>
       {displayText}
-      <span className="animate-pulse">|</span>
+      <span 
+        className="inline-block w-[3px] h-[0.9em] bg-gray-900 dark:bg-white ml-1 align-middle"
+        style={{
+          animation: 'blink 0.8s step-end infinite'
+        }}
+      />
+      <style>{`
+        @keyframes blink {
+          0%, 49% { opacity: 1; }
+          50%, 100% { opacity: 0; }
+        }
+      `}</style>
     </span>
   );
 };

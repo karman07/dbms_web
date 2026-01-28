@@ -5,12 +5,13 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { CompleteProfileDialog } from "./CompleteProfileDialog";
+import { EmailVerificationDialog } from "./EmailVerificationDialog";
 import { BUTTON_STYLES } from "../constants";
 import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 import { useNotification } from "@/contexts/NotificationContext";
 import authService from "@/services/auth.service";
 import { auth, googleProvider } from "@/lib/firebase";
-import { signInWithPopup } from "firebase/auth";
+import { signInWithPopup, createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 
 interface AuthDialogProps {
   isOpen: boolean;
@@ -23,6 +24,8 @@ export function AuthDialog({ isOpen, onClose, mode, onModeChange }: AuthDialogPr
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showCompleteProfile, setShowCompleteProfile] = useState(false);
+  const [showEmailVerification, setShowEmailVerification] = useState(false);
+  const [userEmailForVerification, setUserEmailForVerification] = useState('');
   const notification = useNotification();
   const [formData, setFormData] = useState({
     firstName: '',
@@ -38,8 +41,17 @@ export function AuthDialog({ isOpen, onClose, mode, onModeChange }: AuthDialogPr
 
     try {
       if (mode === 'signup') {
-        // Register new user
-        const response = await authService.register({
+        // Register new user with Firebase first (email/password signup only)
+        const firebaseUser = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+        
+        // Send verification email via Firebase for email/password signups
+        await sendEmailVerification(firebaseUser.user, {
+          url: window.location.origin + '/login',
+          handleCodeInApp: false,
+        });
+
+        // Register user in backend
+        await authService.register({
           email: formData.email,
           firstName: formData.firstName,
           lastName: formData.lastName,
@@ -47,21 +59,11 @@ export function AuthDialog({ isOpen, onClose, mode, onModeChange }: AuthDialogPr
           referralSource: formData.referralSource || undefined,
         });
 
-        // Show success message about email verification
-        if (!response.user.isEmailVerified) {
-          notification.success('Account created!', 'Please check your email to verify your account.');
-        } else {
-          notification.success('Account created successfully!');
-        }
-
-        // Dispatch login success event
-        const event = new CustomEvent('loginSuccess', { detail: { user: response.user } });
-        window.dispatchEvent(event);
-
-        // Close auth dialog and show complete profile dialog
+        // Show verification dialog for email/password signups (Google signups skip this)
+        setUserEmailForVerification(formData.email);
         onClose();
         setTimeout(() => {
-          setShowCompleteProfile(true);
+          setShowEmailVerification(true);
           resetForm();
         }, 500);
       } else {
@@ -71,17 +73,34 @@ export function AuthDialog({ isOpen, onClose, mode, onModeChange }: AuthDialogPr
           password: formData.password,
         });
 
+        // Check if email is verified
+        if (!response.user.isEmailVerified) {
+          notification.warning('Email not verified', 'Please verify your email before accessing your account. Check your inbox for the verification link.');
+          onClose();
+          resetForm();
+          return;
+        }
+
         notification.success('Login successful!', `Welcome back, ${response.user.firstName}!`);
 
         // Dispatch login success event
         const event = new CustomEvent('loginSuccess', { detail: { user: response.user } });
         window.dispatchEvent(event);
 
-        // Close dialog after short delay
+        // Check if profile is incomplete for verified users
+        const isProfileIncomplete = !response.user.phoneNumber || 
+                                    !response.user.currentPosition || 
+                                    !response.user.city || 
+                                    !response.user.bio;
+
+        // Close dialog and show complete profile if needed
+        onClose();
         setTimeout(() => {
-          onClose();
+          if (isProfileIncomplete) {
+            setShowCompleteProfile(true);
+          }
           resetForm();
-        }, 1000);
+        }, isProfileIncomplete ? 500 : 1000);
       }
     } catch (err: any) {
       notification.error('Authentication failed', err.message || 'An error occurred. Please try again.');
@@ -104,25 +123,28 @@ export function AuthDialog({ isOpen, onClose, mode, onModeChange }: AuthDialogPr
         isGoogleSignup: mode === 'signup',
       });
 
+      // Google users are typically auto-verified, so skip email verification
       notification.success('Google authentication successful!', `Welcome, ${response.user.firstName}!`);
 
       // Dispatch login success event
       const event = new CustomEvent('loginSuccess', { detail: { user: response.user } });
       window.dispatchEvent(event);
 
-      // If signup, show complete profile dialog
-      if (mode === 'signup') {
-        onClose();
-        setTimeout(() => {
+      // For Google signup, always show complete profile dialog
+      // For Google login, only show if profile is incomplete
+      const isProfileIncomplete = !response.user.phoneNumber || 
+                                  !response.user.currentPosition || 
+                                  !response.user.city || 
+                                  !response.user.bio;
+
+      // Close dialog and show complete profile if it's a signup or profile is incomplete
+      onClose();
+      setTimeout(() => {
+        if (mode === 'signup' || isProfileIncomplete) {
           setShowCompleteProfile(true);
-        }, 500);
-      } else {
-        // Just close for login
-        setTimeout(() => {
-          onClose();
-          resetForm();
-        }, 1000);
-      }
+        }
+        resetForm();
+      }, 500);
     } catch (err: any) {
       notification.error('Google authentication failed', err.message || 'Please try again.');
     } finally {
@@ -138,6 +160,17 @@ export function AuthDialog({ isOpen, onClose, mode, onModeChange }: AuthDialogPr
       password: '',
       referralSource: ''
     });
+  };
+
+  const handleEmailVerificationClose = () => {
+    setShowEmailVerification(false);
+    setUserEmailForVerification('');
+  };
+
+  const handleBackToLogin = () => {
+    setShowEmailVerification(false);
+    setUserEmailForVerification('');
+    onModeChange('login');
   };
 
   return (
@@ -313,7 +346,16 @@ export function AuthDialog({ isOpen, onClose, mode, onModeChange }: AuthDialogPr
         </motion.div>
       </DialogContent>
     </Dialog>
-    
+
+    {/* Email Verification Dialog */}
+    <EmailVerificationDialog
+      isOpen={showEmailVerification}
+      onClose={handleEmailVerificationClose}
+      onBackToLogin={handleBackToLogin}
+      userEmail={userEmailForVerification}
+    />
+
+    {/* Complete Profile Dialog */}
     <CompleteProfileDialog
       isOpen={showCompleteProfile}
       onClose={() => setShowCompleteProfile(false)}
