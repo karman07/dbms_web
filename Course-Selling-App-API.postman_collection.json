@@ -1,0 +1,475 @@
+{
+  "info": {
+    "name": "Course Selling App API",
+    "description": "API collection for course selling app with user management and Firebase auth",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "firebaseToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "topicId",
+      "value": "697a135f484227377a73d13e",
+      "type": "string"
+    },
+    {
+      "key": "subtopicName",
+      "value": "01-introduction",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"password\": \"password123\",\n  \"referralSource\": \"google\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            }
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "originalRequest": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                  "mode": "raw",
+                  "raw": ""
+                },
+                "url": {
+                  "raw": "{{baseUrl}}/auth/register",
+                  "host": ["{{baseUrl}}"]
+                }
+              },
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "header": [],
+              "cookie": [],
+              "body": "{\n  \"user\": {\n    \"_id\": \"507f1f77bcf86cd799439011\",\n    \"email\": \"user@example.com\",\n    \"firstName\": \"John\",\n    \"lastName\": \"Doe\",\n    \"role\": \"user\"\n  },\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Firebase Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firebaseToken\": \"your-firebase-jwt-token\",\n  \"isGoogleSignup\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/firebase-login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "firebase-login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"password\": \"password123\",\n  \"phoneNumber\": \"+1234567890\",\n  \"age\": 25,\n  \"gender\": \"male\",\n  \"currentPosition\": \"Software Developer\",\n  \"company\": \"Tech Corp\",\n  \"city\": \"New York\",\n  \"state\": \"NY\",\n  \"country\": \"USA\",\n  \"referralSource\": \"google\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "Create Admin",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"firstName\": \"Admin\",\n  \"lastName\": \"User\",\n  \"password\": \"admin123\",\n  \"role\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/admin",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "admin"]
+            }
+          }
+        },
+        {
+          "name": "Get All Users (Admin Only)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebaseToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users",
+              "host": ["{{baseUrl}}"],
+              "path": ["users"]
+            }
+          }
+        },
+        {
+          "name": "Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebaseToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Get User by ID (Admin Only)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebaseToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebaseToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Updated\",\n  \"lastName\": \"Name\",\n  \"currentPosition\": \"Senior Developer\",\n  \"bio\": \"Updated bio\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "profile"]
+            }
+          }
+        },
+        {
+          "name": "Admin Update User",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebaseToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"role\": \"admin\",\n  \"isActive\": true,\n  \"isEmailVerified\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete User (Admin Only)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebaseToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            }
+          }
+        },
+        {
+          "name": "Verify Email (Admin Only)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebaseToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/verify-email",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "verify-email"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Docs",
+      "item": [
+        {
+          "name": "Admin - Create Topic with Subtopics",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebaseToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "topic",
+                  "value": "DBMS Fundamentals",
+                  "type": "text"
+                },
+                {
+                  "key": "course",
+                  "value": "dbms",
+                  "type": "text"
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "sample_docs/01-introduction.md"
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "sample_docs/02-er-model.md"
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "sample_docs/03-relational-model.md"
+                },
+                {
+                  "key": "files",
+                  "type": "file",
+                  "src": "sample_docs/04-sql-basics.md"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/docs/admin/topic",
+              "host": ["{{baseUrl}}"],
+              "path": ["docs", "admin", "topic"]
+            }
+          }
+        },
+        {
+          "name": "Admin - Delete Topic",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebaseToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/docs/admin/topic/{{topicId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["docs", "admin", "topic", "{{topicId}}"]
+            }
+          }
+        },
+        {
+          "name": "Admin - Add Subtopic to Topic",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebaseToken}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "Advanced Topics",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/path/to/advanced-topics.md"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/docs/admin/topic/{{topicId}}/subtopic",
+              "host": ["{{baseUrl}}"],
+              "path": ["docs", "admin", "topic", "{{topicId}}", "subtopic"]
+            }
+          }
+        },
+        {
+          "name": "Admin - Delete Subtopic",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{firebaseToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/docs/admin/topic/{{topicId}}/subtopic/{{subtopicName}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["docs", "admin", "topic", "{{topicId}}", "subtopic", "{{subtopicName}}"]
+            }
+          }
+        },
+        {
+          "name": "Get All Topics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/docs/topics",
+              "host": ["{{baseUrl}}"],
+              "path": ["docs", "topics"]
+            }
+          }
+        },
+        {
+          "name": "Get Topic Subtopics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/docs/topic/{{topicId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["docs", "topic", "{{topicId}}"]
+            }
+          }
+        },
+        {
+          "name": "Get Subtopic Content",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/docs/topic/{{topicId}}/subtopic/{{subtopicName}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["docs", "topic", "{{topicId}}", "subtopic", "{{subtopicName}}"]
+            }
+          }
+        },
+        {
+          "name": "Download Subtopic as MD File",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/docs/topic/{{topicId}}/subtopic/{{subtopicName}}/download",
+              "host": ["{{baseUrl}}"],
+              "path": ["docs", "topic", "{{topicId}}", "subtopic", "{{subtopicName}}", "download"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

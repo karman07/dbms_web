@@ -1,0 +1,104 @@
+{
+  "name": "Docs",
+  "item": [
+    {
+      "name": "Admin - Create Topic",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{firebaseToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"topic\": \"ER Model\",\n  \"subtopics\": [\n    {\n      \"name\": \"Introduction\",\n      \"content\": \"# ER Model\nThis is the intro...\"\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/docs/admin/topic",
+          "host": ["{{baseUrl}}"],
+          "path": ["docs", "admin", "topic"]
+        }
+      }
+    },
+    {
+      "name": "Admin - Delete Topic",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{firebaseToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/docs/admin/topic/{{topicId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["docs", "admin", "topic", "{{topicId}}"]
+        }
+      }
+    },
+    {
+      "name": "Admin - Add Subtopic",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{firebaseToken}}" },
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"ER Diagram\",\n  \"content\": \"# ER Diagram\n...\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/docs/admin/topic/{{topicId}}/subtopic",
+          "host": ["{{baseUrl}}"],
+          "path": ["docs", "admin", "topic", "{{topicId}}", "subtopic"]
+        }
+      }
+    },
+    {
+      "name": "Admin - Delete Subtopic",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "Authorization", "value": "Bearer {{firebaseToken}}" }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/docs/admin/topic/{{topicId}}/subtopic/{{subtopicName}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["docs", "admin", "topic", "{{topicId}}", "subtopic", "{{subtopicName}}"]
+        }
+      }
+    },
+    {
+      "name": "User - List Topics",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/docs/topics",
+          "host": ["{{baseUrl}}"],
+          "path": ["docs", "topics"]
+        }
+      }
+    },
+    {
+      "name": "User - List Subtopics",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/docs/topic/{{topicId}}/subtopics",
+          "host": ["{{baseUrl}}"],
+          "path": ["docs", "topic", "{{topicId}}", "subtopics"]
+        }
+      }
+    },
+    {
+      "name": "User - Get Subtopic Content",
+      "request": {
+        "method": "GET",
+        "url": {
+          "raw": "{{baseUrl}}/docs/topic/{{topicId}}/subtopic/{{subtopicName}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["docs", "topic", "{{topicId}}", "subtopic", "{{subtopicName}}"]
+        }
+      }
+    }
+  ]
+}
