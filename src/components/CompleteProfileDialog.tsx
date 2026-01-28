@@ -53,6 +53,11 @@ export function CompleteProfileDialog({ isOpen, onClose, onSkip }: CompleteProfi
 
       notification.success('Profile completed!', 'Your information has been saved successfully.');
       onClose();
+      
+      // Reload page after profile completion to ensure UI reflects updated state
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
     } catch (err: any) {
       notification.error('Update failed', err.message || 'Failed to update profile. Please try again.');
     } finally {
@@ -64,6 +69,11 @@ export function CompleteProfileDialog({ isOpen, onClose, onSkip }: CompleteProfi
     notification.info('Profile skipped', 'You can complete your profile anytime from your profile page.');
     onSkip();
     onClose();
+    
+    // Reload page after skipping profile to ensure UI reflects authenticated state
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
   };
 
   const handleNext = () => {

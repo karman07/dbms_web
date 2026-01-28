@@ -98,6 +98,9 @@ export function AuthDialog({ isOpen, onClose, mode, onModeChange }: AuthDialogPr
         setTimeout(() => {
           if (isProfileIncomplete) {
             setShowCompleteProfile(true);
+          } else {
+            // Reload page after successful login if profile is complete
+            window.location.reload();
           }
           resetForm();
         }, isProfileIncomplete ? 500 : 1000);
@@ -142,6 +145,9 @@ export function AuthDialog({ isOpen, onClose, mode, onModeChange }: AuthDialogPr
       setTimeout(() => {
         if (mode === 'signup' || isProfileIncomplete) {
           setShowCompleteProfile(true);
+        } else {
+          // Reload page after successful Google login if profile is complete
+          window.location.reload();
         }
         resetForm();
       }, 500);
