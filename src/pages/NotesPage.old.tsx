@@ -8,10 +8,13 @@ import {
   Trash2, 
   Bookmark, 
   Heart, 
+  Eye,
   X,
   Tag,
+  Calendar,
   User,
   BookmarkCheck,
+  HeartIcon,
   FileText,
   Save,
   Loader2
@@ -377,78 +380,94 @@ const NotesPage = () => {
               <motion.div
                 key={note._id}
                 variants={fadeInUp}
-                whileHover={{ y: -8, transition: { duration: 0.2 } }}
-                className="group bg-white dark:bg-gray-800 rounded-2xl shadow-md hover:shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden transition-all duration-300"
+                whileHover={{ y: -5 }}
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
               >
-                {/* Note Card */}
-                <div className="p-7">
-                  {/* Header with Like/Bookmark Icons */}
-                  <div className="flex items-start justify-between gap-3 mb-3">
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white line-clamp-2 flex-1 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                      {note.title}
-                    </h3>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <button
-                        onClick={() => handleToggleLike(note)}
-                        className={`p-2 rounded-lg transition-all hover:scale-110 ${
-                          isLiked(note)
-                            ? 'bg-red-50 dark:bg-red-900/20 text-red-500'
-                            : 'bg-gray-100 dark:bg-gray-700 text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500'
-                        }`}
-                      >
-                        <Heart className={`h-5 w-5 ${isLiked(note) ? 'fill-red-500' : ''}`} />
-                      </button>
-                      <button
-                        onClick={() => handleToggleBookmark(note)}
-                        className={`p-2 rounded-lg transition-all hover:scale-110 ${
-                          isBookmarked(note)
-                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-500'
-                            : 'bg-gray-100 dark:bg-gray-700 text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-500'
-                        }`}
-                      >
-                        <Bookmark className={`h-5 w-5 ${isBookmarked(note) ? 'fill-blue-500' : ''}`} />
-                      </button>
-                    </div>
-                  </div>
+                {/* Note Header */}
+                <div className="p-6">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white line-clamp-2 mb-3">
+                    {note.title}
+                  </h3>
 
-                  {/* Source Badge */}
-                  <div className="mb-4">
-                    <span className="px-3 py-1 bg-gradient-to-r from-purple-100 to-pink-100 dark:from-purple-900/40 dark:to-pink-900/40 text-purple-700 dark:text-purple-300 text-xs font-semibold rounded-lg">
-                      {note.source.replace('_', ' ').toUpperCase()}
-                    </span>
-                  </div>
-
-                  {/* Source Details */}
-                  {note.sourceDetails && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
-                      {note.sourceDetails}
-                    </p>
-                  )}
-
-                  {/* Content Preview */}
-                  <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed line-clamp-4 mb-5">
+                  <p className="text-gray-600 dark:text-gray-300 text-sm line-clamp-3 mb-4">
                     {note.content}
                   </p>
 
                   {/* Tags */}
                   {note.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-5">
-                      {note.tags.slice(0, 4).map((tag, idx) => (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {note.tags.slice(0, 3).map((tag, idx) => (
                         <span
                           key={idx}
-                          className="inline-flex items-center px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 text-blue-700 dark:text-blue-300 text-xs font-medium rounded-lg hover:from-blue-100 hover:to-indigo-100 dark:hover:from-blue-900/30 dark:hover:to-indigo-900/30 transition-all"
+                          className="px-2 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs rounded-full"
                         >
-                          <Tag className="h-3 w-3 mr-1" />
-                          {tag}
+                          #{tag}
                         </span>
                       ))}
-                      {note.tags.length > 4 && (
-                        <span className="inline-flex items-center px-3 py-1.5 text-gray-500 dark:text-gray-400 text-xs font-medium">
-                          +{note.tags.length - 4}
+                      {note.tags.length > 3 && (
+                        <span className="px-2 py-1 text-gray-500 dark:text-gray-400 text-xs">
+                          +{note.tags.length - 3} more
                         </span>
                       )}
                     </div>
                   )}
+
+                  {/* Meta Info */}
+                  <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400 mb-4">
+                    <div className="flex items-center gap-1">
+                      <User className="h-3 w-3" />
+                      <span>{note.author.firstName} {note.author.lastName}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      <span>{new Date(note.createdAt).toLocaleDateString()}</span>
+                    </div>
+                  </div>
+
+                  {/* Source Badge */}
+                  <div className="mb-4">
+                    <span className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 text-xs font-medium rounded-full">
+                      {note.source.replace('_', ' ').toUpperCase()}
+                    </span>
+                  </div>
+
+                  {/* Stats */}
+                  <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400 mb-4">
+                    <div className="flex items-center gap-1">
+                      <Eye className="h-4 w-4" />
+                      <span>{note.viewCount ?? 0}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Heart className={`h-4 w-4 ${isLiked(note) ? 'fill-red-500 text-red-500' : ''}`} />
+                      <span>{note.likeCount ?? 0}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Bookmark className={`h-4 w-4 ${isBookmarked(note) ? 'fill-blue-500 text-blue-500' : ''}`} />
+                      <span>{note.bookmarkCount ?? 0}</span>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleToggleLike(note)}
+                      className={`flex-1 ${isLiked(note) ? 'border-red-500 text-red-500' : ''}`}
+                    >
+                      <Heart className={`h-4 w-4 mr-1 ${isLiked(note) ? 'fill-red-500' : ''}`} />
+                      {isLiked(note) ? 'Liked' : 'Like'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleToggleBookmark(note)}
+                      className={`flex-1 ${isBookmarked(note) ? 'border-blue-500 text-blue-500' : ''}`}
+                    >
+                      <Bookmark className={`h-4 w-4 mr-1 ${isBookmarked(note) ? 'fill-blue-500' : ''}`} />
+                      {isBookmarked(note) ? 'Saved' : 'Save'}
+                    </Button>
+                  </div>
 
                   {/* Edit/Delete Actions (only for author) */}
                   {isAuthor(note) && (

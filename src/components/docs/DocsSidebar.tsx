@@ -45,8 +45,8 @@ export const DocsSidebar = ({
   setSelectedTopic,
   fetchSubtopicContent,
 }: DocsSidebarProps) => (
-  <div className={`fixed inset-y-0 left-0 z-50 w-80 bg-white dark:bg-gray-800 shadow-lg transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:static lg:inset-0 transition-transform duration-300 ease-in-out`}>
-    <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+  <div className={`fixed inset-y-0 left-0 z-50 w-80 bg-white dark:bg-gray-800 shadow-lg transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:static lg:inset-0 lg:h-screen transition-transform duration-300 ease-in-out flex flex-col`}>
+    <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
       <div className="flex items-center space-x-3">
         <div className={`w-10 h-10 ${GRADIENTS.gradientPrimary} rounded-lg flex items-center justify-center`}>
           <Database className="w-6 h-6 text-white" />
@@ -60,7 +60,7 @@ export const DocsSidebar = ({
         <X className="w-5 h-5" />
       </Button>
     </div>
-    <div className="overflow-y-auto h-full pb-20">
+    <div className="flex-1 overflow-y-auto">
       <div className="p-4">
         <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />

@@ -13,6 +13,8 @@ class AuthService {
     if (response.data.token) {
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
+      // Dispatch auth state change event
+      window.dispatchEvent(new Event('authStateChanged'));
     }
     
     return response.data;
@@ -29,6 +31,8 @@ class AuthService {
     if (response.data.token) {
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
+      // Dispatch auth state change event
+      window.dispatchEvent(new Event('authStateChanged'));
     }
     
     return response.data;
@@ -45,6 +49,8 @@ class AuthService {
     if (response.data.token) {
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('user', JSON.stringify(response.data.user));
+      // Dispatch auth state change event
+      window.dispatchEvent(new Event('authStateChanged'));
     }
     
     return response.data;
@@ -56,6 +62,8 @@ class AuthService {
   logout(): void {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    // Dispatch auth state change event
+    window.dispatchEvent(new Event('authStateChanged'));
   }
 
   /**

@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
 import { Typewriter } from "./Typewriter";
 import { GRADIENTS } from "../constants";
-import { Footer } from "./Footer";
 import { 
   Users, 
   BookOpen, 
@@ -272,7 +271,6 @@ export function AboutPage({}: AboutPageProps) {
           </div>
         </div>
       </section>
-      <Footer />
     </div>
   );
 }

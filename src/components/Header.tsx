@@ -68,8 +68,20 @@ export function Navigation() {
       }
     };
 
+    // Listen for auth dialog open requests
+    const handleOpenAuth = (event: CustomEvent) => {
+      if (event.detail?.mode) {
+        setAuthDialog({ isOpen: true, mode: event.detail.mode });
+      }
+    };
+
     window.addEventListener('loginSuccess' as any, handleLoginSuccess);
-    return () => window.removeEventListener('loginSuccess' as any, handleLoginSuccess);
+    window.addEventListener('openAuth' as any, handleOpenAuth);
+    
+    return () => {
+      window.removeEventListener('loginSuccess' as any, handleLoginSuccess);
+      window.removeEventListener('openAuth' as any, handleOpenAuth);
+    };
   }, []);
 
   const handleLogout = () => {

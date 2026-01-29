@@ -93,23 +93,25 @@ const DocsPage = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
       
-      <div className="lg:flex">
+      <div className="lg:flex lg:h-screen">
         {/* Sidebar */}
-        <DocsSidebar
-          topics={topics}
-          filteredTopics={filteredTopics}
-          sidebarOpen={sidebarOpen}
-          setSidebarOpen={setSidebarOpen}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          selectedTopic={selectedTopic}
-          selectedSubtopic={selectedSubtopic}
-          setSelectedTopic={setSelectedTopic}
-          fetchSubtopicContent={fetchSubtopicContent}
-        />
+        <div className="lg:w-80 lg:flex-shrink-0">
+          <DocsSidebar
+            topics={topics}
+            filteredTopics={filteredTopics}
+            sidebarOpen={sidebarOpen}
+            setSidebarOpen={setSidebarOpen}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            selectedTopic={selectedTopic}
+            selectedSubtopic={selectedSubtopic}
+            setSelectedTopic={setSelectedTopic}
+            fetchSubtopicContent={fetchSubtopicContent}
+          />
+        </div>
 
         {/* Main Content */}
-        <div className="flex-1 lg:ml-0">
+        <div className="flex-1 lg:overflow-hidden">
           {/* Header */}
           <div className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
             <div className="px-4 sm:px-6 lg:px-8 py-4">
@@ -169,7 +171,7 @@ const DocsPage = () => {
           </div>
 
           {/* Content Area */}
-          <div className={viewMode === 'slides' ? '' : 'px-4 sm:px-6 lg:px-8 py-8'}>
+          <div className={`lg:h-[calc(100vh-80px)] lg:overflow-y-auto ${viewMode === 'slides' ? '' : 'px-4 sm:px-6 lg:px-8 py-8'}`}>
             <motion.div
               key={selectedTopic?._id || selectedSubtopic?._id || 'home'}
               initial={{ opacity: 0, y: 20 }}

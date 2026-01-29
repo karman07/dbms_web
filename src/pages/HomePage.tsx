@@ -26,6 +26,15 @@ import {
   Github,
   Linkedin,
   Mail,
+  FileText,
+  Activity,
+  CheckCircle,
+  Layers,
+  Video,
+  PenTool,
+  Lightbulb,
+  UserCheck,
+  Calendar,
 } from "lucide-react";
 
 interface HomePageProps {
@@ -40,12 +49,27 @@ export function HomePage({ onAuthOpen }: HomePageProps) {
   const [featuresRef, featuresInView] = useInView({ threshold: 0.1, triggerOnce: true });
   const [curriculumRef, curriculumInView] = useInView({ threshold: 0.1, triggerOnce: true });
   const [instructorRef, instructorInView] = useInView({ threshold: 0.1, triggerOnce: true });
+  const [platformRef, platformInView] = useInView({ threshold: 0.1, triggerOnce: true });
   const [ctaRef, ctaInView] = useInView({ threshold: 0.1, triggerOnce: true });
 
   // Check authentication status
   useEffect(() => {
     const token = localStorage.getItem('token');
     setIsAuthenticated(!!token);
+
+    // Listen for authentication changes
+    const handleAuthChange = () => {
+      const token = localStorage.getItem('token');
+      setIsAuthenticated(!!token);
+    };
+
+    window.addEventListener('authStateChanged', handleAuthChange);
+    window.addEventListener('storage', handleAuthChange);
+
+    return () => {
+      window.removeEventListener('authStateChanged', handleAuthChange);
+      window.removeEventListener('storage', handleAuthChange);
+    };
   }, []);
 
   // Function to scroll to curriculum section
@@ -58,7 +82,7 @@ export function HomePage({ onAuthOpen }: HomePageProps) {
     if (isAuthenticated) {
       navigate('/dashboard');
     } else {
-      onAuthOpen('signup');
+      onAuthOpen('login');
     }
   };
 
@@ -282,8 +306,182 @@ export function HomePage({ onAuthOpen }: HomePageProps) {
         </div>
       </section>
 
+      {/* Platform Overview Section */}
+      <section ref={platformRef} className="py-20 sm:py-32 bg-white dark:bg-gray-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            variants={staggerContainer}
+            initial="hidden"
+            animate={platformInView ? "visible" : "hidden"}
+          >
+            <motion.div variants={fadeInUp} className="text-center mb-16 sm:mb-20">
+              <h2 className="text-4xl sm:text-5xl md:text-6xl font-bold text-gray-900 dark:text-white mb-6 sm:mb-8">
+                DBMS Teaching & Learning Hub
+              </h2>
+              <p className="text-lg sm:text-2xl text-gray-600 dark:text-gray-300 max-w-5xl mx-auto leading-relaxed">
+                A complete platform designed to support faculty, students, and professionals teaching or learning Database Management Systems as a university-level course
+              </p>
+            </motion.div>
+
+            {/* Mission Statement */}
+            <motion.div variants={fadeInUp} className="max-w-5xl mx-auto mb-16 sm:mb-20">
+              <div className="bg-gradient-to-br from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-3xl p-8 sm:p-12 border border-purple-200 dark:border-purple-800">
+                <div className="flex items-start gap-4 sm:gap-6 mb-6">
+                  <div className={`${GRADIENTS.gradientAccent} rounded-2xl p-4 shadow-lg`}>
+                    <Target className="w-8 h-8 text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-4">Our Goal</h3>
+                    <p className="text-base sm:text-lg text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+                      To provide a clear, structured, and complete pathway for teaching and learning DBMS—week by week—without requiring instructors to build the course from scratch.
+                    </p>
+                    <p className="text-base sm:text-lg text-gray-700 dark:text-gray-300 leading-relaxed">
+                      The platform brings together <span className="font-semibold text-purple-600 dark:text-purple-400">conceptual clarity</span>, <span className="font-semibold text-purple-600 dark:text-purple-400">hands-on practice</span>, <span className="font-semibold text-purple-600 dark:text-purple-400">assessment support</span>, and <span className="font-semibold text-purple-600 dark:text-purple-400">career readiness</span> in one place. Faculty may adopt the course as-is or customize individual components to fit their syllabus and teaching style.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* What the Platform Provides */}
+            <motion.div variants={fadeInUp} className="mb-16 sm:mb-20">
+              <h3 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white text-center mb-12 sm:mb-16">
+                What the Platform Provides
+              </h3>
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                {[
+                  {
+                    icon: Calendar,
+                    title: "Weekly Course Structure",
+                    description: "A step-by-step weekly roadmap aligned with a standard DBMS syllabus, enabling consistent coverage across the semester."
+                  },
+                  {
+                    icon: FileText,
+                    title: "Readings",
+                    description: "Curated readings from the best-selling book Simplified Approach to DBMS, supplementary explanations, and concept-first content designed for understanding."
+                  },
+                  {
+                    icon: Activity,
+                    title: "In-Class Activities",
+                    description: "Structured, hands-on classroom activities with guided discussion prompts. Designed for minimal instructor intervention and suitable for all class sizes."
+                  },
+                  {
+                    icon: Code,
+                    title: "Lab Assignments",
+                    description: "Practical lab exercises aligned with weekly topics, with clearly defined objectives and focus on learning by doing."
+                  },
+                  {
+                    icon: PenTool,
+                    title: "Assignments & Assessments",
+                    description: "Homework and problem-solving assignments with conceptual and applied questions. Rubric-friendly structure for fair grading."
+                  },
+                  {
+                    icon: Lightbulb,
+                    title: "Project Ideas",
+                    description: "Individual and team-based project options. Real-world inspired database problems scalable for undergraduate and graduate courses."
+                  },
+                  {
+                    icon: Video,
+                    title: "Teaching Resources",
+                    description: "Lecture slides, presentations, visual explanations, classroom-ready examples, and videos covering core DBMS concepts."
+                  },
+                  {
+                    icon: CheckCircle,
+                    title: "Exam Samples",
+                    description: "Mid-semester and end-semester exam samples available to instructors to support fair, consistent assessment design."
+                  },
+                  {
+                    icon: Layers,
+                    title: "Complete Coverage",
+                    description: "From database fundamentals to distributed systems. Topics include data modeling, SQL, normalization, transactions, and modern database concepts."
+                  }
+                ].map((item, index) => (
+                  <motion.div
+                    key={index}
+                    variants={scaleIn}
+                    whileHover={{ y: -8 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    className="group"
+                  >
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 sm:p-8 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-200 dark:border-gray-700 h-full">
+                      <div className={`w-14 h-14 rounded-xl ${GRADIENTS.gradientAccent} p-3.5 mb-5 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                        <item.icon className="w-7 h-7 text-white" />
+                      </div>
+                      <h4 className="text-xl font-bold text-gray-900 dark:text-white mb-3">{item.title}</h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">{item.description}</p>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Who This Is For */}
+            <motion.div variants={fadeInUp} className="mb-16 sm:mb-20">
+              <h3 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white text-center mb-12 sm:mb-16">
+                Who This Is For
+              </h3>
+              <div className="grid md:grid-cols-2 gap-6 sm:gap-8 max-w-6xl mx-auto">
+                {[
+                  {
+                    icon: GraduationCap,
+                    title: "Faculty & Instructors",
+                    points: [
+                      "Want a complete, university-ready DBMS course they can adopt with confidence",
+                      "New instructors seeking a clear, structured pathway without fragmented materials",
+                      "Experienced instructors looking to elevate their course with reduced preparation overhead"
+                    ]
+                  },
+                  {
+                    icon: Users,
+                    title: "Students & Learners",
+                    points: [
+                      "Want to truly understand how database systems work",
+                      "Build reasoning and intuition, not just learn SQL syntax",
+                      "Need strong conceptual foundation for technical interviews"
+                    ]
+                  },
+                  {
+                    icon: UserCheck,
+                    title: "Professionals",
+                    points: [
+                      "Preparing for technical interviews and placements",
+                      "Need a strong conceptual foundation in DBMS",
+                      "Want to move beyond surface-level understanding"
+                    ]
+                  }
+                ].map((category, index) => (
+                  <motion.div
+                    key={index}
+                    variants={fadeInUp}
+                    whileHover={{ scale: 1.02 }}
+                    className="bg-gradient-to-br from-gray-50 to-white dark:from-gray-800 dark:to-gray-900 rounded-2xl p-8 shadow-xl border border-gray-200 dark:border-gray-700"
+                  >
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className={`${GRADIENTS.gradientAccent} rounded-xl p-3 shadow-lg`}>
+                        <category.icon className="w-6 h-6 text-white" />
+                      </div>
+                      <h4 className="text-2xl font-bold text-gray-900 dark:text-white">{category.title}</h4>
+                    </div>
+                    <ul className="space-y-3">
+                      {category.points.map((point, idx) => (
+                        <li key={idx} className="flex items-start gap-3">
+                          <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" />
+                          <span className="text-gray-700 dark:text-gray-300 text-sm leading-relaxed">{point}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+
+ 
+          </motion.div>
+        </div>
+      </section>
+
       {/* Features Section */}
-      <section ref={featuresRef} className="py-20 bg-white dark:bg-gray-900">
+      <section ref={featuresRef} className="py-20 bg-gray-50 dark:bg-gray-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             variants={staggerContainer}
@@ -324,7 +522,7 @@ export function HomePage({ onAuthOpen }: HomePageProps) {
       </section>
 
       {/* Curriculum Section */}
-      <section ref={curriculumScrollRef} className="py-20 bg-gray-50 dark:bg-gray-800">
+      <section ref={curriculumScrollRef} className="py-20 bg-white dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             ref={curriculumRef}
@@ -369,7 +567,7 @@ export function HomePage({ onAuthOpen }: HomePageProps) {
       </section>
 
       {/* CTA Section */}
-      <section ref={ctaRef} className="py-20 bg-white dark:bg-gray-900">
+      <section ref={ctaRef} className="py-20 bg-gray-50 dark:bg-gray-800">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.div
             variants={staggerContainer}
