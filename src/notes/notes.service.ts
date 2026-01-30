@@ -16,9 +16,8 @@ export class NotesService {
     return note.save();
   }
 
-  async findAll(userId?: string): Promise<Note[]> {
-    const query = userId ? { $or: [{ isPublic: true }, { author: userId }] } : { isPublic: true };
-    return this.noteModel.find(query)
+  async findAll(userId: string): Promise<Note[]> {
+    return this.noteModel.find({ author: userId })
       .populate('author', 'firstName lastName email')
       .sort({ createdAt: -1 })
       .exec();

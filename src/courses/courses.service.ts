@@ -188,7 +188,6 @@ export class CoursesService {
 
     const progress = await this.userProgressModel.findOne({
       userId: new Types.ObjectId(userId),
-      courseId: course._id,
     });
 
     if (!progress) {
@@ -235,6 +234,9 @@ export class CoursesService {
 
   // User: Get my progress for the course
   async getMyProgress(userId: string): Promise<UserProgress> {
+    console.log('getMyProgress service - userId:', userId);
+    console.log('getMyProgress service - userId type:', typeof userId);
+    
     const course = await this.courseModel.findOne();
     if (!course) {
       throw new NotFoundException('Course not found');
@@ -242,8 +244,11 @@ export class CoursesService {
 
     const progress = await this.userProgressModel.findOne({
       userId: new Types.ObjectId(userId),
-      courseId: course._id,
     });
+    
+    console.log('getMyProgress service - progress found:', !!progress);
+    console.log('getMyProgress service - query:', { userId: new Types.ObjectId(userId) });
+    
     if (!progress) {
       throw new NotFoundException('You are not enrolled in this course');
     }
@@ -259,7 +264,6 @@ export class CoursesService {
 
     const progress = await this.userProgressModel.findOne({
       userId: new Types.ObjectId(userId),
-      courseId: course._id,
     });
 
     if (!progress) {

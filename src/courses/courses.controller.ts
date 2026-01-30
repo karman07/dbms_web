@@ -40,7 +40,7 @@ export class CoursesController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles([UserRole.ADMIN])
   async createCourse(@Body() createCourseDto: CreateCourseDto, @Request() req) {
-    return this.coursesService.createCourse(createCourseDto, req.user.uid);
+    return this.coursesService.createCourse(createCourseDto, req.user.id);
   }
 
   @Put('admin')
@@ -181,7 +181,7 @@ export class CoursesController {
   @Post('enroll')
   @UseGuards(JwtAuthGuard)
   async enrollInCourse(@Request() req) {
-    return this.coursesService.enrollInCourse(req.user.uid);
+    return this.coursesService.enrollInCourse(req.user.id);
   }
 
   @Put('progress')
@@ -190,13 +190,16 @@ export class CoursesController {
     @Body() updateProgressDto: UpdateProgressDto,
     @Request() req,
   ) {
-    return this.coursesService.updateProgress(req.user.uid, updateProgressDto);
+    return this.coursesService.updateProgress(req.user.id, updateProgressDto);
   }
 
   @Get('my-progress')
   @UseGuards(JwtAuthGuard)
   async getMyProgress(@Request() req) {
-    return this.coursesService.getMyProgress(req.user.uid);
+    console.log('getMyProgress - req.user:', req.user);
+    console.log('getMyProgress - req.user.id:', req.user.id);
+    console.log('getMyProgress - req.user.uid:', req.user.uid);
+    return this.coursesService.getMyProgress(req.user.id);
   }
 
   @Post('quiz/submit')
@@ -205,6 +208,6 @@ export class CoursesController {
     @Body() submitQuizDto: SubmitQuizDto,
     @Request() req,
   ) {
-    return this.coursesService.submitQuiz(req.user.uid, submitQuizDto);
+    return this.coursesService.submitQuiz(req.user.id, submitQuizDto);
   }
 }

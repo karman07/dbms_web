@@ -15,9 +15,9 @@ export class NotesController {
   }
 
   @Get()
+  @UseGuards(JwtAuthGuard)
   findAll(@Request() req) {
-    const userId = req.headers.authorization ? req.user?.id : undefined;
-    return this.notesService.findAll(userId);
+    return this.notesService.findAll(req.user.id);
   }
 
   @Get('my-notes')

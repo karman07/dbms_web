@@ -112,8 +112,8 @@ Content-Type: application/json
 **Body:**
 ```json
 {
-  "sectionId": "507f191e810c19729de860ec",
-  "lessonId": "507f191e810c19729de860ed",
+  "sectionId": "697b799d68dbbd913f3bc6aa",
+  "lessonId": "697b799d68dbbd913f3bc6af",
   "completed": true,
   "timeSpentMinutes": 15
 }
