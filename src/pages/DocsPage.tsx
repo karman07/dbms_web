@@ -1,12 +1,13 @@
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import { ArrowLeft, Menu, Sun, Moon, BookOpenText, Presentation } from "lucide-react";
+import { ArrowLeft, Menu, Sun, Moon, BookOpenText, Presentation, StickyNote } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useTheme } from "@/contexts/ThemeContext";
 import { DocsSidebar } from "@/components/docs/DocsSidebar";
 import { DocsReadingView } from "@/components/docs/DocsReadingView";
 import { DocsSlidesView } from "@/components/docs/DocsSlidesView";
+import { NotesDrawer } from "@/components/NotesDrawer";
 
 interface Subtopic {
   _id: string;
@@ -41,6 +42,7 @@ const DocsPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>('reading');
+  const [notesOpen, setNotesOpen] = useState(false);
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 
@@ -151,6 +153,19 @@ const DocsPage = () => {
                     </div>
                   )}
                   
+                  {/* Notes Button */}
+                  {selectedSubtopic && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setNotesOpen(true)}
+                      className="flex items-center space-x-2"
+                    >
+                      <StickyNote className="w-4 h-4" />
+                      <span className="hidden sm:inline">Notes</span>
+                    </Button>
+                  )}
+                  
                   {/* Theme Toggle */}
                   <Button 
                     variant="ghost" 
@@ -203,6 +218,13 @@ const DocsPage = () => {
           </div>
         </div>
       </div>
+      
+      {/* Notes Drawer */}
+      <NotesDrawer
+        isOpen={notesOpen}
+        onClose={() => setNotesOpen(false)}
+        screen={`docs-${selectedSubtopic?._id || 'general'}`}
+      />
     </div>
   );
 };

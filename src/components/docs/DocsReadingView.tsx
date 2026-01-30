@@ -48,6 +48,7 @@ export const DocsReadingView = ({
     return (
       <div className="space-y-6">
         <motion.div
+          key={selectedSubtopic._id}
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
@@ -55,6 +56,7 @@ export const DocsReadingView = ({
         >
           <h1 className={`text-5xl md:text-6xl font-extrabold mb-4 leading-tight ${GRADIENTS.gradientTitle}`}>
             <Typewriter 
+              key={selectedSubtopic._id}
               text={selectedSubtopic.name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase())} 
               speed={50} 
               delay={200} 
@@ -80,13 +82,14 @@ export const DocsReadingView = ({
     return (
       <div className="space-y-6">
         <motion.div
+          key={selectedTopic._id}
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}
           className="mb-8"
         >
           <h1 className={`text-5xl md:text-6xl font-extrabold mb-4 leading-tight ${GRADIENTS.gradientTitle}`}>
-            <Typewriter text={selectedTopic.topic} speed={50} delay={200} />
+            <Typewriter key={selectedTopic._id} text={selectedTopic.topic} speed={50} delay={200} />
           </h1>
           <div className={`h-1.5 w-40 ${GRADIENTS.gradientPrimary} rounded-full shadow-lg mb-3`} />
           <p className="text-gray-700 dark:text-gray-300 text-lg font-medium">{selectedTopic.subtopics?.length || 0} chapters available</p>

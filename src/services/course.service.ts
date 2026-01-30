@@ -1,8 +1,13 @@
 import axiosInstance from '@/lib/axios';
 
+export interface QuizOption {
+  text: string;
+  isCorrect: boolean;
+}
+
 export interface Quiz {
   question: string;
-  options: string[];
+  options: (string | QuizOption)[];
   correctAnswer: number;
   explanation: string;
 }

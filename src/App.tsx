@@ -12,15 +12,18 @@ import NotesPage from "@/pages/NotesPage";
 import StudyMaterialPage from "@/pages/StudyMaterialPage";
 import AssignmentsPage from "@/pages/AssignmentsPage";
 import QuizzesPage from "@/pages/QuizzesPage";
+import QuizPage from "@/pages/QuizPage";
+import QuizResultsPage from "@/pages/QuizResultsPage";
 
 import { Footer } from "./components/Footer";
 import { Navigation } from "./components/Header";
+import { NotesProvider } from "@/contexts/NotesContext";
 
 
 
 function AppContent() {
   const location = useLocation();
-  const isDashboardRoute = ['/dashboard', '/docs', '/activities', '/course', '/notes', '/study-material', '/assignments', '/quizzes', '/profile'].includes(location.pathname);
+  const isDashboardRoute = ['/dashboard', '/docs', '/activities', '/course', '/notes', '/study-material', '/assignments', '/quizzes', '/quiz', '/quiz-results', '/profile'].includes(location.pathname);
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
@@ -47,6 +50,8 @@ function AppContent() {
         <Route path="/course" element={<CoursePage />} />
         <Route path="/assignments" element={<AssignmentsPage />} />
         <Route path="/quizzes" element={<QuizzesPage />} />
+        <Route path="/quiz" element={<QuizPage />} />
+        <Route path="/quiz-results" element={<QuizResultsPage />} />
         <Route path="/study-material" element={<StudyMaterialPage />} />
         <Route path="/notes" element={<NotesPage />} />
       </Routes>
@@ -59,7 +64,9 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <AppContent />
+      <NotesProvider>
+        <AppContent />
+      </NotesProvider>
     </Router>
   );
 }

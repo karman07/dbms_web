@@ -90,6 +90,7 @@ export function Navigation() {
     setUser(null);
     setShowUserMenu(false);
     navigate('/');
+    window.location.reload();
   };
 
   const isActive = (path: string) => location.pathname === path;

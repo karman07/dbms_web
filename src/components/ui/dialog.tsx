@@ -30,12 +30,12 @@ const Dialog = ({ open, onOpenChange, children }: DialogProps) => {
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
       <div 
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity" 
+        className="fixed inset-0 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200" 
         onClick={() => onOpenChange?.(false)}
       />
-      <div className="relative z-50 w-full max-w-md">
+      <div className="relative z-50 animate-in zoom-in-95 fade-in duration-200 flex items-center justify-center w-full">
         {children}
       </div>
     </div>
@@ -49,19 +49,14 @@ const DialogContent = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 p-8 w-full transform transition-all duration-300 scale-100 opacity-100",
+      "bg-white dark:bg-gray-900 rounded-xl sm:rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700",
+      "w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto",
+      "transform transition-all duration-300 scale-100 opacity-100",
+      "scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent",
       className
     )}
     {...props}
   >
-    {onClose && (
-      <button
-        onClick={onClose}
-        className="absolute right-6 top-6 rounded-full p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200"
-      >
-        <X className="h-5 w-5" />
-      </button>
-    )}
     {children}
   </div>
 ));
@@ -72,7 +67,10 @@ const DialogHeader = ({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn("flex flex-col space-y-1.5 text-center sm:text-left", className)}
+    className={cn(
+      "flex flex-col space-y-2 px-4 py-4 sm:px-6 sm:py-5 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-900 z-10",
+      className
+    )}
     {...props}
   />
 );
@@ -84,7 +82,10 @@ const DialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <h3
     ref={ref}
-    className={cn("text-lg font-semibold leading-none tracking-tight", className)}
+    className={cn(
+      "text-lg sm:text-xl font-bold leading-tight tracking-tight text-gray-900 dark:text-white pr-8",
+      className
+    )}
     {...props}
   />
 ));

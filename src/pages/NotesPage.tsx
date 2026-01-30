@@ -21,11 +21,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useNavigate } from "react-router-dom";
-import notesService, { Note, CreateNoteDto, UpdateNoteDto } from "@/services/notes.service";
+import { notesService, Note, CreateNoteDto, UpdateNoteDto } from "@/services/notes.service";
 import { useNotification } from "@/contexts/NotificationContext";
 import { GRADIENTS, BUTTON_STYLES, fadeIn, fadeInUp, staggerContainer } from "@/constants";
 
-type FilterType = 'all' | 'my-notes' | 'bookmarked' | 'liked';
+type FilterType = 'all' | 'bookmarked' | 'liked';
 type SourceType = Note['source'] | 'all';
 
 const NotesPage = () => {
@@ -36,7 +36,6 @@ const NotesPage = () => {
   const [filteredNotes, setFilteredNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState<FilterType>('all');
   const [sourceFilter, setSourceFilter] = useState<SourceType>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -66,27 +65,12 @@ const NotesPage = () => {
 
   useEffect(() => {
     filterNotes();
-  }, [notes, searchTerm, filterType, sourceFilter]);
+  }, [notes, searchTerm, sourceFilter]);
 
-  const loadNotes = async (type: FilterType = 'all') => {
+  const loadNotes = async () => {
     try {
       setLoading(true);
-      let data: Note[];
-      
-      switch (type) {
-        case 'my-notes':
-          data = await notesService.getMyNotes();
-          break;
-        case 'bookmarked':
-          data = await notesService.getBookmarkedNotes();
-          break;
-        case 'liked':
-          data = await notesService.getLikedNotes();
-          break;
-        default:
-          data = await notesService.getAllNotes();
-      }
-      
+      const data = await notesService.getAllNotes();
       setNotes(data);
     } catch (error: any) {
       notification.error('Failed to load notes', error.message || 'Please try again');
@@ -108,7 +92,7 @@ const NotesPage = () => {
       filtered = filtered.filter(note =>
         note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         note.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        note.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+        note.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
       );
     }
 
@@ -117,7 +101,7 @@ const NotesPage = () => {
 
   const handleFilterChange = (type: FilterType) => {
     setFilterType(type);
-    loadNotes(type);
+    loadNotes();
   };
 
   const handleCreateNote = async (e: React.FormEvent) => {
@@ -128,7 +112,7 @@ const NotesPage = () => {
       notification.success('Note created!', 'Your note has been saved successfully');
       setShowCreateModal(false);
       resetForm();
-      loadNotes(filterType);
+      loadNotes();
     } catch (error: any) {
       notification.error('Failed to create note', error.message || 'Please try again');
     } finally {
@@ -157,7 +141,7 @@ const NotesPage = () => {
       setShowEditModal(false);
       setSelectedNote(null);
       resetForm();
-      loadNotes(filterType);
+      loadNotes();
     } catch (error: any) {
       notification.error('Failed to update note', error.message || 'Please try again');
     } finally {
@@ -171,7 +155,7 @@ const NotesPage = () => {
     try {
       await notesService.deleteNote(id);
       notification.success('Note deleted', 'The note has been removed');
-      loadNotes(filterType);
+      loadNotes();
     } catch (error: any) {
       notification.error('Failed to delete note', error.message || 'Please try again');
     }
@@ -180,7 +164,7 @@ const NotesPage = () => {
   const handleToggleBookmark = async (note: Note) => {
     try {
       await notesService.toggleBookmark(note._id);
-      loadNotes(filterType);
+      loadNotes();
     } catch (error: any) {
       notification.error('Failed to bookmark', error.message);
     }
@@ -189,7 +173,7 @@ const NotesPage = () => {
   const handleToggleLike = async (note: Note) => {
     try {
       await notesService.toggleLike(note._id);
-      loadNotes(filterType);
+      loadNotes();
     } catch (error: any) {
       notification.error('Failed to like', error.message);
     }
@@ -202,9 +186,9 @@ const NotesPage = () => {
       content: note.content,
       source: note.source,
       sourceDetails: note.sourceDetails || '',
-      tags: note.tags,
+      tags: note.tags || [],
       isPublic: true,
-      attachments: note.attachments
+      attachments: note.attachments || []
     });
     setShowEditModal(true);
   };
@@ -273,10 +257,10 @@ const NotesPage = () => {
               </Button>
               <div>
                 <h1 className={`text-4xl font-bold ${GRADIENTS.gradientText}`}>
-                  My Notes
+                  All Notes
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400 mt-1">
-                  Organize and manage your study notes
+                  Browse and manage all study notes
                 </p>
               </div>
             </div>
@@ -300,24 +284,6 @@ const NotesPage = () => {
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600"
               />
-            </div>
-
-            <div className="flex gap-2 flex-wrap">
-              {['all', 'my-notes', 'bookmarked', 'liked'].map((filter) => (
-                <Button
-                  key={filter}
-                  variant={filterType === filter ? 'default' : 'outline'}
-                  onClick={() => handleFilterChange(filter as FilterType)}
-                  className={filterType === filter ? BUTTON_STYLES.gradient : ''}
-                  size="sm"
-                >
-                  {filter === 'all' && <FileText className="h-4 w-4 mr-2" />}
-                  {filter === 'my-notes' && <User className="h-4 w-4 mr-2" />}
-                  {filter === 'bookmarked' && <BookmarkCheck className="h-4 w-4 mr-2" />}
-                  {filter === 'liked' && <Heart className="h-4 w-4 mr-2" />}
-                  {filter.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
-                </Button>
-              ))}
             </div>
 
             <select
@@ -431,7 +397,7 @@ const NotesPage = () => {
                   </p>
 
                   {/* Tags */}
-                  {note.tags.length > 0 && (
+                  {note.tags && note.tags.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-5">
                       {note.tags.slice(0, 4).map((tag, idx) => (
                         <span
