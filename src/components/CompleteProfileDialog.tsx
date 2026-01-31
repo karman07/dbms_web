@@ -92,13 +92,13 @@ export function CompleteProfileDialog({ isOpen, onClose, onSkip }: CompleteProfi
     switch (currentStep) {
       case 1:
         return (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <div className="space-y-5">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-1">
               <User className="w-5 h-5 text-purple-600" />
               Personal Information
             </h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="space-y-2">
                 <Label htmlFor="phoneNumber">Phone Number</Label>
                 <div className="relative">
@@ -148,13 +148,13 @@ export function CompleteProfileDialog({ isOpen, onClose, onSkip }: CompleteProfi
       
       case 2:
         return (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <div className="space-y-5">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-1">
               <Briefcase className="w-5 h-5 text-purple-600" />
               Professional Information
             </h3>
             
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 gap-5">
               <div className="space-y-2">
                 <Label htmlFor="currentPosition">Current Position</Label>
                 <div className="relative">
@@ -187,13 +187,13 @@ export function CompleteProfileDialog({ isOpen, onClose, onSkip }: CompleteProfi
       
       case 3:
         return (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <div className="space-y-5">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-1">
               <MapPin className="w-5 h-5 text-purple-600" />
               Location
             </h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="space-y-2">
                 <Label htmlFor="city">City</Label>
                 <Input
@@ -235,13 +235,13 @@ export function CompleteProfileDialog({ isOpen, onClose, onSkip }: CompleteProfi
       
       case 4:
         return (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+          <div className="space-y-5">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-1">
               <User className="w-5 h-5 text-purple-600" />
               About You
             </h3>
             
-            <div className="space-y-2">
+            <div className="space-y-3">
               <Label htmlFor="bio">Tell us about yourself</Label>
               <Textarea
                 id="bio"
@@ -264,18 +264,18 @@ export function CompleteProfileDialog({ isOpen, onClose, onSkip }: CompleteProfi
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-2xl">
-        <DialogHeader>
-          <DialogTitle className="text-2xl font-bold text-center mb-2 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
+      <DialogContent className="sm:max-w-2xl p-0">
+        <DialogHeader className="px-6 pt-6 pb-4">
+          <DialogTitle className="text-2xl font-bold text-center mb-3 bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">
             Complete Your Profile
           </DialogTitle>
-          <p className="text-gray-600 dark:text-gray-400 text-center">
+          <p className="text-gray-600 dark:text-gray-400 text-center text-sm">
             Step {currentStep} of {STEPS.length}
           </p>
         </DialogHeader>
 
         {/* Progress Bar */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between px-6 mb-8">
           {STEPS.map((step, index) => {
             const StepIcon = step.icon;
             const isActive = step.id === currentStep;
@@ -309,7 +309,7 @@ export function CompleteProfileDialog({ isOpen, onClose, onSkip }: CompleteProfi
           })}
         </div>
         
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="px-6">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentStep}
@@ -317,14 +317,14 @@ export function CompleteProfileDialog({ isOpen, onClose, onSkip }: CompleteProfi
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.3 }}
-              className="min-h-[280px]"
+              className="min-h-[280px] mb-6"
             >
               {renderStepContent()}
             </motion.div>
           </AnimatePresence>
 
           {/* Navigation Buttons */}
-          <div className="flex items-center justify-between gap-3 pt-6 border-t border-gray-200 dark:border-gray-700 mt-6">
+          <div className="flex items-center justify-between gap-3 pt-6 pb-2 border-t border-gray-200 dark:border-gray-700">
             <Button
               type="button"
               onClick={handleSkip}
