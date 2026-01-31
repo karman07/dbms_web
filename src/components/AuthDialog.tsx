@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import { Dialog, DialogContent } from "./ui/dialog";
 import { CompleteProfileDialog } from "./CompleteProfileDialog";
 import { EmailVerificationDialog } from "./EmailVerificationDialog";
 import { BUTTON_STYLES } from "../constants";

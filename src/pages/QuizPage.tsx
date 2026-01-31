@@ -237,7 +237,7 @@ const QuizPage = () => {
                           )}
                         </div>
                         <span className="text-gray-700 dark:text-gray-300">
-                          {typeof option === 'string' ? option : option}
+                          {typeof option === 'string' ? option : option.text}
                         </span>
                       </div>
                     </button>

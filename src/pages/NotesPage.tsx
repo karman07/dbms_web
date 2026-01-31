@@ -10,8 +10,6 @@ import {
   Heart, 
   X,
   Tag,
-  User,
-  BookmarkCheck,
   FileText,
   Save,
   Loader2
@@ -25,7 +23,6 @@ import { notesService, Note, CreateNoteDto, UpdateNoteDto } from "@/services/not
 import { useNotification } from "@/contexts/NotificationContext";
 import { GRADIENTS, BUTTON_STYLES, fadeIn, fadeInUp, staggerContainer } from "@/constants";
 
-type FilterType = 'all' | 'bookmarked' | 'liked';
 type SourceType = Note['source'] | 'all';
 
 const NotesPage = () => {
@@ -97,11 +94,6 @@ const NotesPage = () => {
     }
 
     setFilteredNotes(filtered);
-  };
-
-  const handleFilterChange = (type: FilterType) => {
-    setFilterType(type);
-    loadNotes();
   };
 
   const handleCreateNote = async (e: React.FormEvent) => {
