@@ -51,6 +51,19 @@ export class Lesson {
   @Prop({ type: [QuizQuestionSchema], default: [] })
   quiz: QuizQuestion[];
 
+  // Instead of embedding markdown `content`, lessons now reference a DocSubtopic document
+  @Prop({ type: Types.ObjectId, ref: 'DocSubtopic' })
+  docSubtopicId?: Types.ObjectId;
+
+  @Prop({ type: [Types.ObjectId], ref: 'Quiz', default: [] })
+  linkedQuizIds?: Types.ObjectId[];
+
+  @Prop({ type: [Types.ObjectId], ref: 'Assignment', default: [] })
+  linkedAssignmentIds?: Types.ObjectId[];
+
+  @Prop({ type: [Types.ObjectId], ref: 'ClassActivity', default: [] })
+  linkedActivityIds?: Types.ObjectId[];
+
   @Prop({ default: 0 })
   estimatedMinutes: number;
 

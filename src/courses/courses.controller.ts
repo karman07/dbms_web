@@ -98,14 +98,34 @@ export class CoursesController {
   )
   async addLesson(
     @Param('sectionIndex') sectionIndex: string,
-    @Body() createLessonDto: CreateLessonDto,
+    @Body() body: any,
     @UploadedFiles() files: { content?: Express.Multer.File[], video?: Express.Multer.File[], resources?: Express.Multer.File[] },
   ) {
+    // Parse and transform multipart/form-data fields
+    const createLessonDto: any = { ...body };
+    
+    if (createLessonDto.quiz && typeof createLessonDto.quiz === 'string') {
+      try {
+        createLessonDto.quiz = JSON.parse(createLessonDto.quiz);
+      } catch (e) {
+        delete createLessonDto.quiz;
+      }
+    }
+    if (createLessonDto.order !== undefined) {
+      createLessonDto.order = parseInt(createLessonDto.order);
+    }
+    if (createLessonDto.estimatedMinutes !== undefined) {
+      createLessonDto.estimatedMinutes = parseInt(createLessonDto.estimatedMinutes);
+    }
+    if (createLessonDto.isPublished !== undefined) {
+      createLessonDto.isPublished = createLessonDto.isPublished === 'true' || createLessonDto.isPublished === true;
+    }
+    
     // If markdown file is uploaded, read its content
     if (files?.content && files.content[0]) {
       createLessonDto.content = readFileSync(files.content[0].path, 'utf-8');
     }
-    // If video file is uploaded, use it; otherwise keep the URL from body (e.g., YouTube URL)
+    // If video file is uploaded, use it; otherwise keep the URL from body
     if (files?.video && files.video[0]) {
       createLessonDto.videoUrl = `/uploads/courses/videos/${files.video[0].filename}`;
     }
@@ -134,14 +154,34 @@ export class CoursesController {
   async updateLesson(
     @Param('sectionIndex') sectionIndex: string,
     @Param('lessonIndex') lessonIndex: string,
-    @Body() updateLessonDto: UpdateLessonDto,
+    @Body() body: any,
     @UploadedFiles() files: { content?: Express.Multer.File[], video?: Express.Multer.File[], resources?: Express.Multer.File[] },
   ) {
+    // Parse and transform multipart/form-data fields
+    const updateLessonDto: any = { ...body };
+    
+    if (updateLessonDto.quiz && typeof updateLessonDto.quiz === 'string') {
+      try {
+        updateLessonDto.quiz = JSON.parse(updateLessonDto.quiz);
+      } catch (e) {
+        delete updateLessonDto.quiz;
+      }
+    }
+    if (updateLessonDto.order !== undefined) {
+      updateLessonDto.order = parseInt(updateLessonDto.order);
+    }
+    if (updateLessonDto.estimatedMinutes !== undefined) {
+      updateLessonDto.estimatedMinutes = parseInt(updateLessonDto.estimatedMinutes);
+    }
+    if (updateLessonDto.isPublished !== undefined) {
+      updateLessonDto.isPublished = updateLessonDto.isPublished === 'true' || updateLessonDto.isPublished === true;
+    }
+    
     // If markdown file is uploaded, read its content
     if (files?.content && files.content[0]) {
       updateLessonDto.content = readFileSync(files.content[0].path, 'utf-8');
     }
-    // If video file is uploaded, use it; otherwise keep the URL from body (e.g., YouTube URL)
+    // If video file is uploaded, use it; otherwise keep the URL from body
     if (files?.video && files.video[0]) {
       updateLessonDto.videoUrl = `/uploads/courses/videos/${files.video[0].filename}`;
     }

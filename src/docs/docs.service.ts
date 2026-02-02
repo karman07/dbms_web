@@ -46,6 +46,24 @@ export class DocsService {
     return doc.save();
   }
 
+  async updateSubtopic(topicId: string, subtopicName: string, newName?: string, newContent?: string) {
+    const doc = await this.docModel.findById(topicId);
+    if (!doc) throw new NotFoundException('Topic not found');
+    
+    const subtopic = doc.subtopics.find(s => s.name === subtopicName);
+    if (!subtopic) throw new NotFoundException('Subtopic not found');
+    
+    if (newName) {
+      subtopic.name = newName;
+      subtopic.filename = `${newName.replace(/\s+/g, '_')}.md`;
+    }
+    if (newContent) {
+      subtopic.content = newContent;
+    }
+    
+    return doc.save();
+  }
+
   async deleteSubtopic(topicId: string, subtopicName: string) {
     const doc = await this.docModel.findById(topicId);
     if (!doc) throw new NotFoundException('Topic not found');

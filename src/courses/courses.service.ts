@@ -5,12 +5,20 @@ import { Course } from './schemas/course.schema';
 import { UserProgress } from './schemas/user-progress.schema';
 import { CreateCourseDto, UpdateCourseDto, CreateSectionDto, UpdateSectionDto, CreateLessonDto, UpdateLessonDto } from './dto/course.dto';
 import { UpdateProgressDto, SubmitQuizDto } from './dto/progress.dto';
+import { Quiz } from '../quiz/schemas/quiz.schema';
+import { Assignment } from '../assignment/schemas/assignment.schema';
+import { ClassActivity } from '../class-activity/schemas/class-activity.schema';
+import { DocTopic } from '../docs/schemas/doc.schema';
 
 @Injectable()
 export class CoursesService {
   constructor(
     @InjectModel(Course.name) private courseModel: Model<Course>,
     @InjectModel(UserProgress.name) private userProgressModel: Model<UserProgress>,
+    @InjectModel(Quiz.name) private quizModel: Model<Quiz>,
+    @InjectModel(Assignment.name) private assignmentModel: Model<Assignment>,
+    @InjectModel(ClassActivity.name) private classActivityModel: Model<ClassActivity>,
+    @InjectModel(DocTopic.name) private docTopicModel: Model<DocTopic>,
   ) {}
 
   // Helper: Get the single course
@@ -118,16 +126,70 @@ export class CoursesService {
 
   // Public: Get published course
   async getPublishedCourse(): Promise<Course> {
-    const course = await this.courseModel.findOne({ isPublished: true });
-    if (!course) {
+    const courseObj = await this.courseModel.findOne({ isPublished: true }).lean().exec();
+    if (!courseObj) {
       throw new NotFoundException('Course not found or not published');
     }
-    return course;
+    await this.populateLinkedResources(courseObj as any);
+    return courseObj as any;
   }
 
   // Admin: Get course (including unpublished)
   async getCourseAdmin(): Promise<Course> {
-    return this.getCourseSingle();
+    const courseObj = await this.getCourseSingle();
+    // convert to plain object to attach runtime fields safely
+    const plain = (courseObj as any).toObject ? (courseObj as any).toObject() : courseObj;
+    await this.populateLinkedResources(plain as any);
+    return plain as any;
+  }
+
+  // Attach linked quizzes, assignments, activities to each lesson before returning
+  private async populateLinkedResources(course: any) {
+    // course may be a plain object (from .lean()) or a mongoose doc converted to object
+    if (!course || !Array.isArray(course.sections)) return;
+
+    for (const section of course.sections) {
+      if (!section || !Array.isArray(section.lessons)) continue;
+      for (const lesson of section.lessons) {
+        try {
+          const lessonId = lesson._id;
+          if (!lessonId) continue;
+
+          const [quizzes, assignments, activities] = await Promise.all([
+            this.quizModel.find({ lessonId: lessonId }).lean().exec(),
+            this.assignmentModel.find({ lessonId: lessonId }).lean().exec(),
+            this.classActivityModel.find({ lessonId: lessonId }).lean().exec(),
+          ]);
+
+          // If lesson references a doc topic + subtopic, fetch the subtopic content
+          let docSubtopic: any = null;
+          try {
+            if (lesson.docTopicId && lesson.docSubtopicId) {
+              const topic: any = await this.docTopicModel.findById(lesson.docTopicId).lean().exec();
+              if (topic && Array.isArray(topic.subtopics)) {
+                docSubtopic = topic.subtopics.find((s: any) => s._id && s._id.toString() === lesson.docSubtopicId.toString()) || null;
+                if (docSubtopic) {
+                  // include parent topic id and topic name for reference
+                  docSubtopic.topicId = topic._id;
+                  docSubtopic.topic = topic.topic;
+                }
+              }
+            }
+          } catch (e) {
+            docSubtopic = null;
+          }
+
+          lesson.linkedQuizzes = quizzes;
+          lesson.linkedAssignments = assignments;
+          lesson.linkedActivities = activities;
+          if (docSubtopic) {
+            lesson.doc = docSubtopic;
+          }
+        } catch (e) {
+          // ignore per-lesson errors but continue
+        }
+      }
+    }
   }
 
   // User: Enroll in course

@@ -62,6 +62,10 @@ export class CreateLessonDto {
   @IsOptional()
   @IsBoolean()
   isPublished?: boolean;
+
+  @IsOptional()
+  @IsString()
+  docSubtopicId?: string;
 }
 
 export class UpdateLessonDto {
@@ -105,6 +109,10 @@ export class UpdateLessonDto {
   @IsOptional()
   @IsBoolean()
   isPublished?: boolean;
+
+  @IsOptional()
+  @IsString()
+  docSubtopicId?: string;
 }
 
 export class CreateSectionDto {

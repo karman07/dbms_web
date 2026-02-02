@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Delete, Param, Body, UseGuards, Patch, UseInterceptors, UploadedFiles, BadRequestException, Res, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Delete, Param, Body, UseGuards, Patch, UseInterceptors, UploadedFiles, BadRequestException, Res, NotFoundException, Put } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import { DocsService } from './docs.service';
@@ -64,6 +64,26 @@ export class DocsController {
 
     const dto: AddSubtopicDto = { name, content };
     return this.docsService.addSubtopic(id, dto);
+  }
+
+  // Admin: Update subtopic
+  @Put('admin/topic/:id/subtopic/:name')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles([UserRole.ADMIN])
+  @UseInterceptors(FilesInterceptor('file', 1, multerDocsConfig))
+  async updateSubtopic(
+    @Param('id') id: string,
+    @Param('name') name: string,
+    @UploadedFiles() files: Express.Multer.File[],
+    @Body() body: { newName?: string },
+  ) {
+    let content: string | undefined;
+    
+    if (files && files.length > 0) {
+      content = await fs.readFile(files[0].path, 'utf-8');
+    }
+
+    return this.docsService.updateSubtopic(id, name, body.newName, content);
   }
 
   // Admin: Delete subtopic

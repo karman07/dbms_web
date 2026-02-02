@@ -8,6 +8,9 @@ import { AuthModule } from './auth/auth.module';
 import { DocsModule } from './docs/docs.module';
 import { NotesModule } from './notes/notes.module';
 import { CoursesModule } from './courses/courses.module';
+import { QuizModule } from './quiz/quiz.module';
+import { AssignmentModule } from './assignment/assignment.module';
+import { ClassActivityModule } from './class-activity/class-activity.module';
 
 @Module({
   imports: [
@@ -27,6 +30,9 @@ import { CoursesModule } from './courses/courses.module';
     DocsModule,
     NotesModule,
     CoursesModule,
+    QuizModule,
+    AssignmentModule,
+    ClassActivityModule,
   ],
   controllers: [AppController],
   providers: [AppService],

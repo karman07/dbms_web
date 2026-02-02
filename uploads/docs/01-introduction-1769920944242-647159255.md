@@ -1,0 +1,37 @@
+# Introduction to DBMS
+
+## What is a DBMS?
+A Database Management System (DBMS) is software that allows users to create, manage, and interact with databases efficiently. It acts as an interface between the database and end-users or application programs, ensuring data is stored securely and accessed systematically.
+
+## Why Use a DBMS?
+Before DBMS, data was stored in file systems, which had several limitations:
+- **Data Redundancy**: Same data stored in multiple places
+- **Data Inconsistency**: Different copies of data with different values
+- **Difficult Data Access**: Complex queries required custom programs
+- **Security Issues**: No centralized access control
+- **Concurrent Access Anomalies**: Multiple users accessing the same data caused conflicts
+
+A DBMS solves these problems by providing a structured, centralized way to manage data.
+
+## Key Features of DBMS
+1. **Data Storage and Retrieval**: Efficiently store large volumes of data and retrieve it quickly
+2. **Data Security and Integrity**: Enforce access controls and validation rules
+3. **Transaction Management**: Ensure ACID properties (Atomicity, Consistency, Isolation, Durability)
+4. **Concurrent Access Control**: Allow multiple users to access data simultaneously without conflicts
+5. **Backup and Recovery**: Protect data from loss and corruption
+6. **Data Independence**: Separate data structure from application programs
+
+## Types of DBMS
+- **Relational DBMS (RDBMS)**: Data stored in tables (e.g., MySQL, PostgreSQL, Oracle)
+- **NoSQL DBMS**: Non-relational, flexible schema (e.g., MongoDB, Cassandra)
+- **Object-Oriented DBMS**: Data stored as objects (e.g., ObjectDB)
+- **Hierarchical DBMS**: Tree-like structure (e.g., IBM IMS)
+
+## Real-World Applications
+- **Banking Systems**: Managing customer accounts, transactions
+- **E-commerce Platforms**: Product catalogs, order management
+- **Social Media**: User profiles, posts, relationships
+- **Healthcare**: Patient records, appointments
+- **Education**: Student information, course management
+
+DBMS is fundamental to modern software systems, enabling efficient data management at scale.
