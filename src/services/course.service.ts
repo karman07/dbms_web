@@ -12,6 +12,43 @@ export interface Quiz {
   explanation: string;
 }
 
+export interface LinkedQuiz {
+  _id: string;
+  title: string;
+  questions: Array<{
+    question: string;
+    options: Array<{
+      text: string;
+      isCorrect: boolean;
+    }>;
+    explanation: string;
+  }>;
+  createdAt: string;
+  updatedAt: string;
+  lessonId: string;
+}
+
+export interface LinkedAssignment {
+  _id: string;
+  title: string;
+  description: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  lessonId: string;
+}
+
+export interface LinkedActivity {
+  _id: string;
+  title: string;
+  description: string;
+  content: string;
+  duration: number;
+  createdAt: string;
+  updatedAt: string;
+  lessonId: string;
+}
+
 export interface Lesson {
   _id: string;
   title: string;
@@ -23,6 +60,13 @@ export interface Lesson {
   estimatedMinutes: number;
   isPublished: boolean;
   resources?: string[];
+  linkedQuizIds?: string[];
+  linkedAssignmentIds?: string[];
+  linkedActivityIds?: string[];
+  linkedQuizzes?: LinkedQuiz[];
+  linkedAssignments?: LinkedAssignment[];
+  linkedActivities?: LinkedActivity[];
+  docSubtopicId?: string;
 }
 
 export interface Section {

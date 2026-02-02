@@ -13,14 +13,13 @@ import {
   ChevronRight,
   Menu,
   X,
-  FileText,
   Lock,
-  Target,
-  TrendingUp,
-  GraduationCap,
   ChevronLeft,
   Award,
   StickyNote,
+  FileDown,
+  ClipboardList,
+  Zap,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -28,11 +27,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import courseService, { Course, Section, Lesson, CourseProgress, QuizSubmissionResponse, QuizAnswer } from '@/services/course.service';
 import { useNotification } from '@/contexts/NotificationContext';
 import { BUTTON_STYLES } from '@/constants';
-import CourseMarkdownRenderer from '@/components/CourseMarkdownRenderer';
 import { EnrollmentDialog } from '@/components/EnrollmentDialog';
 import { NotesDrawer } from '@/components/NotesDrawer';
+import { CourseOverview } from '@/components/course/CourseOverview';
+import { LessonContent } from '@/components/course/LessonContent';
+import { LessonResources } from '@/components/course/LessonResources';
+import { LessonQuizzes } from '@/components/course/LessonQuizzes';
+import { LessonAssignments } from '@/components/course/LessonAssignments';
+import { LessonActivities } from '@/components/course/LessonActivities';
 
 type ViewMode = 'overview' | 'lesson' | 'quiz' | 'results';
+type LessonTab = 'video' | 'content' | 'resources' | 'quizzes' | 'assignments' | 'activities';
 
 interface QuizRecord {
   lessonId: string;
@@ -69,6 +74,7 @@ const CoursePage = () => {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<LessonTab>('content');
 
   // Quiz records in local storage
   const [quizRecords, setQuizRecords] = useState<Record<string, QuizRecord>>({});
@@ -157,6 +163,9 @@ const CoursePage = () => {
     setSelectedSection(section);
     setSelectedLesson(lesson);
     setViewMode('lesson');
+    // Set default tab - video if exists, otherwise content
+    const defaultTab = lesson.videoUrl ? 'video' : 'content';
+    setActiveTab(defaultTab);
     
     if (!openQuiz) {
       setShowQuizDialog(false);
@@ -179,8 +188,52 @@ const CoursePage = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Get available tabs for the current lesson
+  const getAvailableTabs = (lesson: Lesson): LessonTab[] => {
+    const tabs: LessonTab[] = [];
+    if (lesson.videoUrl) tabs.push('video');
+    tabs.push('content'); // Always has content
+    if (lesson.resources && lesson.resources.length > 0) tabs.push('resources');
+    if ((lesson.quiz && lesson.quiz.length > 0) || (lesson.linkedQuizzes && lesson.linkedQuizzes.length > 0)) tabs.push('quizzes');
+    if (lesson.linkedAssignments && lesson.linkedAssignments.length > 0) tabs.push('assignments');
+    if (lesson.linkedActivities && lesson.linkedActivities.length > 0) tabs.push('activities');
+    return tabs;
+  };
+
+  // Get next tab in current lesson
+  const getNextTab = (): LessonTab | null => {
+    if (!selectedLesson) return null;
+    const availableTabs = getAvailableTabs(selectedLesson);
+    const currentIndex = availableTabs.indexOf(activeTab);
+    if (currentIndex < availableTabs.length - 1) {
+      return availableTabs[currentIndex + 1];
+    }
+    return null;
+  };
+
+  // Get previous tab in current lesson
+  const getPreviousTab = (): LessonTab | null => {
+    if (!selectedLesson) return null;
+    const availableTabs = getAvailableTabs(selectedLesson);
+    const currentIndex = availableTabs.indexOf(activeTab);
+    if (currentIndex > 0) {
+      return availableTabs[currentIndex - 1];
+    }
+    return null;
+  };
+
   const handleNextLesson = () => {
     if (!course || !currentLessonIndex) return;
+    
+    // First, try to navigate to next tab within current lesson
+    const nextTab = getNextTab();
+    if (nextTab) {
+      setActiveTab(nextTab);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // If no next tab, navigate to next lesson
     const { sectionIdx, lessonIdx } = currentLessonIndex;
     const currentSection = course.sections[sectionIdx];
     
@@ -197,6 +250,16 @@ const CoursePage = () => {
 
   const handlePreviousLesson = () => {
     if (!course || !currentLessonIndex) return;
+    
+    // First, try to navigate to previous tab within current lesson
+    const prevTab = getPreviousTab();
+    if (prevTab) {
+      setActiveTab(prevTab);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // If no previous tab, navigate to previous lesson
     const { sectionIdx, lessonIdx } = currentLessonIndex;
     
     if (lessonIdx > 0) {
@@ -213,14 +276,24 @@ const CoursePage = () => {
   };
 
   const hasNextLesson = () => {
-    if (!course || !currentLessonIndex) return false;
+    if (!course || !currentLessonIndex || !enrolled) return false;
+    
+    // Check if there's a next tab in current lesson
+    if (getNextTab()) return true;
+    
+    // Check if there's a next lesson
     const { sectionIdx, lessonIdx } = currentLessonIndex;
     const currentSection = course.sections[sectionIdx];
     return lessonIdx < currentSection.lessons.length - 1 || sectionIdx < course.sections.length - 1;
   };
 
   const hasPreviousLesson = () => {
-    if (!currentLessonIndex) return false;
+    if (!currentLessonIndex || !enrolled) return false;
+    
+    // Check if there's a previous tab in current lesson
+    if (getPreviousTab()) return true;
+    
+    // Check if there's a previous lesson
     const { sectionIdx, lessonIdx } = currentLessonIndex;
     return lessonIdx > 0 || sectionIdx > 0;
   };
@@ -233,12 +306,13 @@ const CoursePage = () => {
     }
   };
 
-  const handleQuizSubmit = async () => {
+  const handleQuizSubmit = async (answers?: Record<number, number>) => {
     if (!selectedSection || !selectedLesson) return;
 
     try {
       setSubmittingQuiz(true);
-      const answers: QuizAnswer[] = Object.entries(quizAnswers).map(([qIdx, oIdx]) => ({
+      const answersToSubmit = answers || quizAnswers;
+      const answersArray: QuizAnswer[] = Object.entries(answersToSubmit).map(([qIdx, oIdx]) => ({
         questionIndex: parseInt(qIdx),
         selectedOptionIndex: oIdx,
       }));
@@ -246,11 +320,11 @@ const CoursePage = () => {
       const results = await courseService.submitQuiz(
         selectedSection._id,
         selectedLesson._id,
-        answers
+        answersArray
       );
 
       setQuizResults(results);
-      saveQuizRecord(selectedLesson._id, selectedSection._id, results, answers);
+      saveQuizRecord(selectedLesson._id, selectedSection._id, results, answersArray);
 
       // Auto mark lesson as complete when quiz is submitted (regardless of pass/fail)
       const timeSpent = Math.floor((Date.now() - startTime) / 60000);
@@ -471,6 +545,10 @@ const CoursePage = () => {
                           const isCompleted = lessonProgress?.completed || false;
                           const isActive = selectedLesson?._id === lesson._id;
                           const quizRecord = getQuizRecord(section._id, lesson._id);
+                          const hasResources = lesson.resources && lesson.resources.length > 0;
+                          const hasAssignments = lesson.linkedAssignments && lesson.linkedAssignments.length > 0;
+                          const hasActivities = lesson.linkedActivities && lesson.linkedActivities.length > 0;
+                          const hasLinkedQuizzes = lesson.linkedQuizzes && lesson.linkedQuizzes.length > 0;
 
                           return (
                             <div key={lesson._id}>
@@ -496,12 +574,12 @@ const CoursePage = () => {
                                       {lessonIdx + 1}. {lesson.title}
                                     </p>
                                     {lesson.quiz && lesson.quiz.length > 0 && (
-                                      <span className="flex-shrink-0 px-1.5 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-medium rounded">
+                                      <span className="flex-shrink-0 px-1.5 py-0.5 bg-purple-200 dark:bg-purple-700 text-purple-800 dark:text-purple-200 text-xs font-medium rounded">
                                         Quiz
                                       </span>
                                     )}
                                   </div>
-                                  <div className="flex items-center gap-2 mt-0.5">
+                                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                                     <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                                       <Clock className="h-3 w-3" />
                                       {lesson.estimatedMinutes}m
@@ -511,11 +589,105 @@ const CoursePage = () => {
                                         <PlayCircle className="h-3 w-3" />
                                       </span>
                                     )}
+                                    {hasResources && (
+                                      <span className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+                                        <FileDown className="h-3 w-3" />
+                                        {lesson.resources?.length || 0}
+                                      </span>
+                                    )}
+                                    {hasAssignments && (
+                                      <span className="flex items-center gap-1 text-xs text-orange-600 dark:text-orange-400">
+                                        <ClipboardList className="h-3 w-3" />
+                                        {lesson.linkedAssignments?.length || 0}
+                                      </span>
+                                    )}
+                                    {hasActivities && (
+                                      <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                                        <Zap className="h-3 w-3" />
+                                        {lesson.linkedActivities?.length || 0}
+                                      </span>
+                                    )}
+                                    {hasLinkedQuizzes && (
+                                      <span className="flex items-center gap-1 text-xs text-violet-600 dark:text-violet-400">
+                                        <Trophy className="h-3 w-3" />
+                                        {lesson.linkedQuizzes?.length || 0}
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
                               </button>
                               
-                              {lesson.quiz && lesson.quiz.length > 0 && (
+                              {/* Sub-navigation for active lesson */}
+                              {isActive && (
+                                <div className="bg-gray-50 dark:bg-gray-900/50 border-l-4 border-blue-600">
+                                  {lesson.videoUrl && (
+                                    <button
+                                      onClick={() => setActiveTab('video')}
+                                      className={`w-full flex items-center gap-2 p-2 pl-14 text-sm hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors ${
+                                        activeTab === 'video' ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-600 dark:text-gray-400'
+                                      }`}
+                                    >
+                                      <PlayCircle className="h-3 w-3" />
+                                      Video
+                                    </button>
+                                  )}
+                                  <button
+                                    onClick={() => setActiveTab('content')}
+                                    className={`w-full flex items-center gap-2 p-2 pl-14 text-sm hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors ${
+                                      activeTab === 'content' ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-600 dark:text-gray-400'
+                                    }`}
+                                  >
+                                    <BookOpen className="h-3 w-3" />
+                                    Content
+                                  </button>
+                                  {hasResources && (
+                                    <button
+                                      onClick={() => setActiveTab('resources')}
+                                      className={`w-full flex items-center gap-2 p-2 pl-14 text-sm hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors ${
+                                        activeTab === 'resources' ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-600 dark:text-gray-400'
+                                      }`}
+                                    >
+                                      <FileDown className="h-3 w-3" />
+                                      Resources ({lesson.resources?.length || 0})
+                                    </button>
+                                  )}
+                                  {((lesson.quiz && lesson.quiz.length > 0) || hasLinkedQuizzes) && (
+                                    <button
+                                      onClick={() => setActiveTab('quizzes')}
+                                      className={`w-full flex items-center gap-2 p-2 pl-14 text-sm hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors ${
+                                        activeTab === 'quizzes' ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-600 dark:text-gray-400'
+                                      }`}
+                                    >
+                                      <Trophy className="h-3 w-3" />
+                                      Quizzes ({(lesson.quiz.length > 0 ? 1 : 0) + (lesson.linkedQuizzes?.length || 0)})
+                                    </button>
+                                  )}
+                                  {hasAssignments && (
+                                    <button
+                                      onClick={() => setActiveTab('assignments')}
+                                      className={`w-full flex items-center gap-2 p-2 pl-14 text-sm hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors ${
+                                        activeTab === 'assignments' ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-600 dark:text-gray-400'
+                                      }`}
+                                    >
+                                      <ClipboardList className="h-3 w-3" />
+                                      Assignments ({lesson.linkedAssignments?.length || 0})
+                                    </button>
+                                  )}
+                                  {hasActivities && (
+                                    <button
+                                      onClick={() => setActiveTab('activities')}
+                                      className={`w-full flex items-center gap-2 p-2 pl-14 text-sm hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors ${
+                                        activeTab === 'activities' ? 'text-blue-600 dark:text-blue-400 font-medium' : 'text-gray-600 dark:text-gray-400'
+                                      }`}
+                                    >
+                                      <Zap className="h-3 w-3" />
+                                      Activities ({lesson.linkedActivities?.length || 0})
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {lesson.quiz && lesson.quiz.length > 0 && !isActive && (
                                 <button
                                   onClick={() => {
                                     handleLessonSelect(section, lesson, idx, lessonIdx, true);
@@ -648,215 +820,15 @@ const CoursePage = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="space-y-8"
             >
-              {/* Hero Section */}
-              <div className="bg-blue-600 dark:bg-blue-700 rounded-2xl p-8 lg:p-12 shadow-lg">
-                <div>
-                  <div className="flex items-start justify-between mb-6">
-                    <div className="flex-1">
-                      <h1 className="text-4xl lg:text-5xl font-bold text-white mb-4">
-                        {course.title}
-                      </h1>
-                      <p className="text-white/90 text-lg lg:text-xl mb-6 max-w-3xl">
-                        {course.description}
-                      </p>
-                      
-                      {!enrolled && (
-                        <Button
-                          onClick={handleEnroll}
-                          disabled={enrolling}
-                          className="bg-white text-blue-600 hover:bg-blue-50 font-semibold px-8 py-6 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all"
-                          size="lg"
-                        >
-                          {enrolling ? (
-                            <>
-                              <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                              Enrolling...
-                            </>
-                          ) : (
-                            <>
-                              <GraduationCap className="h-5 w-5 mr-2" />
-                              Enroll Now - It's Free!
-                            </>
-                          )}
-                        </Button>
-                      )}
-                      
-                      {enrolled && progress && (
-                        <div className="bg-white/20 backdrop-blur-sm rounded-xl p-5 max-w-md">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-white font-medium">Your Progress</span>
-                            <span className="text-white font-bold text-xl">{Math.round(progress.overallProgress)}%</span>
-                          </div>
-                          <div className="h-2 bg-white/30 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-white transition-all duration-300"
-                              style={{ width: `${progress.overallProgress}%` }}
-                            />
-                          </div>
-                          <p className="text-white/80 text-sm mt-2">
-                            {progress.sections.reduce((acc, s) => 
-                              acc + s.lessons.filter(l => l.completed).length, 0
-                            )} of{' '}
-                            {course.sections.reduce((acc, s) => acc + s.lessons.length, 0)} lessons completed
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Stats Cards */}
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                      <BookOpen className="h-7 w-7 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Sections</p>
-                      <p className="font-bold text-gray-900 dark:text-white text-2xl">
-                        {course.sections.length}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                      <FileText className="h-7 w-7 text-purple-600 dark:text-purple-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Total Lessons</p>
-                      <p className="font-bold text-gray-900 dark:text-white text-2xl">
-                        {course.sections.reduce((acc, s) => acc + s.lessons.length, 0)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                      <Trophy className="h-7 w-7 text-orange-600 dark:text-orange-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Quizzes</p>
-                      <p className="font-bold text-gray-900 dark:text-white text-2xl">
-                        {course.sections.reduce((acc, s) => 
-                          acc + s.lessons.filter(l => l.quiz.length > 0).length, 0
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-shadow">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                      <TrendingUp className="h-7 w-7 text-green-600 dark:text-green-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Students</p>
-                      <p className="font-bold text-gray-900 dark:text-white text-2xl">
-                        {course.enrolledCount}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Quiz Importance Notice */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-                <div className="flex items-start gap-4">
-                  <div className="flex-shrink-0 w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                    <Trophy className="h-6 w-6 text-gray-700 dark:text-gray-300" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                      Complete Quizzes to Track Your Progress
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                      Many lessons include quizzes to test your understanding. <span className="font-medium text-gray-900 dark:text-white">Completing these quizzes is essential for tracking your course progress</span> and marking lessons as complete. Each quiz submission helps monitor your learning journey and updates your overall progress percentage.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Course Content Preview */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg border border-gray-200 dark:border-gray-700">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
-                  <Target className="h-7 w-7 text-blue-600" />
-                  Course Curriculum
-                </h2>
-                <div className="space-y-4">
-                  {course.sections.map((section, idx) => {
-                    const sectionProgress = getSectionProgress(section._id);
-                    const quizCount = section.lessons.filter(l => l.quiz.length > 0).length;
-                    
-                    return (
-                      <div
-                        key={section._id}
-                        className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden hover:border-blue-400 dark:hover:border-blue-600 transition-colors"
-                      >
-                          <div className="p-5 bg-gray-50 dark:bg-gray-800">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-start gap-4 flex-1">
-                              <div className={`flex-shrink-0 w-10 h-10 rounded-lg ${enrolled ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-gray-400'} flex items-center justify-center font-bold`}>
-                                {enrolled ? (
-                                  <span className="text-blue-600 dark:text-blue-400">{idx + 1}</span>
-                                ) : (
-                                  <Lock className="h-5 w-5 text-white" />
-                                )}
-                              </div>
-                              <div className="flex-1">
-                                <h3 className="font-bold text-gray-900 dark:text-white text-lg mb-2">
-                                  {section.title}
-                                </h3>
-                                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
-                                  <span className="flex items-center gap-1">
-                                    <FileText className="h-4 w-4" />
-                                    {section.lessons.length} lessons
-                                  </span>
-                                  {quizCount > 0 && (
-                                    <span className="flex items-center gap-1 text-purple-600 dark:text-purple-400">
-                                      <Trophy className="h-4 w-4" />
-                                      {quizCount} {quizCount === 1 ? 'quiz' : 'quizzes'}
-                                    </span>
-                                  )}
-                                  <span className="flex items-center gap-1">
-                                    <Clock className="h-4 w-4" />
-                                    ~{section.lessons.reduce((acc, l) => acc + l.estimatedMinutes, 0)} min
-                                  </span>
-                                </div>
-                                {enrolled && sectionProgress > 0 && (
-                                  <div className="mt-3">
-                                    <div className="flex items-center justify-between text-xs mb-1">
-                                      <span className="text-gray-600 dark:text-gray-400">Progress</span>
-                                      <span className="font-medium text-gray-900 dark:text-white">
-                                        {Math.round(sectionProgress)}%
-                                      </span>
-                                    </div>
-                                    <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                                      <div
-                                        className="h-full bg-green-600 dark:bg-green-500 transition-all duration-300"
-                                        style={{ width: `${sectionProgress}%` }}
-                                      />
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+              <CourseOverview 
+                course={course}
+                progress={progress}
+                enrolled={enrolled}
+                onEnroll={handleEnroll}
+                enrolling={enrolling}
+                getSectionProgress={getSectionProgress}
+              />
             </motion.div>
           )}
 
@@ -868,7 +840,8 @@ const CoursePage = () => {
               exit={{ opacity: 0, y: -20 }}
               className="space-y-6"
             >
-              {selectedLesson.videoUrl && (
+              {/* Component-based Content Rendering based on activeTab */}
+              {activeTab === 'video' && selectedLesson.videoUrl && (
                 <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700">
                   <div className="aspect-video">
                     <iframe
@@ -881,66 +854,49 @@ const CoursePage = () => {
                   </div>
                 </div>
               )}
-
-              {/* Quiz Required Notice */}
-              {enrolled && selectedLesson.quiz && selectedLesson.quiz.length > 0 && (
-                <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl p-5 mb-6">
-                  <div className="flex items-start gap-4">
-                    <div className="flex-shrink-0 w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-lg flex items-center justify-center">
-                      <Trophy className="h-5 w-5 text-gray-700 dark:text-gray-300" />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-1.5 flex items-center gap-2">
-                        Quiz Available
-                        <span className="px-2 py-0.5 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs font-medium rounded">Required</span>
-                      </h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                        Complete this {selectedLesson.quiz.length}-question quiz to track your progress and mark this lesson as complete.
-                      </p>
-                      <Button onClick={handleStartQuiz} className="bg-gray-900 dark:bg-gray-100 hover:bg-gray-800 dark:hover:bg-gray-200 text-white dark:text-gray-900 font-medium px-5 py-2 rounded-lg transition-colors">
-                        <Trophy className="h-4 w-4 mr-2" />
-                        Start Quiz
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+              
+              {activeTab === 'content' && <LessonContent lesson={selectedLesson} />}
+              
+              {activeTab === 'resources' && <LessonResources lesson={selectedLesson} />}
+              
+              {activeTab === 'quizzes' && (
+                <LessonQuizzes 
+                  lesson={selectedLesson} 
+                  enrolled={enrolled}
+                  onStartQuiz={handleStartQuiz}
+                  onSubmitQuiz={handleQuizSubmit}
+                  sectionId={selectedSection._id}
+                  onProgressUpdate={loadCourseData}
+                />
               )}
-
-              <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-lg border border-gray-200 dark:border-gray-700">
-                <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-                    {selectedLesson.title}
-                  </h2>
-                  {enrolled && selectedLesson.quiz && selectedLesson.quiz.length > 0 && (
-                    <Button onClick={handleStartQuiz} className="bg-gray-900 dark:bg-gray-100 hover:bg-gray-800 dark:hover:bg-gray-200 text-white dark:text-gray-900 font-medium px-5 py-2.5 rounded-lg transition-colors">
-                      <Trophy className="h-4 w-4 mr-2" />
-                      Take Quiz
-                    </Button>
-                  )}
-                </div>
-
-                <CourseMarkdownRenderer content={selectedLesson.content} />
-              </div>
+              
+              {activeTab === 'assignments' && <LessonAssignments lesson={selectedLesson} />}
+              
+              {activeTab === 'activities' && <LessonActivities lesson={selectedLesson} />}
 
               {/* Navigation Buttons */}
               <div className="flex items-center justify-between mt-6">
-                <Button
-                  onClick={handlePreviousLesson}
-                  disabled={!hasPreviousLesson()}
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Previous Lesson
-                </Button>
-                <Button
-                  onClick={handleNextLesson}
-                  disabled={!hasNextLesson()}
-                  className={BUTTON_STYLES.gradient}
-                >
-                  Next Lesson
-                  <ChevronRight className="h-4 w-4 ml-2" />
-                </Button>
+                {hasPreviousLesson() ? (
+                  <Button
+                    onClick={handlePreviousLesson}
+                    variant="outline"
+                    className="flex items-center gap-2 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Previous
+                  </Button>
+                ) : (
+                  <div></div>
+                )}
+                {hasNextLesson() && (
+                  <Button
+                    onClick={handleNextLesson}
+                    className="bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4 ml-2" />
+                  </Button>
+                )}
               </div>
             </motion.div>
           )}
@@ -951,7 +907,7 @@ const CoursePage = () => {
 
       {/* Quiz Dialog */}
       <Dialog open={showQuizDialog} onOpenChange={setShowQuizDialog}>
-        <DialogContent className="max-w-4xl w-[90vw]">
+        <DialogContent className="max-w-4xl w-[90vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <div className="flex items-start justify-between gap-4">
               <DialogTitle className="flex-1">
@@ -991,7 +947,7 @@ const CoursePage = () => {
                       </div>
 
                       <div className="space-y-2">
-                        {question.options.map((option, oIdx) => {
+                        {question.options && question.options.length > 0 ? question.options.map((option, oIdx) => {
                           const optionText = typeof option === 'string' ? option : (option as { text: string }).text;
                           return (
                             <button
@@ -1017,7 +973,9 @@ const CoursePage = () => {
                               </div>
                             </button>
                           );
-                        })}
+                        }) : (
+                          <p className="text-sm text-red-500">No options available for this question</p>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -1030,7 +988,7 @@ const CoursePage = () => {
                       Cancel
                     </Button>
                     <Button
-                      onClick={handleQuizSubmit}
+                      onClick={() => handleQuizSubmit()}
                       disabled={Object.keys(quizAnswers).length !== selectedLesson.quiz.length || submittingQuiz}
                       className={BUTTON_STYLES.gradient}
                     >
