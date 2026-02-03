@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trophy, Loader2, CheckCircle, XCircle } from 'lucide-react';
+import { Trophy, Loader2, CheckCircle, XCircle} from 'lucide-react';
 import { Lesson } from '@/services/course.service';
 import { Button } from '@/components/ui/button';
 import courseService from '@/services/course.service';
@@ -12,16 +12,33 @@ interface LessonQuizzesProps {
   onSubmitQuiz?: (answers: Record<number, number>) => Promise<void>;
   sectionId?: string;
   onProgressUpdate?: () => void;
+  selectedQuizIndex?: number;
+  onQuizIndexChange?: (index: number) => void;
 }
 
 // Separate component for linked quizzes to properly use hooks
-const LinkedQuizItem = ({ quiz, sectionId, lessonId, onProgressUpdate }: { quiz: any; sectionId?: string; lessonId?: string; onProgressUpdate?: () => void }) => {
+const LinkedQuizItem = ({ quiz, sectionId, lessonId, onProgressUpdate, title, totalQuizzes, currentIndex, enrolled, lesson }: { 
+  quiz: any; 
+  sectionId?: string; 
+  lessonId?: string; 
+  onProgressUpdate?: () => void;
+  title: string;
+  totalQuizzes: number;
+  currentIndex: number;
+  enrolled: boolean;
+  lesson: Lesson;
+}) => {
   const [linkedQuizAnswers, setLinkedQuizAnswers] = useState<Record<number, number>>({});
   const [linkedSubmitting, setLinkedSubmitting] = useState(false);
   const [linkedResults, setLinkedResults] = useState<{ score: number; total: number; passed: boolean } | null>(null);
   const notification = useNotification();
-
+  console.log('lesson in linked quiz item:', lesson);
   const handleLinkedSubmit = async () => {
+    if (!enrolled) {
+      notification.error('Not enrolled', 'Please enroll in the course first');
+      return;
+    }
+    
     try {
       setLinkedSubmitting(true);
       // Calculate results for linked quiz
@@ -36,14 +53,49 @@ const LinkedQuizItem = ({ quiz, sectionId, lessonId, onProgressUpdate }: { quiz:
       const score = (correct / total) * 100;
       setLinkedResults({ score, total, passed: score >= 70 });
 
-      // Call progress API regardless of pass/fail
-      if (sectionId && lessonId) {
-        const timeSpent = 5; // Default time spent for linked quizzes
-        await courseService.updateProgress(sectionId, lessonId, true, timeSpent);
-        if (onProgressUpdate) {
-          onProgressUpdate();
+      // Get quiz records from localStorage to check completion
+      const stored = localStorage.getItem('quizRecords');
+      let quizRecords: Record<string, any> = {};
+      if (stored) {
+        try {
+          quizRecords = JSON.parse(stored);
+        } catch (e) {
+          console.error('Failed to parse quiz records:', e);
         }
-        notification.success('Progress Updated', 'Quiz submitted and progress saved');
+      }
+
+      // Save this quiz record
+      const key = `${sectionId}_${lessonId}_linked_${currentIndex}`;
+      quizRecords[key] = {
+        lessonId,
+        sectionId,
+        score,
+        passed: score >= 70,
+        attempts: (quizRecords[key]?.attempts || 0) + 1,
+        lastAttempt: new Date().toISOString(),
+      };
+      localStorage.setItem('quizRecords', JSON.stringify(quizRecords));
+
+      // Check if all quizzes are attempted
+      const attemptedQuizzes = Object.keys(quizRecords).filter(k => k.startsWith(`${sectionId}_${lessonId}`)).length;
+      
+      // Only mark progress if all quizzes are attempted
+      if (attemptedQuizzes >= totalQuizzes) {
+        if (sectionId && lessonId) {
+          try {
+            const timeSpent = 5;
+            await courseService.updateProgress(sectionId, lessonId, true, timeSpent);
+            if (onProgressUpdate) {
+              onProgressUpdate();
+            }
+            notification.success('All Quizzes Complete!', 'Lesson marked as complete');
+          } catch (error: any) {
+            console.error('Failed to update progress:', error);
+            notification.warning('Quiz Submitted', 'Quiz completed but progress update failed');
+          }
+        }
+      } else {
+        notification.success('Quiz Submitted', `Complete ${totalQuizzes - attemptedQuizzes} more quiz(es) to mark lesson complete`);
       }
     } catch (error) {
       console.error('Failed to submit linked quiz:', error);
@@ -63,11 +115,18 @@ const LinkedQuizItem = ({ quiz, sectionId, lessonId, onProgressUpdate }: { quiz:
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
           <Trophy className="h-6 w-6" />
-          {quiz.title}
+          {title}
         </h3>
-        <span className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-full">
-          {quiz.questions.length} Questions
-        </span>
+        <div className="flex items-center gap-3">
+          <span className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-full">
+            {quiz.questions.length} Questions
+          </span>
+          {totalQuizzes > 1 && (
+            <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm font-medium rounded-full">
+              {currentIndex + 1} / {totalQuizzes}
+            </span>
+          )}
+        </div>
       </div>
 
       {!linkedResults ? (
@@ -164,15 +223,19 @@ const LinkedQuizItem = ({ quiz, sectionId, lessonId, onProgressUpdate }: { quiz:
   );
 };
 
-export const LessonQuizzes = ({ lesson, enrolled, onSubmitQuiz, sectionId, onProgressUpdate }: LessonQuizzesProps) => {
+export const LessonQuizzes = ({ lesson, enrolled, onSubmitQuiz, sectionId, onProgressUpdate, selectedQuizIndex = 0 }: LessonQuizzesProps) => {
   const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
   const [submitting, setSubmitting] = useState(false);
   const [results, setResults] = useState<{ score: number; total: number; passed: boolean } | null>(null);
 
   const hasMainQuiz = lesson.quiz && lesson.quiz.length > 0;
   const hasLinkedQuizzes = lesson.linkedQuizzes && lesson.linkedQuizzes.length > 0;
+  const allQuizzes = [
+    ...(hasMainQuiz ? [{ type: 'main', data: lesson.quiz, title: 'Lesson Quiz' }] : []),
+    ...(hasLinkedQuizzes ? lesson.linkedQuizzes!.map(q => ({ type: 'linked', data: q, title: q.title })) : [])
+  ];
 
-  if (!hasMainQuiz && !hasLinkedQuizzes) {
+  if (allQuizzes.length === 0) {
     return (
       <div className="text-center py-12">
         <Trophy className="h-12 w-12 text-gray-400 mx-auto mb-3" />
@@ -181,47 +244,28 @@ export const LessonQuizzes = ({ lesson, enrolled, onSubmitQuiz, sectionId, onPro
     );
   }
 
-  const handleSubmit = async () => {
-    if (!onSubmitQuiz || !hasMainQuiz) return;
-    
-    try {
-      setSubmitting(true);
-      await onSubmitQuiz(quizAnswers);
-      // Calculate results
-      let correct = 0;
-      lesson.quiz.forEach((q, idx) => {
-        if (quizAnswers[idx] === q.correctAnswer) {
-          correct++;
-        }
-      });
-      const total = lesson.quiz.length;
-      const score = (correct / total) * 100;
-      setResults({ score, total, passed: score >= 70 });
-    } catch (error) {
-      console.error('Failed to submit quiz:', error);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const resetQuiz = () => {
-    setQuizAnswers({});
-    setResults(null);
-  };
+  const currentQuiz = allQuizzes[selectedQuizIndex];
 
   return (
     <div className="space-y-6">
-      {/* Main Lesson Quiz */}
-      {enrolled && hasMainQuiz && (
+      {/* Current Quiz Content */}
+      {currentQuiz.type === 'main' ? (
         <div className="bg-white dark:bg-gray-800 rounded-lg p-6 border border-gray-200 dark:border-gray-700">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
               <Trophy className="h-6 w-6" />
-              Lesson Quiz
+              {currentQuiz.title}
             </h3>
-            <span className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-full">
-              {lesson.quiz.length} Questions
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-full">
+                {lesson.quiz.length} Questions
+              </span>
+              {allQuizzes.length > 1 && (
+                <span className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm font-medium rounded-full">
+                  {selectedQuizIndex + 1} / {allQuizzes.length}
+                </span>
+              )}
+            </div>
           </div>
 
           {!results ? (
@@ -275,7 +319,24 @@ export const LessonQuizzes = ({ lesson, enrolled, onSubmitQuiz, sectionId, onPro
 
               <div className="flex justify-end pt-4">
                 <Button
-                  onClick={handleSubmit}
+                  onClick={async () => {
+                    if (!onSubmitQuiz) return;
+                    try {
+                      setSubmitting(true);
+                      await onSubmitQuiz(quizAnswers);
+                      let correct = 0;
+                      lesson.quiz.forEach((q, idx) => {
+                        if (quizAnswers[idx] === q.correctAnswer) correct++;
+                      });
+                      const total = lesson.quiz.length;
+                      const score = (correct / total) * 100;
+                      setResults({ score, total, passed: score >= 70 });
+                    } catch (error) {
+                      console.error('Failed to submit quiz:', error);
+                    } finally {
+                      setSubmitting(false);
+                    }
+                  }}
                   disabled={Object.keys(quizAnswers).length !== lesson.quiz.length || submitting}
                   className="bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white"
                 >
@@ -312,27 +373,24 @@ export const LessonQuizzes = ({ lesson, enrolled, onSubmitQuiz, sectionId, onPro
               <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
                 You scored {Math.round(results.score)}% ({Math.round((results.score / 100) * results.total)} / {results.total} correct)
               </p>
-              <Button onClick={resetQuiz} variant="outline">
+              <Button onClick={() => { setQuizAnswers({}); setResults(null); }} variant="outline">
                 Retake Quiz
               </Button>
             </div>
           )}
         </div>
-      )}
-
-      {/* Linked Quizzes */}
-      {hasLinkedQuizzes && (
-        <div className="space-y-6">
-          {lesson.linkedQuizzes!.map((quiz) => (
-            <LinkedQuizItem 
-              key={quiz._id} 
-              quiz={quiz} 
-              sectionId={sectionId}
-              lessonId={lesson._id}
-              onProgressUpdate={onProgressUpdate}
-            />
-          ))}
-        </div>
+      ) : (
+        <LinkedQuizItem 
+          quiz={currentQuiz.data} 
+          sectionId={sectionId}
+          lessonId={lesson._id}
+          onProgressUpdate={onProgressUpdate}
+          title={currentQuiz.title}
+          totalQuizzes={allQuizzes.length}
+          currentIndex={selectedQuizIndex}
+          enrolled={enrolled}
+          lesson={lesson}
+        />
       )}
     </div>
   );

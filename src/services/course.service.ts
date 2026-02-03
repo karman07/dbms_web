@@ -49,6 +49,28 @@ export interface LinkedActivity {
   lessonId: string;
 }
 
+export interface Media {
+  _id: string;
+  title: string;
+  description: string;
+  url: string;
+  thumbnailUrl?: string;
+  uploadedBy: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DocSubtopic {
+  _id: string;
+  name: string;
+  filename: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  topicId: string;
+  topic: string;
+}
+
 export interface Lesson {
   _id: string;
   title: string;
@@ -66,6 +88,8 @@ export interface Lesson {
   linkedQuizzes?: LinkedQuiz[];
   linkedAssignments?: LinkedAssignment[];
   linkedActivities?: LinkedActivity[];
+  media?: Media[];
+  docSubtopics?: DocSubtopic[];
   docSubtopicId?: string;
 }
 
@@ -176,6 +200,14 @@ class CourseService {
       completed,
       timeSpentMinutes,
     });
+    return response.data;
+  }
+
+  /**
+   * Get lesson by ID
+   */
+  async getLessonById(lessonId: string): Promise<Lesson> {
+    const response = await axiosInstance.get(`/courses/lesson/${lessonId}`);
     return response.data;
   }
 
