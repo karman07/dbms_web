@@ -2,11 +2,15 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { DocTopic } from './schemas/doc.schema';
+import { Course } from '../courses/schemas/course.schema';
 import { CreateDocTopicDto, AddSubtopicDto } from './dto/doc.dto';
 
 @Injectable()
 export class DocsService {
-  constructor(@InjectModel(DocTopic.name) private docModel: Model<DocTopic>) {}
+  constructor(
+    @InjectModel(DocTopic.name) private docModel: Model<DocTopic>,
+    @InjectModel(Course.name) private courseModel: Model<Course>,
+  ) {}
 
   async createTopic(createDto: CreateDocTopicDto) {
     const subtopicsWithFilename = createDto.subtopics.map(sub => ({
@@ -32,6 +36,24 @@ export class DocsService {
   }
 
   async deleteTopic(id: string) {
+    const topic = await this.docModel.findById(id).exec();
+    if (!topic) {
+      throw new NotFoundException('Topic not found');
+    }
+
+    // Remove all subtopic IDs from this topic from lessons that contain them
+    const subtopicIds = topic.subtopics.map(s => s._id);
+    try {
+      if (subtopicIds.length > 0) {
+        await this.courseModel.updateMany(
+          { 'sections.lessons.docSubtopicIds': { $in: subtopicIds } },
+          { $pull: { 'sections.$[].lessons.$[].docSubtopicIds': { $in: subtopicIds } } },
+        ).exec();
+      }
+    } catch (e) {
+      // ignore cleanup errors
+    }
+
     return this.docModel.findByIdAndDelete(id).exec();
   }
 
@@ -67,7 +89,25 @@ export class DocsService {
   async deleteSubtopic(topicId: string, subtopicName: string) {
     const doc = await this.docModel.findById(topicId);
     if (!doc) throw new NotFoundException('Topic not found');
+    
+    const subtopic = doc.subtopics.find(s => s.name === subtopicName);
+    if (!subtopic) throw new NotFoundException('Subtopic not found');
+    
+    const subtopicId = subtopic._id;
     doc.subtopics = doc.subtopics.filter(s => s.name !== subtopicName);
+    
+    // Remove subtopic ID from lessons that contain it
+    try {
+      if (subtopicId) {
+        await this.courseModel.updateMany(
+          { 'sections.lessons.docSubtopicIds': subtopicId },
+          { $pull: { 'sections.$[].lessons.$[].docSubtopicIds': subtopicId } },
+        ).exec();
+      }
+    } catch (e) {
+      // ignore cleanup errors
+    }
+    
     return doc.save();
   }
 

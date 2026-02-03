@@ -3,6 +3,8 @@ import { Document, Types } from 'mongoose';
 
 @Schema({ timestamps: true })
 export class DocSubtopic {
+  _id?: Types.ObjectId;
+
   @Prop({ required: true })
   name: string;
 

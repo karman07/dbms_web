@@ -55,6 +55,16 @@ export class ClassActivityService {
     if (!result) {
       throw new NotFoundException('Class activity not found');
     }
+
+    // Remove activity ID from lessons that contain it
+    try {
+      await this.courseModel.updateMany(
+        { 'sections.lessons.linkedActivityIds': new Types.ObjectId(activityId) },
+        { $pull: { 'sections.$[].lessons.$[].linkedActivityIds': new Types.ObjectId(activityId) } },
+      ).exec();
+    } catch (e) {
+      // ignore cleanup errors
+    }
   }
 
   async linkToLesson(activityId: string, lessonId: string): Promise<ClassActivity> {

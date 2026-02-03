@@ -104,6 +104,34 @@ export class CoursesController {
     // Parse and transform multipart/form-data fields
     const createLessonDto: any = { ...body };
     
+    // Helper to parse JSON string or array
+    const parseArrayField = (field: any): any[] => {
+      if (!field) return [];
+      if (Array.isArray(field)) {
+        // If array contains stringified JSON, parse it
+        return field.flatMap(item => {
+          if (typeof item === 'string') {
+            try {
+              const parsed = JSON.parse(item);
+              return Array.isArray(parsed) ? parsed : [item];
+            } catch {
+              return [item];
+            }
+          }
+          return [item];
+        });
+      }
+      if (typeof field === 'string') {
+        try {
+          const parsed = JSON.parse(field);
+          return Array.isArray(parsed) ? parsed : [field];
+        } catch {
+          return [field];
+        }
+      }
+      return [];
+    };
+    
     if (createLessonDto.quiz && typeof createLessonDto.quiz === 'string') {
       try {
         createLessonDto.quiz = JSON.parse(createLessonDto.quiz);
@@ -119,6 +147,26 @@ export class CoursesController {
     }
     if (createLessonDto.isPublished !== undefined) {
       createLessonDto.isPublished = createLessonDto.isPublished === 'true' || createLessonDto.isPublished === true;
+    }
+    
+    // Parse array fields
+    if (createLessonDto.mediaIds) {
+      createLessonDto.mediaIds = parseArrayField(createLessonDto.mediaIds);
+    }
+    if (createLessonDto.resources && !files?.resources) {
+      createLessonDto.resources = parseArrayField(createLessonDto.resources);
+    }
+    if (createLessonDto.docSubtopicIds) {
+      createLessonDto.docSubtopicIds = parseArrayField(createLessonDto.docSubtopicIds);
+    }
+    if (createLessonDto.linkedQuizIds) {
+      createLessonDto.linkedQuizIds = parseArrayField(createLessonDto.linkedQuizIds);
+    }
+    if (createLessonDto.linkedAssignmentIds) {
+      createLessonDto.linkedAssignmentIds = parseArrayField(createLessonDto.linkedAssignmentIds);
+    }
+    if (createLessonDto.linkedActivityIds) {
+      createLessonDto.linkedActivityIds = parseArrayField(createLessonDto.linkedActivityIds);
     }
     
     // If markdown file is uploaded, read its content
@@ -160,6 +208,34 @@ export class CoursesController {
     // Parse and transform multipart/form-data fields
     const updateLessonDto: any = { ...body };
     
+    // Helper to parse JSON string or array
+    const parseArrayField = (field: any): any[] => {
+      if (!field) return [];
+      if (Array.isArray(field)) {
+        // If array contains stringified JSON, parse it
+        return field.flatMap(item => {
+          if (typeof item === 'string') {
+            try {
+              const parsed = JSON.parse(item);
+              return Array.isArray(parsed) ? parsed : [item];
+            } catch {
+              return [item];
+            }
+          }
+          return [item];
+        });
+      }
+      if (typeof field === 'string') {
+        try {
+          const parsed = JSON.parse(field);
+          return Array.isArray(parsed) ? parsed : [field];
+        } catch {
+          return [field];
+        }
+      }
+      return [];
+    };
+    
     if (updateLessonDto.quiz && typeof updateLessonDto.quiz === 'string') {
       try {
         updateLessonDto.quiz = JSON.parse(updateLessonDto.quiz);
@@ -175,6 +251,26 @@ export class CoursesController {
     }
     if (updateLessonDto.isPublished !== undefined) {
       updateLessonDto.isPublished = updateLessonDto.isPublished === 'true' || updateLessonDto.isPublished === true;
+    }
+    
+    // Parse array fields
+    if (updateLessonDto.mediaIds) {
+      updateLessonDto.mediaIds = parseArrayField(updateLessonDto.mediaIds);
+    }
+    if (updateLessonDto.resources && !files?.resources) {
+      updateLessonDto.resources = parseArrayField(updateLessonDto.resources);
+    }
+    if (updateLessonDto.docSubtopicIds) {
+      updateLessonDto.docSubtopicIds = parseArrayField(updateLessonDto.docSubtopicIds);
+    }
+    if (updateLessonDto.linkedQuizIds) {
+      updateLessonDto.linkedQuizIds = parseArrayField(updateLessonDto.linkedQuizIds);
+    }
+    if (updateLessonDto.linkedAssignmentIds) {
+      updateLessonDto.linkedAssignmentIds = parseArrayField(updateLessonDto.linkedAssignmentIds);
+    }
+    if (updateLessonDto.linkedActivityIds) {
+      updateLessonDto.linkedActivityIds = parseArrayField(updateLessonDto.linkedActivityIds);
     }
     
     // If markdown file is uploaded, read its content
@@ -240,6 +336,11 @@ export class CoursesController {
     console.log('getMyProgress - req.user.id:', req.user.id);
     console.log('getMyProgress - req.user.uid:', req.user.uid);
     return this.coursesService.getMyProgress(req.user.id);
+  }
+
+  @Get('lesson/:lessonId')
+  async getLessonById(@Param('lessonId') lessonId: string) {
+    return this.coursesService.getLessonById(lessonId);
   }
 
   @Post('quiz/submit')

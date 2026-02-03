@@ -11,6 +11,7 @@ import { CoursesModule } from './courses/courses.module';
 import { QuizModule } from './quiz/quiz.module';
 import { AssignmentModule } from './assignment/assignment.module';
 import { ClassActivityModule } from './class-activity/class-activity.module';
+import { MediaModule } from './media/media.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { ClassActivityModule } from './class-activity/class-activity.module';
     QuizModule,
     AssignmentModule,
     ClassActivityModule,
+    MediaModule,
   ],
   controllers: [AppController],
   providers: [AppService],

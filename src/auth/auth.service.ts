@@ -16,7 +16,7 @@ export class AuthService {
     return jwt.sign(
       { id: user._id, email: user.email, role: user.role },
       process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '24h' }
+      { expiresIn: '365d' }
     );
   }
 

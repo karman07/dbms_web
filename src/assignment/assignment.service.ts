@@ -56,6 +56,16 @@ export class AssignmentService {
     if (!result) {
       throw new NotFoundException('Assignment not found');
     }
+
+    // Remove assignment ID from lessons that contain it
+    try {
+      await this.courseModel.updateMany(
+        { 'sections.lessons.linkedAssignmentIds': new Types.ObjectId(assignmentId) },
+        { $pull: { 'sections.$[].lessons.$[].linkedAssignmentIds': new Types.ObjectId(assignmentId) } },
+      ).exec();
+    } catch (e) {
+      // ignore cleanup errors
+    }
   }
 
   async linkToLesson(assignmentId: string, lessonId: string): Promise<Assignment> {

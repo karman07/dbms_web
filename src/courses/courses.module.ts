@@ -10,6 +10,7 @@ import { Assignment, AssignmentSchema } from '../assignment/schemas/assignment.s
 import { ClassActivity, ClassActivitySchema } from '../class-activity/schemas/class-activity.schema';
 import { DocTopic, DocTopicSchema } from '../docs/schemas/doc.schema';
 import { DocSubtopic, DocSubtopicSchema } from '../docs/schemas/doc-subtopic.schema';
+import { Media, MediaSchema } from '../media/schemas/media.schema';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { DocSubtopic, DocSubtopicSchema } from '../docs/schemas/doc-subtopic.sch
       { name: ClassActivity.name, schema: ClassActivitySchema },
       { name: DocTopic.name, schema: DocTopicSchema },
       { name: DocSubtopic.name, schema: DocSubtopicSchema },
+      { name: Media.name, schema: MediaSchema },
     ]),
     AuthModule,
   ],

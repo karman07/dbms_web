@@ -33,27 +33,19 @@ export class Lesson {
   @Prop({ required: true })
   title: string;
 
-  @Prop({ required: true })
-  content: string; // Markdown content or HTML
-
   @Prop({ default: 0 })
   order: number;
 
-  @Prop()
-  videoUrl?: string;
-
-  @Prop()
-  videoDescription?: string;
+  @Prop({ type: [Types.ObjectId], ref: 'Media', default: [] })
+  mediaIds?: Types.ObjectId[];
 
   @Prop({ type: [String], default: [] })
   resources: string[]; // URLs or file paths
 
-  @Prop({ type: [QuizQuestionSchema], default: [] })
-  quiz: QuizQuestion[];
+  // Removed embedded quiz; quizzes are now linked by ID only
 
-  // Instead of embedding markdown `content`, lessons now reference a DocSubtopic document
-  @Prop({ type: Types.ObjectId, ref: 'DocSubtopic' })
-  docSubtopicId?: Types.ObjectId;
+  @Prop({ type: [Types.ObjectId], ref: 'DocSubtopic', default: [] })
+  docSubtopicIds?: Types.ObjectId[];
 
   @Prop({ type: [Types.ObjectId], ref: 'Quiz', default: [] })
   linkedQuizIds?: Types.ObjectId[];

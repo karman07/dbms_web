@@ -9,6 +9,7 @@ import { Quiz } from '../quiz/schemas/quiz.schema';
 import { Assignment } from '../assignment/schemas/assignment.schema';
 import { ClassActivity } from '../class-activity/schemas/class-activity.schema';
 import { DocTopic } from '../docs/schemas/doc.schema';
+import { Media } from '../media/schemas/media.schema';
 
 @Injectable()
 export class CoursesService {
@@ -19,6 +20,7 @@ export class CoursesService {
     @InjectModel(Assignment.name) private assignmentModel: Model<Assignment>,
     @InjectModel(ClassActivity.name) private classActivityModel: Model<ClassActivity>,
     @InjectModel(DocTopic.name) private docTopicModel: Model<DocTopic>,
+    @InjectModel(Media.name) private mediaModel: Model<Media>,
   ) {}
 
   // Helper: Get the single course
@@ -155,36 +157,87 @@ export class CoursesService {
           const lessonId = lesson._id;
           if (!lessonId) continue;
 
-          const [quizzes, assignments, activities] = await Promise.all([
-            this.quizModel.find({ lessonId: lessonId }).lean().exec(),
-            this.assignmentModel.find({ lessonId: lessonId }).lean().exec(),
-            this.classActivityModel.find({ lessonId: lessonId }).lean().exec(),
-          ]);
-
-          // If lesson references a doc topic + subtopic, fetch the subtopic content
-          let docSubtopic: any = null;
-          try {
-            if (lesson.docTopicId && lesson.docSubtopicId) {
-              const topic: any = await this.docTopicModel.findById(lesson.docTopicId).lean().exec();
-              if (topic && Array.isArray(topic.subtopics)) {
-                docSubtopic = topic.subtopics.find((s: any) => s._id && s._id.toString() === lesson.docSubtopicId.toString()) || null;
-                if (docSubtopic) {
-                  // include parent topic id and topic name for reference
-                  docSubtopic.topicId = topic._id;
-                  docSubtopic.topic = topic.topic;
+          // Helper function to parse IDs (handle both ObjectId and stringified JSON arrays)
+          const parseIds = (ids: any[]): any[] => {
+            if (!ids || !Array.isArray(ids)) return [];
+            return ids.flatMap(id => {
+              if (typeof id === 'string') {
+                try {
+                  // Try to parse if it's a JSON stringified array
+                  const parsed = JSON.parse(id);
+                  return Array.isArray(parsed) ? parsed : [id];
+                } catch {
+                  return [id];
                 }
               }
+              return [id];
+            });
+          };
+
+          // Fetch quizzes linked to this lesson by lessonId OR by linkedQuizIds array
+          let quizIds = parseIds(lesson.linkedQuizIds || []);
+          const [quizzesByLesson, quizzesByIds, assignments, activities] = await Promise.all([
+            this.quizModel.find({ lessonId: lessonId }).lean().exec(),
+            quizIds.length > 0 ? this.quizModel.find({ _id: { $in: quizIds } }).lean().exec() : Promise.resolve([]),
+            lesson.linkedAssignmentIds && Array.isArray(lesson.linkedAssignmentIds) && parseIds(lesson.linkedAssignmentIds).length > 0
+              ? this.assignmentModel.find({ $or: [{ lessonId: lessonId }, { _id: { $in: parseIds(lesson.linkedAssignmentIds) } }] }).lean().exec()
+              : this.assignmentModel.find({ lessonId: lessonId }).lean().exec(),
+            lesson.linkedActivityIds && Array.isArray(lesson.linkedActivityIds) && parseIds(lesson.linkedActivityIds).length > 0
+              ? this.classActivityModel.find({ $or: [{ lessonId: lessonId }, { _id: { $in: parseIds(lesson.linkedActivityIds) } }] }).lean().exec()
+              : this.classActivityModel.find({ lessonId: lessonId }).lean().exec(),
+          ]);
+
+          // Combine quizzes from both sources and remove duplicates
+          const allQuizzes = [...quizzesByLesson, ...quizzesByIds];
+          const uniqueQuizzes = Array.from(new Map(allQuizzes.map(q => [q._id.toString(), q])).values());
+
+          // Fetch media if mediaIds array is present
+          let mediaList: any[] = [];
+          const mediaIds = parseIds(lesson.mediaIds || []);
+          if (mediaIds.length > 0) {
+            try {
+              mediaList = await this.mediaModel.find({ _id: { $in: mediaIds } }).lean().exec();
+            } catch (e) {
+              mediaList = [];
             }
-          } catch (e) {
-            docSubtopic = null;
           }
 
-          lesson.linkedQuizzes = quizzes;
+          // Fetch subtopics if docSubtopicIds array is present
+          let docSubtopics: any[] = [];
+          const docSubtopicIds = parseIds(lesson.docSubtopicIds || []);
+          if (docSubtopicIds.length > 0) {
+            try {
+              const topics: any[] = await this.docTopicModel.find().lean().exec();
+              for (const topic of topics) {
+                if (topic.subtopics && Array.isArray(topic.subtopics)) {
+                  const matchingSubtopics = topic.subtopics.filter((s: any) => 
+                    docSubtopicIds.some((id: any) => s._id && s._id.toString() === id.toString())
+                  );
+                  matchingSubtopics.forEach((s: any) => {
+                    s.topicId = topic._id;
+                    s.topic = topic.topic;
+                  });
+                  docSubtopics.push(...matchingSubtopics);
+                }
+              }
+            } catch (e) {
+              docSubtopics = [];
+            }
+          }
+
+          // Replace ID arrays with actual populated data
+          lesson.linkedQuizzes = uniqueQuizzes;
           lesson.linkedAssignments = assignments;
           lesson.linkedActivities = activities;
-          if (docSubtopic) {
-            lesson.doc = docSubtopic;
-          }
+          lesson.media = mediaList;
+          lesson.docSubtopics = docSubtopics;
+
+          // Remove the ID-only fields to avoid confusion
+          delete lesson.linkedQuizIds;
+          delete lesson.linkedAssignmentIds;
+          delete lesson.linkedActivityIds;
+          delete lesson.mediaIds;
+          delete lesson.docSubtopicIds;
         } catch (e) {
           // ignore per-lesson errors but continue
         }
@@ -317,7 +370,25 @@ export class CoursesService {
     return progress;
   }
 
-  // User: Submit quiz and calculate score
+  async getLessonById(lessonId: string): Promise<any> {
+    const course = await this.getCourseSingle();
+    
+    for (const section of course.sections) {
+      const lesson = section.lessons.find(l => l._id.toString() === lessonId);
+      if (lesson) {
+        return {
+          _id: lesson._id,
+          title: lesson.title,
+          sectionTitle: section.title,
+          order: lesson.order,
+          estimatedMinutes: lesson.estimatedMinutes,
+          isPublished: lesson.isPublished
+        };
+      }
+    }
+    
+    throw new NotFoundException('Lesson not found');
+  }
   async submitQuiz(userId: string, submitQuizDto: SubmitQuizDto): Promise<any> {
     const course = await this.courseModel.findOne();
     if (!course) {
@@ -327,7 +398,6 @@ export class CoursesService {
     const progress = await this.userProgressModel.findOne({
       userId: new Types.ObjectId(userId),
     });
-
     if (!progress) {
       throw new NotFoundException('You are not enrolled in this course');
     }
@@ -337,43 +407,43 @@ export class CoursesService {
     if (!section) {
       throw new BadRequestException('Section not found');
     }
-
     const lesson = section.lessons.find(l => l._id.toString() === submitQuizDto.lessonId);
-    if (!lesson || !lesson.quiz || lesson.quiz.length === 0) {
+    if (!lesson) {
+      throw new BadRequestException('Lesson not found');
+    }
+
+    // Fetch quiz by lessonId
+    const quiz = await this.quizModel.findOne({ lessonId: lesson._id }).lean().exec();
+    if (!quiz || !quiz.questions || quiz.questions.length === 0) {
       throw new BadRequestException('Quiz not found for this lesson');
     }
 
     // Calculate score
     let correctAnswers = 0;
     const results = submitQuizDto.answers.map(answer => {
-      const question = lesson.quiz[answer.questionIndex];
+      const question = quiz.questions[answer.questionIndex];
       if (!question) {
         return { questionIndex: answer.questionIndex, correct: false, explanation: 'Invalid question' };
       }
-
       const isCorrect = question.options[answer.selectedOptionIndex]?.isCorrect || false;
       if (isCorrect) correctAnswers++;
-
       return {
         questionIndex: answer.questionIndex,
         correct: isCorrect,
         explanation: question.explanation || 'No explanation provided'
       };
     });
-
-    const score = Math.round((correctAnswers / lesson.quiz.length) * 100);
+    const score = Math.round((correctAnswers / quiz.questions.length) * 100);
     const passed = score >= 60; // Pass threshold
 
     // Update progress
     const sectionProgress = progress.sections.find(
       s => s.sectionId.toString() === submitQuizDto.sectionId
     );
-
     if (sectionProgress) {
       const lessonProgress = sectionProgress.lessons.find(
         l => l.lessonId.toString() === submitQuizDto.lessonId
       );
-
       if (lessonProgress) {
         lessonProgress.quizScore = score;
         lessonProgress.quizAttempts = (lessonProgress.quizAttempts || 0) + 1;
@@ -381,18 +451,11 @@ export class CoursesService {
         await progress.save();
       }
     }
-
     return {
       score,
-      totalQuestions: lesson.quiz.length,
-      correctAnswers,
       passed,
       results,
-      progress: {
-        quizScore: score,
-        quizAttempts: sectionProgress?.lessons.find(l => l.lessonId.toString() === submitQuizDto.lessonId)?.quizAttempts || 1,
-        overallProgress: progress.overallProgress
-      }
+      totalQuestions: quiz.questions.length,
     };
   }
 }

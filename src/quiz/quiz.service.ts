@@ -56,6 +56,16 @@ export class QuizService {
     if (!result) {
       throw new NotFoundException('Quiz not found');
     }
+
+    // Remove quiz ID from lessons that contain it
+    try {
+      await this.courseModel.updateMany(
+        { 'sections.lessons.linkedQuizIds': new Types.ObjectId(quizId) },
+        { $pull: { 'sections.$[].lessons.$[].linkedQuizIds': new Types.ObjectId(quizId) } },
+      ).exec();
+    } catch (e) {
+      // ignore cleanup errors
+    }
   }
 
   async linkToLesson(quizId: string, lessonId: string): Promise<Quiz> {
