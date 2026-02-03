@@ -10,7 +10,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ClipboardList,
-  Brain
+  Brain,
+  Video
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
@@ -20,6 +21,7 @@ const navigation = [
   { name: 'Course', href: '/course', icon: BookOpen },
   { name: 'Assignments & Activities', href: '/assignments-activities', icon: ClipboardList },
   { name: 'Quiz', href: '/quiz', icon: Brain },
+  { name: 'Media', href: '/media', icon: Video },
   { name: 'Documentation', href: '/docs', icon: FileText },
   // { name: 'Settings', href: '/settings', icon: Settings },
 ];

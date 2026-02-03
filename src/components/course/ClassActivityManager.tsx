@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import Modal from '@/components/ui/modal';
 import MarkdownEditor from '@/components/ui/markdown-editor';
-import { Activity, Unlink, Edit, Trash2, Plus, Clock } from 'lucide-react';
+import { Activity,  Edit, Trash2, Plus} from 'lucide-react';
 
 interface ClassActivityFormData {
   title: string;
@@ -34,6 +34,8 @@ const ClassActivityManager = ({ lessonOptions = [] }: ClassActivityManagerProps)
     linkedLessonId: '',
   });
 
+
+  console.log(lessonOptions)
   useEffect(() => {
     loadActivities();
   }, []);
@@ -100,24 +102,6 @@ const ClassActivityManager = ({ lessonOptions = [] }: ClassActivityManagerProps)
     setIsModalOpen(true);
   };
 
-  const handleLinkLesson = async (activityId: string, lessonId: string) => {
-    try {
-      await classActivityAPI.linkActivityToLesson(activityId, lessonId);
-      await loadActivities();
-    } catch (error) {
-      console.error('Failed to link lesson:', error);
-    }
-  };
-
-  const handleUnlinkLesson = async (activityId: string) => {
-    if (!confirm('Are you sure you want to unlink this activity from the lesson?')) return;
-    try {
-      await classActivityAPI.unlinkActivityFromLesson(activityId);
-      await loadActivities();
-    } catch (error) {
-      console.error('Failed to unlink lesson:', error);
-    }
-  };
 
   const resetForm = () => {
     setFormData({
@@ -142,7 +126,7 @@ const ClassActivityManager = ({ lessonOptions = [] }: ClassActivityManagerProps)
             resetForm();
             setIsModalOpen(true);
           }}
-          className="bg-blue-600 hover:bg-blue-700"
+          className="bg-blue-600 hover:bg-blue-700 shadow-md"
         >
           <Plus className="h-4 w-4 mr-2" />
           Create Activity
@@ -164,52 +148,43 @@ const ClassActivityManager = ({ lessonOptions = [] }: ClassActivityManagerProps)
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {activities.map((activity) => (
-            <Card key={activity._id} className="p-5 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow ring-1 ring-blue-50 border border-gray-100">
+            <Card key={activity._id} className="group p-6 hover:shadow-2xl transition-all duration-300 border border-blue-100 bg-white hover:border-blue-300 shadow-sm hover:-translate-y-1">
               <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="p-3 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg">
-                    <Activity className="h-5 w-5 text-blue-600" />
+                <div className="flex items-start gap-4">
+                  <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300">
+                    <Activity className="h-6 w-6 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-lg text-gray-900 mb-1">{activity.title}</h3>
-                    <p className="text-sm text-gray-600 line-clamp-2">{activity.description}</p>
+                    <h3 className="font-bold text-lg text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">{activity.title}</h3>
+                    <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">{activity.description}</p>
                   </div>
                 </div>
                 
-                {activity.duration && (
-                  <div className="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-lg w-fit">
-                    <Clock className="h-4 w-4 text-white" />
-                    <span className="text-xs text-white font-medium">
-                      {activity.duration} minutes
-                    </span>
-                  </div>
-                )}
+             
                 
-               
-                
-                <div className="flex flex-wrap gap-2 pt-2 border-t">
+                <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-200">
                   <Button 
                     size="sm" 
                     variant="outline" 
                     onClick={() => handleEdit(activity)}
-                    className="flex-1 min-w-[80px]"
+                    className="flex-1 min-w-[80px] border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400 font-medium"
                   >
-                    <Edit className="h-3 w-3 mr-1" />
+                    <Edit className="h-3.5 w-3.5 mr-1.5" />
                     Edit
                   </Button>
                   <Button 
                     size="sm" 
                     variant="outline" 
                     onClick={() => handleDelete(activity._id)}
-                    className="flex-1 min-w-[80px] text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="flex-1 min-w-[80px] border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400 font-medium"
                   >
-                    <Trash2 className="h-3 w-3 mr-1" />
+                    <Trash2 className="h-3.5 w-3.5 mr-1.5" />
                     Delete
                   </Button>
-                  {lessonOptions.length > 0 && (
-                    <div className="w-full flex flex-col gap-2 bg-gray-50 p-2 rounded-md">
+                  {/* {lessonOptions.length > 0 && (
+                    <div className="w-full flex flex-col gap-2">
                       <select
-                        className="w-full text-sm px-3 py-2 border rounded-md hover:border-blue-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white"
+                        className="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white transition-all duration-200 font-medium"
                         onChange={(e) => {
                           const val = e.target.value;
                           if (val) {
@@ -233,14 +208,14 @@ const ClassActivityManager = ({ lessonOptions = [] }: ClassActivityManagerProps)
                           size="sm" 
                           variant="outline" 
                           onClick={() => handleUnlinkLesson(activity._id)}
-                          className="w-full text-orange-700 bg-orange-50 hover:bg-orange-100"
+                          className="w-full border-amber-300 text-amber-700 hover:bg-amber-50 hover:border-amber-400 font-medium"
                         >
-                          <Unlink className="h-3 w-3 mr-1" />
-                          Unlink from Lesson
+                          <Unlink className="h-3.5 w-3.5 mr-1.5" />
+                          Unlink Lesson
                         </Button>
                       )}
                     </div>
-                  )}
+                  )} */}
                 </div>
               </div>
             </Card>
@@ -249,11 +224,7 @@ const ClassActivityManager = ({ lessonOptions = [] }: ClassActivityManagerProps)
       )}
 
       {/* Create/Edit Modal */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={selectedActivity ? 'Edit Class Activity' : 'Create Class Activity'}
-      >
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={selectedActivity ? 'Edit Activity' : 'Create Activity'}>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1">Title</label>
@@ -264,17 +235,14 @@ const ClassActivityManager = ({ lessonOptions = [] }: ClassActivityManagerProps)
               required
             />
           </div>
-
           <div>
             <label className="block text-sm font-medium mb-1">Description</label>
             <Textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              rows={4}
               required
             />
           </div>
-
           <div>
             <label className="block text-sm font-medium mb-1">Duration (minutes)</label>
             <Input
@@ -282,42 +250,24 @@ const ClassActivityManager = ({ lessonOptions = [] }: ClassActivityManagerProps)
               value={formData.duration}
               onChange={(e) => setFormData({ ...formData, duration: parseInt(e.target.value) || 60 })}
               min="1"
+              required
             />
           </div>
-
-          {lessonOptions.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium mb-1">Linked Lesson (Optional)</label>
-              <select
-                className="w-full px-3 py-2 border rounded-md"
-                value={formData.linkedLessonId}
-                onChange={(e) => setFormData({ ...formData, linkedLessonId: e.target.value })}
-              >
-                <option value="">Select Lesson</option>
-                {lessonOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
-
           <div>
             <label className="block text-sm font-medium mb-1">Content</label>
             <MarkdownEditor
               value={formData.content}
               onChange={(content) => setFormData({ ...formData, content })}
-              placeholder="Write the class activity content in Markdown..."
+              placeholder="Write your activity content here..."
             />
           </div>
-
-          <div className="flex gap-2 justify-end pt-4">
+        
+          <div className="flex gap-2 pt-4">
+            <Button type="submit" disabled={isLoading} className="flex-1">
+              {isLoading ? 'Saving...' : (selectedActivity ? 'Update Activity' : 'Create Activity')}
+            </Button>
             <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
               Cancel
-            </Button>
-            <Button type="submit" disabled={isLoading}>
-              {isLoading ? 'Saving...' : selectedActivity ? 'Update' : 'Create'}
             </Button>
           </div>
         </form>

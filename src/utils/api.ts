@@ -486,4 +486,48 @@ export const classActivityAPI = {
   },
 };
 
+// Media Management API
+export const mediaAPI = {
+  // 1. Upload Media (File or URL)
+  createMedia: async (formData: FormData) => {
+    const response = await api.post('/media', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  // 2. Get All Media
+  getAllMedia: async (userId?: string) => {
+    const params = userId ? { userId } : {};
+    const response = await api.get('/media', { params });
+    return response.data;
+  },
+
+  // 3. Get Media by ID
+  getMediaById: async (id: string) => {
+    const response = await api.get(`/media/${id}`);
+    return response.data;
+  },
+
+  // 4. Search Media
+  searchMedia: async (query: string) => {
+    const response = await api.get(`/media/search`, { params: { q: query } });
+    return response.data;
+  },
+
+  // 5. Update Media
+  updateMedia: async (id: string, formData: FormData) => {
+    const response = await api.patch(`/media/${id}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return response.data;
+  },
+
+  // 6. Delete Media
+  deleteMedia: async (id: string) => {
+    const response = await api.delete(`/media/${id}`);
+    return response.data;
+  },
+};
+
 export default api;

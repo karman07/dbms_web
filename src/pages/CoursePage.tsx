@@ -18,7 +18,6 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { Badge } from '../components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import Modal from '../components/ui/modal';
 import SectionModal from '../components/course/SectionModal';
 import LessonForm from '../components/course/LessonForm';
@@ -239,34 +238,54 @@ const CoursePage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-gray-50">
+        <div className="flex items-center justify-center h-96">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600 font-medium">Loading course data...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!course) {
     return (
-      <div className="max-w-4xl mx-auto">
-        <Card className="border-l-4 border-l-blue-500 shadow-lg">
-          <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-blue-600 rounded-lg">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-gray-50">
+        <div className="p-8 max-w-4xl mx-auto">
+          {/* Enhanced Header */}
+          <div className="mb-8">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="p-3 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-lg">
                 <BookOpen className="h-8 w-8 text-white" />
               </div>
               <div>
-                <CardTitle className="text-2xl text-gray-900">No Course Found</CardTitle>
-                <CardDescription className="text-base">Create your first course to get started</CardDescription>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                  Course Management
+                </h1>
+                <p className="text-gray-600 mt-2 text-lg">
+                  Create and manage your course content
+                </p>
               </div>
             </div>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <Button onClick={() => setShowCourseModal(true)} className="bg-blue-600 hover:bg-blue-700">
+          </div>
+
+          <div className="text-center py-16 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20">
+            <div className="p-4 bg-blue-100 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
+              <BookOpen className="h-10 w-10 text-blue-600" />
+            </div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-3">No Course Found</h3>
+            <p className="text-gray-600 mb-8 max-w-md mx-auto">
+              Get started by creating your first course. You can add sections, lessons, and organize your content effectively.
+            </p>
+            <Button 
+              onClick={() => setShowCourseModal(true)} 
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Create Course
             </Button>
-          </CardContent>
-        </Card>
+          </div>
 
         <Modal
           isOpen={showCourseModal}
@@ -343,137 +362,194 @@ const CoursePage: React.FC = () => {
             </div>
           </form>
         </Modal>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Main Course Card */}
-      <Card className="border-l-4 border-l-blue-500 shadow-lg hover:shadow-xl transition-shadow">
-        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50">
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <div className="flex items-center gap-3">
-                <CardTitle className="text-3xl text-gray-900">{course.title}</CardTitle>
-                <Badge className={course.isPublished ? 'bg-green-100 text-green-700 border-0' : 'bg-gray-100 text-gray-600 border-0'}>
-                  {course.isPublished ? '✓ Published' : 'Draft'}
-                </Badge>
-              </div>
-              <CardDescription className="mt-2 text-base">{course.description}</CardDescription>
-              
-              {course.tags && course.tags.length > 0 && (
-                <div className="flex items-center gap-2 mt-3">
-                  <Tag className="h-4 w-4 text-blue-500" />
-                  {course.tags.map((tag, index) => (
-                    <Badge key={index} className="bg-blue-100 text-blue-700 border-blue-200">
-                      {tag}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-gray-50">
+      <div className="p-8 max-w-7xl mx-auto">
+        {/* Enhanced Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-3 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-lg">
+              <BookOpen className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                Course Management
+              </h1>
+              <p className="text-gray-600 mt-2 text-lg">
+                Manage your course content, sections, and lessons
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          {/* Main Course Card */}
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden hover:shadow-2xl transition-all duration-300">
+            <div className="p-6 bg-gradient-to-r from-blue-50 to-slate-50 border-b border-blue-100">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-3">
+                    <h2 className="text-3xl font-bold text-gray-900">{course.title}</h2>
+                    <Badge className={course.isPublished ? 'bg-green-100 text-green-700 border-green-200' : 'bg-gray-100 text-gray-600 border-gray-200'}>
+                      {course.isPublished ? (
+                        <>
+                          <CheckCircle className="h-3 w-3 mr-1" />
+                          Published
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="h-3 w-3 mr-1" />
+                          Draft
+                        </>
+                      )}
                     </Badge>
-                  ))}
+                  </div>
+                  <p className="text-gray-700 text-lg mb-4">{course.description}</p>
+                  
+                  {course.tags && course.tags.length > 0 && (
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="p-1 bg-blue-100 rounded">
+                        <Tag className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {course.tags.map((tag: string, index: number) => (
+                          <Badge key={index} className="bg-blue-100 text-blue-700 border-blue-200">
+                            {tag}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+                
+                {course.thumbnail && (
+                  <div className="ml-6">
+                    <img
+                      src={course.thumbnail}
+                      alt={course.title}
+                      className="w-40 h-32 object-cover rounded-xl border-2 border-blue-200 shadow-lg"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
             
-            {course.thumbnail && (
-              <img
-                src={course.thumbnail}
-                alt={course.title}
-                className="w-32 h-32 object-cover rounded-lg ml-4 border-2 border-blue-200"
-              />
-            )}
-          </div>
-        </CardHeader>
-        
-        <CardContent className="bg-white">
-          <div className="flex items-center gap-6 text-sm text-gray-600 bg-gradient-to-r from-blue-50/50 to-indigo-50/50 p-4 rounded-lg">
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Users className="h-4 w-4 text-blue-600" />
+            <div className="p-6">
+              {/* Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl border border-blue-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-600 rounded-lg">
+                      <Users className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-blue-600 font-medium">Enrolled Students</p>
+                      <p className="text-2xl font-bold text-gray-900">{course.enrolledCount}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl border border-slate-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-slate-600 rounded-lg">
+                      <BookOpen className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-slate-600 font-medium">Sections</p>
+                      <p className="text-2xl font-bold text-gray-900">{course.sections.length}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl border border-blue-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-600 rounded-lg">
+                      <FileText className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-blue-600 font-medium">Total Lessons</p>
+                      <p className="text-2xl font-bold text-gray-900">{course.sections.reduce((acc: number, s: Section) => acc + s.lessons.length, 0)}</p>
+                    </div>
+                  </div>
+                </div>
               </div>
-              <span className="font-medium">{course.enrolledCount} enrolled</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-indigo-100 rounded-lg">
-                <BookOpen className="h-4 w-4 text-indigo-600" />
-              </div>
-              <span className="font-medium">{course.sections.length} sections</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <FileText className="h-4 w-4 text-purple-600" />
-              </div>
-              <span className="font-medium">{course.sections.reduce((acc, s) => acc + s.lessons.length, 0)} lessons</span>
-            </div>
-          </div>
 
-          <div className="flex items-center gap-3 mt-6">
-            <Button onClick={handleEditCourse} className="bg-blue-600 hover:bg-blue-700">
-              <Edit className="h-4 w-4 mr-2" />
-              Edit Course
-            </Button>
-            <Button
-              className={course.isPublished ? 'border-orange-200 text-orange-600 hover:bg-orange-50' : 'bg-green-600 hover:bg-green-700 text-white'}
-              variant={course.isPublished ? 'outline' : 'default'}
-              onClick={() => handleUpdateCourse('isPublished', !course.isPublished)}
-            >
-              {course.isPublished ? (
-                <>
-                  <XCircle className="h-4 w-4 mr-2" />
-                  Unpublish
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Publish
-                </>
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              className="border-blue-200 text-blue-600 hover:bg-blue-50"
-              onClick={() => {
-                setSectionMode('add');
-                setSelectedSection(null);
-                setShowSectionModal(true);
-              }}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Section
-            </Button>
+              {/* Action Buttons */}
+              <div className="flex items-center gap-3">
+                <Button 
+                  onClick={handleEditCourse} 
+                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Course
+                </Button>
+                <Button
+                  className={course.isPublished ? 'border-orange-200 text-orange-600 hover:bg-orange-50' : 'bg-green-600 hover:bg-green-700 text-white'}
+                  variant={course.isPublished ? 'outline' : 'default'}
+                  onClick={() => handleUpdateCourse('isPublished', !course.isPublished)}
+                >
+                  {course.isPublished ? (
+                    <>
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Unpublish
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Publish
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  className="border-blue-200 text-blue-600 hover:bg-blue-50"
+                  onClick={() => {
+                    setSectionMode('add');
+                    setSelectedSection(null);
+                    setShowSectionModal(true);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Section
+                </Button>
+              </div>
+            </div>
           </div>
-        </CardContent>
-      </Card>
 
       {/* Sections List */}
       <div className="space-y-4">
         {course.sections.length === 0 ? (
-          <Card className="border-l-4 border-l-blue-400">
-            <CardContent className="py-12 text-center">
-              <div className="p-4 bg-blue-100 rounded-full w-fit mx-auto mb-4">
-                <BookOpen className="h-12 w-12 text-blue-600" />
-              </div>
-              <p className="text-gray-600 mb-4 font-medium">No sections yet. Add your first section to get started.</p>
-              <Button
-                className="bg-blue-600 hover:bg-blue-700"
-                onClick={() => {
-                  setSectionMode('add');
-                  setShowSectionModal(true);
-                }}
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Section
-              </Button>
-            </CardContent>
-          </Card>
+          <div className="text-center py-16 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20">
+            <div className="p-4 bg-blue-100 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
+              <BookOpen className="h-10 w-10 text-blue-600" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-3">No sections yet</h3>
+            <p className="text-gray-600 mb-8 max-w-md mx-auto">
+              Add your first section to start organizing your course content into structured lessons.
+            </p>
+            <Button
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"
+              onClick={() => {
+                setSectionMode('add');
+                setShowSectionModal(true);
+              }}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add First Section
+            </Button>
+          </div>
         ) : (
-          course.sections.map((section, sectionIndex) => (
-            <Card key={section._id} className="border-l-4 border-l-blue-500 hover:shadow-lg transition-shadow">
-              <CardHeader className="bg-gradient-to-r from-blue-50/30 to-transparent">
+          course.sections.map((section: Section, sectionIndex: number) => (
+            <div key={section._id} className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden hover:shadow-2xl transition-all duration-300">
+              <div className="p-6 bg-gradient-to-r from-blue-50/30 to-slate-50/30 border-b border-blue-100">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start gap-3 flex-1">
                     <button
                       onClick={() => toggleSection(section._id)}
-                      className="mt-1 text-blue-500 hover:text-blue-700 transition-colors p-1 hover:bg-blue-100 rounded"
+                      className="mt-1 p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded-lg transition-all duration-200 flex-shrink-0"
                     >
                       {expandedSections.has(section._id) ? (
                         <ChevronDown className="h-5 w-5" />
@@ -482,21 +558,21 @@ const CoursePage: React.FC = () => {
                       )}
                     </button>
                     <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <CardTitle className="text-xl text-gray-900">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-xl font-bold text-gray-900">
                           {sectionIndex + 1}. {section.title}
-                        </CardTitle>
-                        <Badge className="bg-blue-100 text-blue-700 border-0">
-                          {section.lessons.length} lessons
+                        </h3>
+                        <Badge className="bg-blue-100 text-blue-700 border-blue-200">
+                          {section.lessons.length} lesson{section.lessons.length !== 1 ? 's' : ''}
                         </Badge>
                       </div>
                       {section.description && (
-                        <CardDescription className="mt-1">{section.description}</CardDescription>
+                        <p className="text-gray-600">{section.description}</p>
                       )}
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-shrink-0 ml-4">
                     <Button
                       variant="outline"
                       size="sm"
@@ -514,7 +590,7 @@ const CoursePage: React.FC = () => {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="border-blue-200 text-blue-600 hover:bg-blue-50"
+                      className="border-slate-200 text-slate-600 hover:bg-slate-50"
                       onClick={() => {
                         setSectionMode('edit');
                         setSelectedSection({ section, index: sectionIndex });
@@ -527,25 +603,25 @@ const CoursePage: React.FC = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => handleDeleteSection(sectionIndex)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      className="border-red-200 text-red-600 hover:bg-red-50"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
-              </CardHeader>
+              </div>
 
               {expandedSections.has(section._id) && (
-                <CardContent className="bg-gradient-to-br from-gray-50/50 to-blue-50/30">
+                <div className="p-6 bg-gradient-to-br from-gray-50/50 to-blue-50/30">
                   {section.lessons.length === 0 ? (
-                    <div className="text-center py-8 bg-white rounded-lg border-2 border-dashed border-blue-200">
+                    <div className="text-center py-8 bg-white rounded-xl border-2 border-dashed border-blue-200">
                       <div className="p-3 bg-blue-100 rounded-full w-fit mx-auto mb-3">
-                        <FileText className="h-10 w-10 text-blue-600" />
+                        <FileText className="h-8 w-8 text-blue-600" />
                       </div>
-                      <p className="text-gray-600 mb-3 font-medium">No lessons in this section yet.</p>
+                      <p className="text-gray-600 mb-4 font-medium">No lessons in this section yet.</p>
                       <Button
                         size="sm"
-                        className="bg-blue-600 hover:bg-blue-700"
+                        className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"
                         onClick={() => {
                           setLessonMode('add');
                           setLessonSectionIndex(sectionIndex);
@@ -559,42 +635,84 @@ const CoursePage: React.FC = () => {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {section.lessons.map((lesson, lessonIndex) => (
+                      {section.lessons.map((lesson: Lesson, lessonIndex: number) => {
+                        const hasMedia = lesson.mediaIds && lesson.mediaIds.length > 0;
+                        const hasDocs = lesson.docSubtopicIds && lesson.docSubtopicIds.length > 0;
+                        const hasLinkedQuiz = lesson.linkedQuizIds && lesson.linkedQuizIds.length > 0;
+                        const hasLinkedAssignment = lesson.linkedAssignmentIds && lesson.linkedAssignmentIds.length > 0;
+                        const hasLinkedActivity = lesson.linkedActivityIds && lesson.linkedActivityIds.length > 0;
+                        
+                        return (
                         <div
                           key={lesson._id}
-                          className="flex items-center justify-between p-4 bg-white hover:bg-blue-50/50 rounded-lg transition-all border border-gray-200 hover:border-blue-300 hover:shadow-md"
+                          className="flex items-center justify-between p-4 bg-white hover:bg-blue-50/50 rounded-xl transition-all border border-gray-200 hover:border-blue-300 hover:shadow-md"
                         >
                           <div className="flex items-center gap-3 flex-1">
-                            <div className={`p-2 rounded-lg ${lesson.videoUrl ? 'bg-purple-100' : 'bg-blue-100'}`}>
-                              {lesson.videoUrl ? (
+                            <div className={`p-2 rounded-lg ${hasMedia ? 'bg-purple-100' : hasDocs ? 'bg-blue-100' : 'bg-slate-100'}`}>
+                              {hasMedia ? (
                                 <Video className="h-5 w-5 text-purple-600" />
-                              ) : (
+                              ) : hasDocs ? (
                                 <FileText className="h-5 w-5 text-blue-600" />
+                              ) : (
+                                <FileText className="h-5 w-5 text-slate-600" />
                               )}
                             </div>
                             <div className="flex-1">
-                              <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <h4 className="font-semibold text-gray-900">
                                   {lessonIndex + 1}. {lesson.title}
                                 </h4>
+                                {lesson.isPublished ? (
+                                  <Badge className="bg-green-100 text-green-700 border-0 text-xs">
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Published
+                                  </Badge>
+                                ) : (
+                                  <Badge className="bg-yellow-100 text-yellow-700 border-0 text-xs">
+                                    <XCircle className="h-3 w-3 mr-1" />
+                                    Draft
+                                  </Badge>
+                                )}
                               </div>
-                              <div className="flex items-center gap-3 mt-1 text-sm">
-                                {lesson.estimatedMinutes && (
+                              <div className="flex items-center gap-3 mt-2 text-sm flex-wrap">
+                                {lesson.estimatedMinutes && lesson.estimatedMinutes > 0 && (
                                   <div className="flex items-center gap-1 text-blue-600">
                                     <Clock className="h-3 w-3" />
                                     <span className="font-medium">{lesson.estimatedMinutes} min</span>
                                   </div>
+                                )}
+                                {hasMedia && (
+                                  <Badge className="bg-purple-100 text-purple-700 border-0 text-xs">
+                                    <Video className="h-3 w-3 mr-1" />
+                                    {lesson.mediaIds!.length} media
+                                  </Badge>
+                                )}
+                                {hasDocs && (
+                                  <Badge className="bg-blue-100 text-blue-700 border-0 text-xs">
+                                    <FileText className="h-3 w-3 mr-1" />
+                                    {lesson.docSubtopicIds!.length} doc{lesson.docSubtopicIds!.length > 1 ? 's' : ''}
+                                  </Badge>
                                 )}
                                 {lesson.quiz && lesson.quiz.length > 0 && (
                                   <Badge className="bg-green-100 text-green-700 border-0 text-xs">
                                     {lesson.quiz.length} quiz questions
                                   </Badge>
                                 )}
-                                {/* {lesson.resources && lesson.resources.length > 0 && (
-                                  <Badge className="bg-orange-100 text-orange-700 border-0 text-xs">
-                                    {lesson.resources.length} resources
+                                {hasLinkedQuiz && (
+                                  <Badge className="bg-indigo-100 text-indigo-700 border-0 text-xs">
+                                    {lesson.linkedQuizIds!.length} linked quiz
                                   </Badge>
-                                )} */}
+                                )}
+                                {hasLinkedAssignment && (
+                                  <Badge className="bg-orange-100 text-orange-700 border-0 text-xs">
+                                    {lesson.linkedAssignmentIds!.length} assignment
+                                  </Badge>
+                                )}
+                                {hasLinkedActivity && (
+                                  <Badge className="bg-cyan-100 text-cyan-700 border-0 text-xs">
+                                    {lesson.linkedActivityIds!.length} activity
+                                  </Badge>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -616,18 +734,18 @@ const CoursePage: React.FC = () => {
                               variant="outline"
                               size="sm"
                               onClick={() => handleDeleteLesson(sectionIndex, lessonIndex)}
-                              className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200"
+                              className="border-red-200 text-red-600 hover:bg-red-50"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
-                      ))}
+                      )})}
                     </div>
                   )}
-                </CardContent>
+                </div>
               )}
-            </Card>
+            </div>
           ))
         )}
       </div>
@@ -743,10 +861,12 @@ const CoursePage: React.FC = () => {
             <Button type="button" variant="outline" onClick={() => setShowCourseModal(false)}>
               Cancel
             </Button>
-            <Button type="submit">Save Changes</Button>
+            <Button type="submit" className="bg-blue-600 hover:bg-blue-700">Save Changes</Button>
           </div>
         </form>
       </Modal>
+        </div>
+      </div>
     </div>
   );
 };

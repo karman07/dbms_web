@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import Modal from '@/components/ui/modal';
 import MarkdownEditor from '@/components/ui/markdown-editor';
-import { FileText, Unlink, Edit, Trash2, Plus} from 'lucide-react';
+import { FileText, Edit, Trash2, Plus} from 'lucide-react';
 
 interface AssignmentFormData {
   title: string;
@@ -32,6 +32,7 @@ const AssignmentManager = ({ lessonOptions = [] }: AssignmentManagerProps) => {
     linkedLessonId: '',
   });
 
+  console.log(lessonOptions)
   useEffect(() => {
     loadAssignments();
   }, []);
@@ -96,24 +97,24 @@ const AssignmentManager = ({ lessonOptions = [] }: AssignmentManagerProps) => {
     setIsModalOpen(true);
   };
 
-  const handleLinkLesson = async (assignmentId: string, lessonId: string) => {
-    try {
-      await assignmentAPI.linkAssignmentToLesson(assignmentId, lessonId);
-      await loadAssignments();
-    } catch (error) {
-      console.error('Failed to link lesson:', error);
-    }
-  };
+  // const handleLinkLesson = async (assignmentId: string, lessonId: string) => {
+  //   try {
+  //     await assignmentAPI.linkAssignmentToLesson(assignmentId, lessonId);
+  //     await loadAssignments();
+  //   } catch (error) {
+  //     console.error('Failed to link lesson:', error);
+  //   }
+  // };
 
-  const handleUnlinkLesson = async (assignmentId: string) => {
-    if (!confirm('Are you sure you want to unlink this assignment from the lesson?')) return;
-    try {
-      await assignmentAPI.unlinkAssignmentFromLesson(assignmentId);
-      await loadAssignments();
-    } catch (error) {
-      console.error('Failed to unlink lesson:', error);
-    }
-  };
+  // const handleUnlinkLesson = async (assignmentId: string) => {
+  //   if (!confirm('Are you sure you want to unlink this assignment from the lesson?')) return;
+  //   try {
+  //     await assignmentAPI.unlinkAssignmentFromLesson(assignmentId);
+  //     await loadAssignments();
+  //   } catch (error) {
+  //     console.error('Failed to unlink lesson:', error);
+  //   }
+  // };
 
   const resetForm = () => {
     setFormData({
@@ -159,24 +160,24 @@ const AssignmentManager = ({ lessonOptions = [] }: AssignmentManagerProps) => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {assignments.map((assignment) => (
-            <Card key={assignment._id} className="p-5 hover:shadow-lg transition-shadow border-l-4 border-l-blue-500">
+            <Card key={assignment._id} className="p-6 hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-white to-blue-50/30 shadow-lg">
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <FileText className="h-5 w-5 text-blue-600" />
+                  <div className="p-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-md">
+                    <FileText className="h-5 w-5 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-lg text-gray-900 mb-1">{assignment.title}</h3>
-                    <p className="text-sm text-gray-600 line-clamp-2">{assignment.description}</p>
+                    <h3 className="font-bold text-lg text-gray-900 mb-2">{assignment.title}</h3>
+                    <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">{assignment.description}</p>
                   </div>
                 </div>
                 
-                <div className="flex flex-wrap gap-2 pt-2 border-t">
+                <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-100">
                   <Button 
                     size="sm" 
                     variant="outline" 
                     onClick={() => handleEdit(assignment)}
-                    className="flex-1 min-w-[80px]"
+                    className="flex-1 min-w-[80px] border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300"
                   >
                     <Edit className="h-3 w-3 mr-1" />
                     Edit
@@ -185,15 +186,15 @@ const AssignmentManager = ({ lessonOptions = [] }: AssignmentManagerProps) => {
                     size="sm" 
                     variant="outline" 
                     onClick={() => handleDelete(assignment._id)}
-                    className="flex-1 min-w-[80px] text-red-600 hover:text-red-700 hover:bg-red-50"
+                    className="flex-1 min-w-[80px] border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
                   >
                     <Trash2 className="h-3 w-3 mr-1" />
                     Delete
                   </Button>
-                  {lessonOptions.length > 0 && (
+                  {/* {lessonOptions.length > 0 && (
                     <div className="w-full flex flex-col gap-2">
                       <select
-                        className="w-full text-sm px-3 py-2 border rounded-md hover:border-blue-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white"
+                        className="w-full text-sm px-3 py-2 border border-gray-200 rounded-lg hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white transition-all duration-200"
                         onChange={(e) => {
                           const val = e.target.value;
                           if (val) {
@@ -217,14 +218,14 @@ const AssignmentManager = ({ lessonOptions = [] }: AssignmentManagerProps) => {
                           size="sm" 
                           variant="outline" 
                           onClick={() => handleUnlinkLesson(assignment._id)}
-                          className="w-full text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                          className="w-full border-orange-200 text-orange-600 hover:bg-orange-50 hover:border-orange-300"
                         >
                           <Unlink className="h-3 w-3 mr-1" />
                           Unlink from Lesson
                         </Button>
                       )}
                     </div>
-                  )}
+                  )} */}
                 </div>
               </div>
             </Card>
@@ -255,23 +256,7 @@ const AssignmentManager = ({ lessonOptions = [] }: AssignmentManagerProps) => {
             />
           </div>
 
-          {lessonOptions.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium mb-1">Linked Lesson (Optional)</label>
-              <select
-                className="w-full px-3 py-2 border rounded-md"
-                value={formData.linkedLessonId}
-                onChange={(e) => setFormData({ ...formData, linkedLessonId: e.target.value })}
-              >
-                <option value="">Select Lesson</option>
-                {lessonOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          )}
+      
 
           <div>
             <label className="block text-sm font-medium mb-1">Content</label>

@@ -33,25 +33,19 @@ export interface Section {
 export interface Lesson {
   _id: string;
   title: string;
-  content: string;
   order: number;
-  videoUrl?: string;
-  videoDescription?: string;
+  // New: Array of media references (videos, images, documents)
+  mediaIds?: string[];
+  // Populated media items (returned by API)
+  media?: Media[];
   resources?: string[];
   quiz?: QuizQuestion[];
+  // New: Array of doc subtopic references
+  docSubtopicIds?: string[];
+  // Populated doc subtopics (returned by API)
+  docSubtopics?: DocSubtopic[];
   estimatedMinutes?: number;
   isPublished: boolean;
-  // Doc subtopic reference (replaces embedded content)
-  docSubtopicId?: string;
-  // Populated doc subtopic (returned by API when docSubtopicId exists)
-  doc?: {
-    _id: string;
-    name: string;
-    filename: string;
-    content: string;
-    topicId?: string;
-    topic?: string;
-  };
   // Multiple linked resource IDs (stored in DB)
   linkedQuizIds?: string[];
   linkedAssignmentIds?: string[];
@@ -60,6 +54,34 @@ export interface Lesson {
   linkedQuizzes?: Quiz[];
   linkedAssignments?: Assignment[];
   linkedActivities?: ClassActivity[];
+  
+  // Legacy fields (for backward compatibility - will be removed)
+  content?: string;
+  videoUrl?: string;
+  videoDescription?: string;
+  docSubtopicId?: string;
+  doc?: {
+    _id: string;
+    name: string;
+    filename: string;
+    content: string;
+    topicId?: string;
+    topic?: string;
+  };
+}
+
+export interface Media {
+  _id: string;
+  title: string;
+  description?: string;
+  type: 'video' | 'image' | 'document';
+  url: string;
+  thumbnailUrl?: string;
+  mimeType?: string;
+  fileSize?: number;
+  uploadedBy: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface QuizQuestion {

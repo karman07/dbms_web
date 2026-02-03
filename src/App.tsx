@@ -10,6 +10,7 @@ import DocsPage from './pages/DocsPage';
 import SettingsPage from './pages/SettingsPage';
 import AssignmentsActivitiesPage from './pages/AssignmentsActivitiesPage';
 import QuizPage from './pages/QuizPage';
+import MediaPage from './pages/MediaPage';
 
 const AppContent: React.FC = () => {
   const { user, isLoading } = useAuth();
@@ -38,6 +39,7 @@ const AppContent: React.FC = () => {
         <Route path="course" element={<CoursePage />} />
         <Route path="assignments-activities" element={<AssignmentsActivitiesPage />} />
         <Route path="quiz" element={<QuizPage />} />
+        <Route path="media" element={<MediaPage />} />
         <Route path="docs" element={<DocsPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>

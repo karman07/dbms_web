@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import Modal from '@/components/ui/modal';
 import QuizBuilder from './QuizBuilder';
-import { Brain, Unlink, Edit, Trash2, Plus } from 'lucide-react';
+import { Brain, Edit, Trash2, Plus } from 'lucide-react';
 
 interface QuizManagerProps {
   lessonOptions?: Array<{ value: string; label: string }>;
@@ -22,7 +22,7 @@ const QuizManager = ({ lessonOptions = [] }: QuizManagerProps) => {
     linkedLessonId: '',
   });
   const [questions, setQuestions] = useState<any[]>([]);
-
+  console.log(lessonOptions);
   useEffect(() => {
     loadQuizzes();
   }, []);
@@ -81,24 +81,24 @@ const QuizManager = ({ lessonOptions = [] }: QuizManagerProps) => {
     setIsModalOpen(true);
   };
 
-  const handleLinkLesson = async (quizId: string, lessonId: string) => {
-    try {
-      await quizAPI.linkQuizToLesson(quizId, lessonId);
-      await loadQuizzes();
-    } catch (error) {
-      console.error('Failed to link lesson:', error);
-    }
-  };
+  // const handleLinkLesson = async (quizId: string, lessonId: string) => {
+  //   try {
+  //     await quizAPI.linkQuizToLesson(quizId, lessonId);
+  //     await loadQuizzes();
+  //   } catch (error) {
+  //     console.error('Failed to link lesson:', error);
+  //   }
+  // };
 
-  const handleUnlinkLesson = async (quizId: string) => {
-    if (!confirm('Are you sure you want to unlink this quiz from the lesson?')) return;
-    try {
-      await quizAPI.unlinkQuizFromLesson(quizId);
-      await loadQuizzes();
-    } catch (error) {
-      console.error('Failed to unlink lesson:', error);
-    }
-  };
+  // const handleUnlinkLesson = async (quizId: string) => {
+  //   if (!confirm('Are you sure you want to unlink this quiz from the lesson?')) return;
+  //   try {
+  //     await quizAPI.unlinkQuizFromLesson(quizId);
+  //     await loadQuizzes();
+  //   } catch (error) {
+  //     console.error('Failed to unlink lesson:', error);
+  //   }
+  // };
 
   const resetForm = () => {
     setFormData({ title: '', linkedLessonId: '' });
@@ -140,32 +140,30 @@ const QuizManager = ({ lessonOptions = [] }: QuizManagerProps) => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {quizzes.map((quiz) => (
-            <Card key={quiz._id} className="p-5 bg-white rounded-lg shadow-sm hover:shadow-md transition-shadow ring-1 ring-blue-50 border border-gray-100">
+            <Card key={quiz._id} className="p-6 hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-white to-blue-50/30 shadow-lg">
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
-                  <div className="p-3 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg">
-                    <Brain className="h-5 w-5 text-blue-600" />
+                  <div className="p-3 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl shadow-md">
+                    <Brain className="h-5 w-5 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-lg text-gray-900 mb-1">{quiz.title}</h3>
-                    <p className="text-sm text-gray-600 line-clamp-2">{quiz.description}</p>
+                    <h3 className="font-bold text-lg text-gray-900 mb-2">{quiz.title}</h3>
+                    <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">{quiz.description}</p>
                   </div>
                 </div>
                 
                 <div className="flex flex-wrap gap-2">
-                  <span className="text-xs px-2 py-1 bg-gradient-to-r from-blue-100 to-indigo-100 text-white rounded-full font-medium">
+                  <span className="text-sm px-3 py-1 bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 rounded-full font-semibold">
                     {quiz.questions?.length || 0} Questions
                   </span>
                 </div>
                 
-            
-                
-                <div className="flex flex-wrap gap-2 pt-2 border-t">
+                <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-100">
                   <Button 
                     size="sm" 
                     variant="outline" 
                     onClick={() => handleEdit(quiz)}
-                    className="flex-1 min-w-[80px] border-blue-200 text-blue-600 hover:bg-blue-50"
+                    className="flex-1 min-w-[80px] border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300"
                   >
                     <Edit className="h-3 w-3 mr-1" />
                     Edit
@@ -174,15 +172,15 @@ const QuizManager = ({ lessonOptions = [] }: QuizManagerProps) => {
                     size="sm" 
                     variant="outline" 
                     onClick={() => handleDelete(quiz._id)}
-                    className="flex-1 min-w-[80px] border-blue-200 text-blue-600 hover:bg-blue-50"
+                    className="flex-1 min-w-[80px] border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
                   >
                     <Trash2 className="h-3 w-3 mr-1" />
                     Delete
                   </Button>
-                  {lessonOptions.length > 0 && (
-                    <div className="w-full flex flex-col gap-2 bg-gray-50 p-2 rounded-md">
+                  {/* {lessonOptions.length > 0 && (
+                    <div className="w-full flex flex-col gap-2">
                       <select
-                        className="w-full text-sm px-3 py-2 border rounded-md hover:border-blue-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 bg-white"
+                        className="w-full text-sm px-3 py-2 border border-gray-200 rounded-lg hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white transition-all duration-200"
                         onChange={(e) => {
                           const val = e.target.value;
                           if (val) {
@@ -206,14 +204,14 @@ const QuizManager = ({ lessonOptions = [] }: QuizManagerProps) => {
                           size="sm" 
                           variant="outline" 
                           onClick={() => handleUnlinkLesson(quiz._id)}
-                          className="w-full text-orange-700 bg-orange-50 hover:bg-orange-100"
+                          className="w-full border-orange-200 text-orange-600 hover:bg-orange-50 hover:border-orange-300"
                         >
                           <Unlink className="h-3 w-3 mr-1" />
                           Unlink from Lesson
                         </Button>
                       )}
                     </div>
-                  )}
+                  )} */}
                 </div>
               </div>
             </Card>
@@ -240,24 +238,6 @@ const QuizManager = ({ lessonOptions = [] }: QuizManagerProps) => {
                 required
               />
             </div>
-
-            {lessonOptions.length > 0 && (
-              <div>
-                <label className="block text-sm font-medium mb-1">Linked Lesson (Optional)</label>
-                <select
-                  className="w-full px-3 py-2 border rounded-md"
-                  value={formData.linkedLessonId}
-                  onChange={(e) => setFormData({ ...(formData as any), linkedLessonId: e.target.value })}
-                >
-                  <option value="">Select Lesson</option>
-                  {lessonOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
           </div>
 
           {/* Quiz Questions */}

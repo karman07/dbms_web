@@ -197,139 +197,180 @@ const DocsPage = () => {
   }
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Documentation Management</h1>
-          <p className="text-gray-500 mt-1">
-            Manage documentation topics and subtopics
-          </p>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-gray-50">
+      <div className="p-8 max-w-7xl mx-auto">
+        {/* Enhanced Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="p-3 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-lg">
+              <BookOpen className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                Documentation Management
+              </h1>
+              <p className="text-gray-600 mt-2 text-lg">
+                Create, organize and manage your documentation topics and content
+              </p>
+            </div>
+          </div>
         </div>
-        <Button onClick={() => setIsTopicModalOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white">
-          <Plus className="h-4 w-4 mr-2" />
-          Create Topic
-        </Button>
-      </div>
 
-      {/* Topics List */}
-      {topics.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-          <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No topics yet</h3>
-          <p className="text-gray-500 mb-6">Get started by creating your first documentation topic</p>
-          <Button onClick={() => setIsTopicModalOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white">
-            <Plus className="h-4 w-4 mr-2" />
-            Create First Topic
-          </Button>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {topics.map((topic) => {
-            const isExpanded = expandedTopics.has(topic._id);
-            
-            return (
-              <div
-                key={topic._id}
-                className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm hover:shadow-lg transition-shadow border-l-4 border-blue-500"
+        {/* Action Bar */}
+        <div className="mb-8">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <FileText className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-gray-900">Documentation Topics</h3>
+                  <p className="text-sm text-gray-600">{topics.length} topic{topics.length !== 1 ? 's' : ''} available</p>
+                </div>
+              </div>
+              <Button 
+                onClick={() => setIsTopicModalOpen(true)} 
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"
               >
-                {/* Topic Header */}
-                <div className="p-5">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                      <button
-                        onClick={() => toggleTopicExpanded(topic._id)}
-                        className="mt-1 text-indigo-500 hover:text-indigo-700 flex-shrink-0"
-                      >
-                        {isExpanded ? (
-                          <ChevronDown className="h-5 w-5" />
-                        ) : (
-                          <ChevronRight className="h-5 w-5" />
-                        )}
-                      </button>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-lg font-semibold text-gray-900">
-                            {topic.topic || topic.name || 'Untitled Topic'}
-                          </h3>
-                          <Badge variant="secondary" className="bg-indigo-100 text-indigo-700">{topic.course || 'dbms'}</Badge>
-                          <Badge variant="outline" className="border-indigo-200 text-indigo-700">
-                            {topic.subtopics?.length || 0} subtopic{(topic.subtopics?.length || 0) !== 1 ? 's' : ''}
-                          </Badge>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Topic
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {/* Topics List */}
+        {topics.length === 0 ? (
+          <div className="text-center py-16 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20">
+            <div className="p-4 bg-blue-100 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
+              <BookOpen className="h-10 w-10 text-blue-600" />
+            </div>
+            <h3 className="text-xl font-bold text-gray-900 mb-3">No documentation topics yet</h3>
+            <p className="text-gray-600 mb-8 max-w-md mx-auto">
+              Get started by creating your first documentation topic. You can add subtopics and organize your content effectively.
+            </p>
+            <Button 
+              onClick={() => setIsTopicModalOpen(true)} 
+              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Create First Topic
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {topics.map((topic) => {
+              const isExpanded = expandedTopics.has(topic._id);
+              
+              return (
+                <div
+                  key={topic._id}
+                  className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden hover:shadow-2xl transition-all duration-300"
+                >
+                  {/* Topic Header */}
+                  <div className="p-6 bg-gradient-to-r from-blue-50 to-slate-50 border-b border-blue-100">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start gap-4 flex-1 min-w-0">
+                        <button
+                          onClick={() => toggleTopicExpanded(topic._id)}
+                          className="mt-1 p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded-lg transition-all duration-200 flex-shrink-0"
+                        >
+                          {isExpanded ? (
+                            <ChevronDown className="h-5 w-5" />
+                          ) : (
+                            <ChevronRight className="h-5 w-5" />
+                          )}
+                        </button>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-4 mb-3">
+                            <h3 className="text-xl font-bold text-gray-900">
+                              {topic.topic || topic.name || 'Untitled Topic'}
+                            </h3>
+                            <Badge className="bg-gradient-to-r from-blue-100 to-slate-100 text-blue-800 border-blue-200">
+                              {topic.course || 'dbms'}
+                            </Badge>
+                            <Badge variant="outline" className="border-blue-200 text-blue-700">
+                              {topic.subtopics?.length || 0} subtopic{(topic.subtopics?.length || 0) !== 1 ? 's' : ''}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            Created {topic.createdAt ? new Date(topic.createdAt).toLocaleDateString() : 'Unknown date'}
+                          </p>
                         </div>
-                        <p className="text-sm text-gray-500">
-                          Created {topic.createdAt ? new Date(topic.createdAt).toLocaleDateString() : 'Unknown date'}
-                        </p>
+                      </div>
+                      <div className="flex items-center gap-3 flex-shrink-0 ml-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openAddSubtopicModal(topic)}
+                          className="border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Subtopic
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setDeleteConfirm({ type: 'topic', topicId: topic._id })}
+                          className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0 ml-4">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openAddSubtopicModal(topic)}
-                        className="border-indigo-200 text-indigo-700 hover:bg-indigo-50"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Subtopic
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setDeleteConfirm({ type: 'topic', topicId: topic._id })}
-                        className="border-gray-200 text-gray-700 hover:bg-gray-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
                   </div>
-                </div>
 
-                {/* Subtopics List */}
-                {isExpanded && topic.subtopics && topic.subtopics.length > 0 && (
-                  <div className="border-t border-gray-200 bg-slate-50">
-                    <div className="p-5">
-                      <h4 className="text-sm font-semibold text-gray-700 mb-3">Subtopics:</h4>
-                      <div className="space-y-2">
+                  {/* Subtopics List */}
+                  {isExpanded && topic.subtopics && topic.subtopics.length > 0 && (
+                    <div className="p-6">
+                      <h4 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                        <FileText className="h-5 w-5 text-blue-600" />
+                        Subtopics
+                      </h4>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         {topic.subtopics.map((subtopic, index) => (
                           <div
                             key={index}
-                            className="flex items-center justify-between p-3 bg-white rounded-lg border border-indigo-100 hover:border-indigo-300 transition-colors hover:shadow-sm"
+                            className="p-4 bg-gradient-to-br from-white to-blue-50/30 rounded-xl border border-blue-100 hover:border-blue-200 hover:shadow-md transition-all duration-200"
                           >
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
-                              <div className="p-2 bg-indigo-50 rounded-lg">
-                                <FileText className="h-4 w-4 text-indigo-600 flex-shrink-0" />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="font-semibold text-gray-900">{subtopic.name}</p>
-                                <p className="text-xs text-gray-500">{subtopic.filename}</p>
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                                <div className="p-2 bg-blue-100 rounded-lg">
+                                  <FileText className="h-4 w-4 text-blue-600" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <h5 className="font-semibold text-gray-900 truncate">{subtopic.name}</h5>
+                                  <p className="text-xs text-gray-500 mt-1">{subtopic.filename}</p>
+                                </div>
                               </div>
                             </div>
-                            <div className="flex items-center gap-2 flex-shrink-0">
+                            <div className="flex items-center gap-2">
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => openContentViewer(topic, index)}
-                                className="border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                                className="flex-1 border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300"
                               >
-                                <Eye className="h-4 w-4 mr-2" />
+                                <Eye className="h-3 w-3 mr-1" />
                                 View
                               </Button>
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => openEditModal(topic._id, subtopic.name)}
-                                className="border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                                className="flex-1 border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300"
                               >
-                                <Edit className="h-4 w-4 mr-2" />
+                                <Edit className="h-3 w-3 mr-1" />
                                 Edit
                               </Button>
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleDownloadSubtopic(topic._id, subtopic.name, subtopic.filename)}
-                                className="border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                                className="border-green-200 text-green-700 hover:bg-green-50 hover:border-green-300"
                               >
-                                <Download className="h-4 w-4" />
+                                <Download className="h-3 w-3" />
                               </Button>
                               <Button
                                 variant="outline"
@@ -341,30 +382,32 @@ const DocsPage = () => {
                                     subtopicName: subtopic.name,
                                   })
                                 }
-                                className="border-gray-200 text-gray-700 hover:bg-gray-50"
+                                className="border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <Trash2 className="h-3 w-3" />
                               </Button>
                             </div>
                           </div>
-                        ))}
+                        ))} 
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {isExpanded && (!topic.subtopics || topic.subtopics.length === 0) && (
-                  <div className="border-t border-gray-200 bg-gray-50 p-5">
-                    <p className="text-sm text-gray-500 text-center">
-                      No subtopics yet. Click "Add Subtopic" to get started.
-                    </p>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      )}
+                  {isExpanded && (!topic.subtopics || topic.subtopics.length === 0) && (
+                    <div className="p-6 text-center">
+                      <div className="p-3 bg-blue-100 rounded-full w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+                        <Plus className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <p className="text-gray-600 mb-4">
+                        No subtopics yet. Click "Add Subtopic" to get started.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
       {/* Create Topic Modal */}
       <TopicModal
@@ -418,43 +461,48 @@ const DocsPage = () => {
         />
       )}
 
-      {/* Delete Confirmation Modal */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-rose-100 flex items-center justify-center flex-shrink-0">
-                <AlertTriangle className="h-6 w-6 text-rose-600" />
+        {/* Delete Confirmation Modal */}
+        {deleteConfirm && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4">
+              <div className="flex items-center gap-4 mb-6">
+                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center flex-shrink-0">
+                  <AlertTriangle className="h-6 w-6 text-red-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">Confirm Deletion</h3>
+                  <p className="text-gray-600 mt-1">
+                    {deleteConfirm.type === 'topic'
+                      ? 'This will delete the topic and all its subtopics permanently.'
+                      : 'This will delete the subtopic permanently.'}
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900">Confirm Deletion</h3>
-                <p className="text-sm text-gray-500 mt-1">
-                  {deleteConfirm.type === 'topic'
-                    ? 'This will delete the topic and all its subtopics permanently.'
-                    : 'This will delete the subtopic permanently.'}
-                </p>
+              <div className="flex items-center justify-end gap-3">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setDeleteConfirm(null)}
+                  className="border-gray-200 text-gray-600 hover:bg-gray-50"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    if (deleteConfirm.type === 'topic') {
+                      handleDeleteTopic(deleteConfirm.topicId);
+                    } else if (deleteConfirm.subtopicName) {
+                      handleDeleteSubtopic(deleteConfirm.topicId, deleteConfirm.subtopicName);
+                    }
+                  }}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  Delete
+                </Button>
               </div>
-            </div>
-            <div className="flex items-center justify-end gap-3">
-              <Button variant="outline" onClick={() => setDeleteConfirm(null)} className="border-gray-200 text-gray-700 hover:bg-gray-50">
-                Cancel
-              </Button>
-              <Button
-                onClick={() => {
-                  if (deleteConfirm.type === 'topic') {
-                    handleDeleteTopic(deleteConfirm.topicId);
-                  } else if (deleteConfirm.subtopicName) {
-                    handleDeleteSubtopic(deleteConfirm.topicId, deleteConfirm.subtopicName);
-                  }
-                }}
-                className="bg-rose-600 hover:bg-rose-700 text-white"
-              >
-                Delete
-              </Button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
