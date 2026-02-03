@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import quizService, { Quiz } from "@/services/quiz.service";
 import courseService from "@/services/course.service";
 import { useNotification } from "@/contexts/NotificationContext";
-import CourseMarkdownRenderer from "@/components/CourseMarkdownRenderer";
+
 
 const QuizzesPage = () => {
   const navigate = useNavigate();

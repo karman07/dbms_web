@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { motion } from "framer-motion";
-import { ArrowLeft, BookMarked, Download, Eye, Clock, Loader2, Search, Play, FileText, Video } from "lucide-react";
+import { ArrowLeft, BookMarked, Download, Eye, Clock, Loader2, Search, FileText, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
