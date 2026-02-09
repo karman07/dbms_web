@@ -7,7 +7,7 @@ import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
+  constructor(@InjectModel(User.name) private userModel: Model<User>) { }
 
   async createAdmin(createUserDto: CreateUserDto): Promise<User> {
     const existingUser = await this.userModel.findOne({ email: createUserDto.email });
@@ -73,7 +73,7 @@ export class UsersService {
       { ...updateUserDto, updatedAt: new Date() },
       { new: true }
     ).select('-password').exec();
-    
+
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -86,7 +86,7 @@ export class UsersService {
       { ...adminUpdateUserDto, updatedAt: new Date() },
       { new: true }
     ).select('-password').exec();
-    
+
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -106,7 +106,7 @@ export class UsersService {
       { isEmailVerified: true },
       { new: true }
     ).select('-password').exec();
-    
+
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -119,7 +119,7 @@ export class UsersService {
       { profilePicture: `/uploads/profile-pictures/${filename}`, updatedAt: new Date() },
       { new: true }
     ).select('-password').exec();
-    
+
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -128,6 +128,42 @@ export class UsersService {
 
   async updateLastLogin(id: string): Promise<void> {
     await this.userModel.findByIdAndUpdate(id, { lastLoginAt: new Date() });
+  }
+
+  async isProfileComplete(id: string): Promise<{ isComplete: boolean; missingFields: string[] }> {
+    const user = await this.userModel.findById(id).exec();
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const missingFields: string[] = [];
+
+    // Check basic required fields
+    if (!user.phoneNumber) missingFields.push('phoneNumber');
+    if (!user.dateOfBirth) missingFields.push('dateOfBirth');
+    if (!user.gender) missingFields.push('gender');
+    if (!user.city) missingFields.push('city');
+    if (!user.state) missingFields.push('state');
+    if (!user.country) missingFields.push('country');
+    if (!user.bio) missingFields.push('bio');
+    if (!user.visitorType) missingFields.push('visitorType');
+
+    // Check visitor type specific fields
+    if (user.visitorType === 'student') {
+      if (!user.university) missingFields.push('university');
+      if (!user.degree) missingFields.push('degree');
+      if (!user.major) missingFields.push('major');
+      if (!user.graduationYear) missingFields.push('graduationYear');
+    } else if (user.visitorType === 'teacher') {
+      if (!user.department) missingFields.push('department');
+      if (!user.designation) missingFields.push('designation');
+      if (!user.teachingExperience) missingFields.push('teachingExperience');
+    }
+
+    return {
+      isComplete: missingFields.length === 0,
+      missingFields,
+    };
   }
 
 }

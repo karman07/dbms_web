@@ -10,7 +10,7 @@ import { multerConfig } from '../config/multer.config';
 @Controller('users')
 @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly usersService: UsersService) { }
 
   @Post('admin')
   createAdmin(@Body() createUserDto: CreateUserDto) {
@@ -75,5 +75,11 @@ export class UsersController {
   @Roles([UserRole.ADMIN])
   verifyEmail(@Param('id') id: string) {
     return this.usersService.verifyEmail(id);
+  }
+
+  @Get('profile/is-complete')
+  @UseGuards(JwtAuthGuard)
+  checkProfileCompletion(@Request() req) {
+    return this.usersService.isProfileComplete(req.user.id);
   }
 }

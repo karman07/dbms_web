@@ -1,5 +1,5 @@
 import { IsEmail, IsString, IsOptional, IsEnum, IsNumber, IsBoolean, IsDateString, MinLength, MaxLength, IsPhoneNumber } from 'class-validator';
-import { Gender, UserRole } from '../schemas/user.schema';
+import { Gender, UserRole, VisitorType } from '../schemas/user.schema';
 
 export class CreateUserDto {
   @IsEmail()
@@ -83,6 +83,44 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   website?: string;
+
+  @IsOptional()
+  @IsEnum(VisitorType)
+  visitorType?: VisitorType;
+
+  // Student fields
+  @IsOptional()
+  @IsString()
+  university?: string;
+
+  @IsOptional()
+  @IsString()
+  degree?: string;
+
+  @IsOptional()
+  @IsString()
+  major?: string;
+
+  @IsOptional()
+  @IsNumber()
+  graduationYear?: number;
+
+  // Teacher fields
+  @IsOptional()
+  @IsString()
+  department?: string;
+
+  @IsOptional()
+  @IsString()
+  designation?: string;
+
+  @IsOptional()
+  @IsNumber()
+  teachingExperience?: number;
+
+  @IsOptional()
+  @IsString({ each: true })
+  specialization?: string[];
 }
 
 export class UpdateUserDto {
@@ -149,6 +187,44 @@ export class UpdateUserDto {
   @IsOptional()
   @IsString()
   website?: string;
+
+  @IsOptional()
+  @IsEnum(VisitorType)
+  visitorType?: VisitorType;
+
+  // Student fields
+  @IsOptional()
+  @IsString()
+  university?: string;
+
+  @IsOptional()
+  @IsString()
+  degree?: string;
+
+  @IsOptional()
+  @IsString()
+  major?: string;
+
+  @IsOptional()
+  @IsNumber()
+  graduationYear?: number;
+
+  // Teacher fields
+  @IsOptional()
+  @IsString()
+  department?: string;
+
+  @IsOptional()
+  @IsString()
+  designation?: string;
+
+  @IsOptional()
+  @IsNumber()
+  teachingExperience?: number;
+
+  @IsOptional()
+  @IsString({ each: true })
+  specialization?: string[];
 }
 
 export class AdminUpdateUserDto extends UpdateUserDto {

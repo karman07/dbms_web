@@ -12,6 +12,11 @@ export enum Gender {
   OTHER = 'other',
 }
 
+export enum VisitorType {
+  STUDENT = 'student',
+  TEACHER = 'teacher',
+}
+
 @Schema({ timestamps: true })
 export class User extends Document {
   @Prop({ required: true, unique: true })
@@ -26,7 +31,7 @@ export class User extends Document {
   @Prop()
   password?: string;
 
-  @Prop({ unique: true, sparse: true })
+  @Prop()
   phoneNumber?: string;
 
   @Prop()
@@ -86,6 +91,35 @@ export class User extends Document {
   @Prop()
   website?: string;
 
+  @Prop({ enum: VisitorType })
+  visitorType?: VisitorType;
+
+  // Student-specific fields
+  @Prop()
+  university?: string;
+
+  @Prop()
+  degree?: string;
+
+  @Prop()
+  major?: string;
+
+  @Prop()
+  graduationYear?: number;
+
+  // Teacher-specific fields
+  @Prop()
+  department?: string;
+
+  @Prop()
+  designation?: string;
+
+  @Prop()
+  teachingExperience?: number;
+
+  @Prop([String])
+  specialization?: string[];
+
   @Prop({ default: true })
   isActive: boolean;
 
@@ -103,3 +137,4 @@ export const UserSchema = SchemaFactory.createForClass(User);
 
 UserSchema.index({ email: 1 });
 UserSchema.index({ firebaseUid: 1 });
+UserSchema.index({ visitorType: 1 });
