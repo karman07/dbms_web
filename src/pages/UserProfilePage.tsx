@@ -6,25 +6,21 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useNotification } from '@/contexts/NotificationContext';
-import {COLORS, GRADIENTS } from '@/constants';
-import { 
-  Camera, 
-  User as UserIcon, 
-  Phone, 
-  Briefcase, 
-  MapPin, 
+import { COLORS, GRADIENTS } from '@/constants';
+import {
+  Camera,
+  User as UserIcon,
+  Phone,
+  MapPin,
   Calendar,
-  Github,
-  Linkedin,
-  Globe,
   XCircle,
   Heart,
-  Building2,
   CakeIcon,
   Save,
   Edit3,
   X,
-  ArrowLeft
+  ArrowLeft,
+  GraduationCap
 } from 'lucide-react';
 
 export default function UserProfilePage() {
@@ -34,33 +30,33 @@ export default function UserProfilePage() {
   const [uploading, setUploading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const notification = useNotification();
-  
+
   // Professional Profile Picture Component
   const ProfilePicture: React.FC<{ showUpload?: boolean; size?: 'sm' | 'md' | 'lg' }> = ({ showUpload = false, size = 'lg' }) => {
     const [imageLoading, setImageLoading] = useState(true);
     const [imageError, setImageError] = useState(false);
-    
+
     const sizeClasses = {
       sm: 'w-20 h-20',
       md: 'w-32 h-32',
       lg: 'w-32 h-32 lg:w-40 lg:h-40'
     };
-    
+
     const iconSizes = {
       sm: 'w-8 h-8',
-      md: 'w-12 h-12', 
+      md: 'w-12 h-12',
       lg: 'w-16 h-16'
     };
 
     // Get the base URL with fallback
     const getImageUrl = (imagePath: string) => {
       if (!imagePath) return '';
-      
+
       // If it's already a full URL, use it as is
       if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
         return imagePath;
       }
-      
+
       // If it's a relative path, construct the full URL
       const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
       const fullUrl = `${baseUrl}${imagePath}`;
@@ -78,7 +74,7 @@ export default function UserProfilePage() {
 
     return (
       <div className={`relative ${showUpload ? 'group' : ''} flex-shrink-0`}>
-        <div 
+        <div
           className={`${sizeClasses[size]} rounded-full p-1 shadow-lg`}
           style={{ background: GRADIENTS.primary.background }}
         >
@@ -90,9 +86,9 @@ export default function UserProfilePage() {
                     <div className="animate-spin rounded-full h-8 w-8 border-2 border-gray-300 border-t-blue-600"></div>
                   </div>
                 )}
-                <img 
-                  src={getImageUrl(user.profilePicture)} 
-                  alt="Profile" 
+                <img
+                  src={getImageUrl(user.profilePicture)}
+                  alt="Profile"
                   className="w-full h-full object-cover"
                   style={{ display: imageLoading ? 'none' : 'block' }}
                   onLoad={() => {
@@ -112,7 +108,7 @@ export default function UserProfilePage() {
                 />
               </>
             ) : (
-              <div 
+              <div
                 className={`rounded-full p-3 flex items-center justify-center ${GRADIENTS.gradientPrimary}`}
               >
                 <UserIcon className={`${iconSizes[size]} text-white`} />
@@ -120,7 +116,7 @@ export default function UserProfilePage() {
             )}
           </div>
         </div>
-        
+
         {/* Upload Overlay - Only show in edit mode */}
         {showUpload && (
           <label className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 cursor-pointer">
@@ -142,7 +138,7 @@ export default function UserProfilePage() {
       </div>
     );
   };
-  
+
   const [formData, setFormData] = useState<UpdateProfileDto>({
     firstName: '',
     lastName: '',
@@ -159,6 +155,17 @@ export default function UserProfilePage() {
     linkedinProfile: '',
     githubProfile: '',
     website: '',
+    visitorType: undefined,
+    // Student fields
+    university: '',
+    degree: '',
+    major: '',
+    graduationYear: undefined,
+    // Teacher fields
+    department: '',
+    designation: '',
+    teachingExperience: undefined,
+    specialization: [],
   });
 
   useEffect(() => {
@@ -172,7 +179,7 @@ export default function UserProfilePage() {
       console.log('Profile data received:', userData);
       console.log('Profile picture path:', userData.profilePicture);
       setUser(userData);
-      
+
       // Populate form with existing data
       setFormData({
         firstName: userData.firstName || '',
@@ -190,6 +197,15 @@ export default function UserProfilePage() {
         linkedinProfile: userData.linkedinProfile || '',
         githubProfile: userData.githubProfile || '',
         website: userData.website || '',
+        visitorType: userData.visitorType,
+        university: userData.university || '',
+        degree: userData.degree || '',
+        major: userData.major || '',
+        graduationYear: userData.graduationYear,
+        department: userData.department || '',
+        designation: userData.designation || '',
+        teachingExperience: userData.teachingExperience,
+        specialization: userData.specialization || [],
       });
     } catch (err: any) {
       console.error('Failed to load profile:', err);
@@ -211,7 +227,7 @@ export default function UserProfilePage() {
     e.preventDefault();
     try {
       setSaving(true);
-      
+
       const updatedUser = await userService.updateProfile(formData);
       setUser(updatedUser);
       setIsEditing(false);
@@ -246,11 +262,11 @@ export default function UserProfilePage() {
 
     try {
       setUploading(true);
-      
+
       const updatedUser = await userService.uploadProfilePicture(file);
       setUser(updatedUser);
       notification.success('Profile picture updated!', 'Your new photo has been uploaded successfully');
-      
+
       // Clear the input for future uploads
       e.target.value = '';
     } catch (err: any) {
@@ -344,7 +360,7 @@ export default function UserProfilePage() {
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-8">
-          
+
           {/* Section 1: Personal Info */}
           <section id="personal-info" className="scroll-mt-20">
             <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-700">
@@ -362,7 +378,7 @@ export default function UserProfilePage() {
                   </div>
                 </div>
               </div>
-              
+
               {/* Content */}
               <div className="p-8">
                 {isEditing ? (
@@ -392,7 +408,7 @@ export default function UserProfilePage() {
                           className="h-12 text-lg"
                         />
                       </div>
-                      
+
                       <div className="space-y-2">
                         <Label htmlFor="lastName" className="text-sm font-medium">Last Name *</Label>
                         <Input
@@ -443,7 +459,7 @@ export default function UserProfilePage() {
                           className="h-12 text-lg"
                         />
                       </div>
-                      
+
                       <div className="space-y-2">
                         <Label htmlFor="gender" className="text-sm font-medium">Gender</Label>
                         <select
@@ -452,8 +468,8 @@ export default function UserProfilePage() {
                           value={formData.gender || ''}
                           onChange={handleInputChange}
                           className="w-full h-12 px-3 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-lg"
-                          style={{ 
-                            borderColor: formData.gender ? COLORS.primary : undefined 
+                          style={{
+                            borderColor: formData.gender ? COLORS.primary : undefined
                           }}
                         >
                           <option value="">Select</option>
@@ -476,14 +492,13 @@ export default function UserProfilePage() {
                           {user.firstName} {user.lastName}
                         </h3>
                         <p className="text-xl text-gray-600 dark:text-gray-400 mb-4">{user.email}</p>
-                        
+
                         {/* Status Badges */}
                         <div className="flex flex-wrap justify-center lg:justify-start gap-3">
-                          <span className={`px-4 py-2 rounded-full text-sm font-medium ${
-                            user.role === 'admin' 
-                              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' 
-                              : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
-                          }`}>
+                          <span className={`px-4 py-2 rounded-full text-sm font-medium ${user.role === 'admin'
+                            ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
+                            : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+                            }`}>
                             {user.role === 'admin' ? ' Administrator' : ' User'}
                           </span>
                           {user.isEmailVerified && (
@@ -503,7 +518,7 @@ export default function UserProfilePage() {
                           {user.phoneNumber || 'Not provided'}
                         </div>
                       </div>
-                      
+
                       <div className="space-y-2">
                         <div className="text-sm font-medium text-gray-600 dark:text-gray-400">Date of Birth</div>
                         <div className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
@@ -533,174 +548,204 @@ export default function UserProfilePage() {
             </div>
           </section>
 
-          {/* Section 2: Professional */}
-          <section id="professional" className="scroll-mt-20">
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-700">
-              {/* Section Header */}
-              <div className={`px-8 py-6 ${GRADIENTS.gradientPrimary}`}>
-                <div className="flex items-center gap-3">
-                  <div className="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
-                    <Briefcase className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold text-white">Professional</h2>
-                    <p className="text-white/80 text-sm">Your career and professional information</p>
+          {/* Section 1.5: Role Information */}
+          {user.visitorType && (
+            <section id="role-info" className="scroll-mt-20">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl overflow-hidden border border-gray-200 dark:border-gray-700">
+                {/* Section Header */}
+                <div className={`px-8 py-6 ${GRADIENTS.gradientPrimary}`}>
+                  <div className="flex items-center gap-3">
+                    <div className="bg-white/20 backdrop-blur-sm p-2 rounded-lg">
+                      <GraduationCap className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-white">
+                        {user.visitorType === 'student' ? 'Academic Details' : 'Teaching Profile'}
+                      </h2>
+                      <p className="text-white/80 text-sm">
+                        {user.visitorType === 'student' ? 'Your educational background' : 'Your academic position and experience'}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              </div>
-              
-              {/* Content */}
-              <div className="p-8">
-                {isEditing ? (
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="space-y-2">
-                        <Label htmlFor="currentPosition" className="text-sm font-medium">Current Position</Label>
-                        <Input
-                          id="currentPosition"
-                          name="currentPosition"
-                          value={formData.currentPosition}
-                          onChange={handleInputChange}
-                          placeholder="e.g. Software Engineer"
-                          className="h-12 text-lg"
-                        />
-                      </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="company" className="text-sm font-medium">Company</Label>
-                        <Input
-                          id="company"
-                          name="company"
-                          value={formData.company}
-                          onChange={handleInputChange}
-                          placeholder="e.g. Tech Corp"
-                          className="h-12 text-lg"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="linkedinProfile" className="text-sm font-medium">LinkedIn Profile</Label>
-                        <Input
-                          id="linkedinProfile"
-                          name="linkedinProfile"
-                          type="url"
-                          value={formData.linkedinProfile}
-                          onChange={handleInputChange}
-                          placeholder="https://linkedin.com/in/username"
-                          className="h-12 text-lg"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="githubProfile" className="text-sm font-medium">GitHub Profile</Label>
-                        <Input
-                          id="githubProfile"
-                          name="githubProfile"
-                          type="url"
-                          value={formData.githubProfile}
-                          onChange={handleInputChange}
-                          placeholder="https://github.com/username"
-                          className="h-12 text-lg"
-                        />
-                      </div>
-
-                      <div className="space-y-2 md:col-span-2">
-                        <Label htmlFor="website" className="text-sm font-medium">Personal Website</Label>
-                        <Input
-                          id="website"
-                          name="website"
-                          type="url"
-                          value={formData.website}
-                          onChange={handleInputChange}
-                          placeholder="https://yourwebsite.com"
-                          className="h-12 text-lg"
-                        />
-                      </div>
+                {/* Content */}
+                <div className="p-8">
+                  {isEditing ? (
+                    <div className="space-y-6">
+                      {user.visitorType === 'student' ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-2">
+                            <Label htmlFor="university" className="text-sm font-medium">University/College</Label>
+                            <Input
+                              id="university"
+                              name="university"
+                              value={formData.university}
+                              onChange={handleInputChange}
+                              placeholder="e.g. MIT"
+                              className="h-12 text-lg"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="degree" className="text-sm font-medium">Degree</Label>
+                            <Input
+                              id="degree"
+                              name="degree"
+                              value={formData.degree}
+                              onChange={handleInputChange}
+                              placeholder="e.g. B.Tech"
+                              className="h-12 text-lg"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="major" className="text-sm font-medium">Major</Label>
+                            <Input
+                              id="major"
+                              name="major"
+                              value={formData.major}
+                              onChange={handleInputChange}
+                              placeholder="e.g. Computer Science"
+                              className="h-12 text-lg"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="graduationYear" className="text-sm font-medium">Graduation Year</Label>
+                            <Input
+                              id="graduationYear"
+                              name="graduationYear"
+                              type="number"
+                              value={formData.graduationYear || ''}
+                              onChange={handleInputChange}
+                              placeholder="e.g. 2026"
+                              className="h-12 text-lg"
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="space-y-2">
+                            <Label htmlFor="department" className="text-sm font-medium">Department</Label>
+                            <Input
+                              id="department"
+                              name="department"
+                              value={formData.department}
+                              onChange={handleInputChange}
+                              placeholder="e.g. Computer Science"
+                              className="h-12 text-lg"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="designation" className="text-sm font-medium">Designation</Label>
+                            <Input
+                              id="designation"
+                              name="designation"
+                              value={formData.designation}
+                              onChange={handleInputChange}
+                              placeholder="e.g. Professor"
+                              className="h-12 text-lg"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="teachingExperience" className="text-sm font-medium">Experience (Years)</Label>
+                            <Input
+                              id="teachingExperience"
+                              name="teachingExperience"
+                              type="number"
+                              value={formData.teachingExperience || ''}
+                              onChange={handleInputChange}
+                              placeholder="e.g. 5"
+                              className="h-12 text-lg"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="specialization" className="text-sm font-medium">Specialization (comma separated)</Label>
+                            <Input
+                              id="specialization"
+                              name="specialization"
+                              value={formData.specialization?.join(', ') || ''}
+                              onChange={(e) => setFormData(prev => ({
+                                ...prev,
+                                specialization: e.target.value.split(',').map(s => s.trim())
+                              }))}
+                              placeholder="e.g. AI, ML, DBMS"
+                              className="h-12 text-lg"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ) : (
-                  <div>
-                    {user.currentPosition && (
-                      <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 mb-6">
-                        <Briefcase className="w-6 h-6" style={{ color: COLORS.primary }} />
-                        <span className="text-xl font-semibold">
-                          {user.currentPosition}
-                          {user.company && ` at ${user.company}`}
-                        </span>
-                      </div>
-                    )}
-
+                  ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      <div className="space-y-2">
-                        <div className="text-sm font-medium text-gray-600 dark:text-gray-400">Position</div>
-                        <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                          {user.currentPosition || 'Not specified'}
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="text-sm font-medium text-gray-600 dark:text-gray-400">Company</div>
-                        <div className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                          <Building2 className="w-4 h-4" style={{ color: COLORS.accent }} />
-                          {user.company || 'Not specified'}
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="text-sm font-medium text-gray-600 dark:text-gray-400">LinkedIn</div>
-                        <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                          {user.linkedinProfile ? (
-                            <a href={user.linkedinProfile.startsWith('http') ? user.linkedinProfile : `https://linkedin.com/in/${user.linkedinProfile}`} 
-                               target="_blank" rel="noopener noreferrer" 
-                               className="flex items-center gap-2 hover:underline"
-                               style={{ color: COLORS.primary }}>
-                              <Linkedin className="w-4 h-4" />
-                              View Profile
-                            </a>
-                          ) : (
-                            'Not provided'
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="text-sm font-medium text-gray-600 dark:text-gray-400">GitHub</div>
-                        <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                          {user.githubProfile ? (
-                            <a href={user.githubProfile.startsWith('http') ? user.githubProfile : `https://github.com/${user.githubProfile}`} 
-                               target="_blank" rel="noopener noreferrer" 
-                               className="flex items-center gap-2 hover:underline"
-                               style={{ color: COLORS.primary }}>
-                              <Github className="w-4 h-4" />
-                              View Profile
-                            </a>
-                          ) : (
-                            'Not provided'
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="text-sm font-medium text-gray-600 dark:text-gray-400">Website</div>
-                        <div className="text-lg font-semibold text-gray-900 dark:text-white">
-                          {user.website ? (
-                            <a href={user.website} target="_blank" rel="noopener noreferrer" 
-                               className="flex items-center gap-2 hover:underline"
-                               style={{ color: COLORS.primary }}>
-                              <Globe className="w-4 h-4" />
-                              Visit Site
-                            </a>
-                          ) : (
-                            'Not provided'
-                          )}
-                        </div>
-                      </div>
+                      {user.visitorType === 'student' ? (
+                        <>
+                          <div className="space-y-2">
+                            <div className="text-sm font-medium text-gray-600 dark:text-gray-400">University</div>
+                            <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                              {user.university || 'Not specified'}
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="text-sm font-medium text-gray-600 dark:text-gray-400">Degree</div>
+                            <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                              {user.degree || 'Not specified'}
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="text-sm font-medium text-gray-600 dark:text-gray-400">Major</div>
+                            <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                              {user.major || 'Not specified'}
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="text-sm font-medium text-gray-600 dark:text-gray-400">Graduation Year</div>
+                            <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                              {user.graduationYear || 'Not specified'}
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <div className="space-y-2">
+                            <div className="text-sm font-medium text-gray-600 dark:text-gray-400">Department</div>
+                            <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                              {user.department || 'Not specified'}
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="text-sm font-medium text-gray-600 dark:text-gray-400">Designation</div>
+                            <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                              {user.designation || 'Not specified'}
+                            </div>
+                          </div>
+                          <div className="space-y-2">
+                            <div className="text-sm font-medium text-gray-600 dark:text-gray-400">Experience</div>
+                            <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                              {user.teachingExperience ? `${user.teachingExperience} years` : 'Not specified'}
+                            </div>
+                          </div>
+                          <div className="space-y-2 sm:col-span-2">
+                            <div className="text-sm font-medium text-gray-600 dark:text-gray-400">Specialization</div>
+                            <div className="flex flex-wrap gap-2 mt-1">
+                              {user.specialization && user.specialization.map((spec, i) => (
+                                <span key={i} className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full text-sm">
+                                  {spec}
+                                </span>
+                              ))}
+                              {(!user.specialization || user.specialization.length === 0) && (
+                                <span className="text-lg font-semibold text-gray-900 dark:text-white">Not specified</span>
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
+          )}
+
+
 
           {/* Section 3: Location */}
           <section id="location" className="scroll-mt-20">
@@ -717,7 +762,7 @@ export default function UserProfilePage() {
                   </div>
                 </div>
               </div>
-              
+
               {/* Content */}
               <div className="p-8">
                 {isEditing ? (
@@ -804,7 +849,7 @@ export default function UserProfilePage() {
                   </div>
                 </div>
               </div>
-              
+
               {/* Content */}
               <div className="p-8">
                 {isEditing ? (

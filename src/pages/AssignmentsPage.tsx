@@ -26,10 +26,10 @@ const AssignmentsPage = () => {
     try {
       setLoading(true);
       const assignmentsData = await assignmentsService.getAllAssignments();
-      
+
       // Get unique lesson IDs from assignments
       const lessonIds = [...new Set(assignmentsData.filter(a => a.lessonId).map(a => a.lessonId!))];
-      
+
       // Fetch lesson details for each ID
       const lessonTitleMap: Record<string, string> = {};
       await Promise.all(
@@ -42,7 +42,7 @@ const AssignmentsPage = () => {
           }
         })
       );
-      
+
       setLessonMap(lessonTitleMap);
       setAssignments(assignmentsData);
     } catch (error: any) {
@@ -54,9 +54,9 @@ const AssignmentsPage = () => {
 
   const filteredAssignments = useMemo(() => {
     if (!searchQuery.trim()) return assignments;
-    
+
     const query = searchQuery.toLowerCase();
-    return assignments.filter(assignment => 
+    return assignments.filter(assignment =>
       assignment.title.toLowerCase().includes(query) ||
       assignment.description.toLowerCase().includes(query) ||
       assignment.content.toLowerCase().includes(query)
@@ -119,7 +119,7 @@ const AssignmentsPage = () => {
                   )}
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-6 mt-4">
                 <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                   <Calendar className="h-4 w-4" />
@@ -205,25 +205,6 @@ const AssignmentsPage = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <BookOpen className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Linked to Lessons</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {filteredAssignments.filter(a => a.lessonId).length}
-                </p>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700"
           >
@@ -277,15 +258,15 @@ const AssignmentsPage = () => {
                       )}
                     </div>
                   </div>
-                  
+
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
                     {assignment.title}
                   </h3>
-                  
+
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
                     {assignment.description}
                   </p>
-                  
+
                   <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                       <Calendar className="h-4 w-4" />

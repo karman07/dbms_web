@@ -19,7 +19,7 @@ const QuizzesPage = () => {
   const [lessonMap, setLessonMap] = useState<Record<string, string>>({});
   const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
   const [showResults, setShowResults] = useState(false);
-  const [quizResults, setQuizResults] = useState<{score: number, total: number, correct: number} | null>(null);
+  const [quizResults, setQuizResults] = useState<{ score: number, total: number, correct: number } | null>(null);
 
   useEffect(() => {
     loadData();
@@ -29,10 +29,10 @@ const QuizzesPage = () => {
     try {
       setLoading(true);
       const quizzesData = await quizService.getAllQuizzes();
-      
+
       // Get unique lesson IDs from quizzes
       const lessonIds = [...new Set(quizzesData.filter(q => q.lessonId).map(q => q.lessonId!))];
-      
+
       // Fetch lesson details for each ID
       const lessonTitleMap: Record<string, string> = {};
       await Promise.all(
@@ -45,7 +45,7 @@ const QuizzesPage = () => {
           }
         })
       );
-      
+
       setLessonMap(lessonTitleMap);
       setQuizzes(quizzesData);
     } catch (error: any) {
@@ -57,9 +57,9 @@ const QuizzesPage = () => {
 
   const filteredQuizzes = useMemo(() => {
     if (!searchQuery.trim()) return quizzes;
-    
+
     const query = searchQuery.toLowerCase();
-    return quizzes.filter(quiz => 
+    return quizzes.filter(quiz =>
       quiz.title.toLowerCase().includes(query) ||
       quiz.description.toLowerCase().includes(query)
     );
@@ -72,7 +72,7 @@ const QuizzesPage = () => {
 
   const handleQuizSubmit = () => {
     if (!selectedQuiz) return;
-    
+
     let correct = 0;
     selectedQuiz.questions.forEach((question, index) => {
       const selectedOption = quizAnswers[index];
@@ -80,10 +80,10 @@ const QuizzesPage = () => {
         correct++;
       }
     });
-    
+
     const total = selectedQuiz.questions.length;
     const score = Math.round((correct / total) * 100);
-    
+
     setQuizResults({ score, total, correct });
     setShowResults(true);
   };
@@ -148,7 +148,7 @@ const QuizzesPage = () => {
                   )}
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-6 mt-4">
                 <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                   <HelpCircle className="h-4 w-4" />
@@ -181,18 +181,16 @@ const QuizzesPage = () => {
                           <button
                             key={oIndex}
                             onClick={() => setQuizAnswers(prev => ({ ...prev, [qIndex]: oIndex }))}
-                            className={`w-full text-left p-4 rounded-lg border-2 transition-all ${
-                              quizAnswers[qIndex] === oIndex
+                            className={`w-full text-left p-4 rounded-lg border-2 transition-all ${quizAnswers[qIndex] === oIndex
                                 ? 'border-teal-600 bg-teal-50 dark:bg-teal-900/30'
                                 : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                            }`}
+                              }`}
                           >
                             <div className="flex items-center gap-3">
-                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                                quizAnswers[qIndex] === oIndex
+                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${quizAnswers[qIndex] === oIndex
                                   ? 'border-teal-600 bg-teal-600'
                                   : 'border-gray-300 dark:border-gray-600'
-                              }`}>
+                                }`}>
                                 {quizAnswers[qIndex] === oIndex && (
                                   <div className="w-2 h-2 rounded-full bg-white"></div>
                                 )}
@@ -217,16 +215,14 @@ const QuizzesPage = () => {
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full mb-6 ${
-                    quizResults && quizResults.score >= 70 
-                      ? 'bg-green-100 dark:bg-green-900/30' 
+                  <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full mb-6 ${quizResults && quizResults.score >= 70
+                      ? 'bg-green-100 dark:bg-green-900/30'
                       : 'bg-red-100 dark:bg-red-900/30'
-                  }`}>
-                    <span className={`text-3xl font-bold ${
-                      quizResults && quizResults.score >= 70 
-                        ? 'text-green-600 dark:text-green-400' 
-                        : 'text-red-600 dark:text-red-400'
                     }`}>
+                    <span className={`text-3xl font-bold ${quizResults && quizResults.score >= 70
+                        ? 'text-green-600 dark:text-green-400'
+                        : 'text-red-600 dark:text-red-400'
+                      }`}>
                       {quizResults?.score}%
                     </span>
                   </div>
@@ -311,25 +307,6 @@ const QuizzesPage = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <BookOpen className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Linked to Lessons</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {filteredQuizzes.filter(q => q.lessonId).length}
-                </p>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700"
           >
@@ -377,15 +354,15 @@ const QuizzesPage = () => {
                       </span>
                     )}
                   </div>
-                  
+
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">
                     {quiz.title}
                   </h3>
-                  
+
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
                     {quiz.description}
                   </p>
-                  
+
                   <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                       <HelpCircle className="h-4 w-4" />
@@ -396,7 +373,7 @@ const QuizzesPage = () => {
                       <span>{formatDate(quiz.createdAt)}</span>
                     </div>
                   </div>
-                  
+
                   <Button className="w-full mt-4 bg-teal-600 hover:bg-teal-700 text-white">
                     <Play className="h-4 w-4 mr-2" />
                     Start Quiz

@@ -71,7 +71,7 @@ class UserService {
         'Content-Type': 'multipart/form-data',
       },
     });
-    
+
     return response.data;
   }
 
@@ -82,7 +82,7 @@ class UserService {
    */
   async updateProfile(data: UpdateProfileDto): Promise<User> {
     const response = await axiosInstance.patch<User>('/users/profile', data);
-    
+
     return response.data;
   }
 
@@ -112,6 +112,16 @@ class UserService {
    */
   async verifyEmail(id: string): Promise<User> {
     const response = await axiosInstance.patch<User>(`/users/${id}/verify-email`);
+    return response.data;
+  }
+
+  /**
+   * Check if profile is complete
+   * GET /users/profile/is-complete
+   * Requires: JWT Token (own profile only)
+   */
+  async isProfileComplete(): Promise<{ isComplete: boolean; missingFields: string[] }> {
+    const response = await axiosInstance.get<{ isComplete: boolean; missingFields: string[] }>('/users/profile/is-complete');
     return response.data;
   }
 }

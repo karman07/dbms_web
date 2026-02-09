@@ -1,8 +1,7 @@
-import { useState, useEffect, useMemo } from "react";
-import { motion } from "framer-motion";
-import { ArrowLeft, BookMarked, Download, Eye, Clock, Loader2, Search, FileText, Video } from "lucide-react";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Play, Calendar, ExternalLink, Loader2, Video, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import mediaService, { MediaItem } from "@/services/media.service";
 import { useNotification } from "@/contexts/NotificationContext";
@@ -12,9 +11,7 @@ const StudyMaterialPage = () => {
   const notification = useNotification();
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedMedia, setSelectedMedia] = useState<MediaItem | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedVideo, setSelectedVideo] = useState<MediaItem | null>(null);
 
   useEffect(() => {
     loadData();
@@ -26,188 +23,36 @@ const StudyMaterialPage = () => {
       const data = await mediaService.getAllMedia();
       setMediaItems(data);
     } catch (error: any) {
-      notification.error('Failed to load media', error.message || 'Please try again');
+      notification.error('Failed to load study material', error.message || 'Please try again');
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredMedia = useMemo(() => {
-    let filtered = mediaItems;
-    
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(item => 
-        item.title.toLowerCase().includes(query) ||
-        (item.description && item.description.toLowerCase().includes(query))
-      );
-    }
-    
-    if (selectedCategory !== "All") {
-      filtered = filtered.filter(item => getMediaType(item) === selectedCategory);
-    }
-    
-    return filtered;
-  }, [mediaItems, searchQuery, selectedCategory]);
-
-  const getMediaType = (item: MediaItem) => {
-    if (item.mimeType) {
-      if (item.mimeType.startsWith('video/')) return 'Video';
-      if (item.mimeType.startsWith('audio/')) return 'Audio';
-      if (item.mimeType.includes('pdf')) return 'PDF';
-      if (item.mimeType.startsWith('image/')) return 'Image';
-    }
-    if (item.url) {
-      if (item.url.includes('youtube') || item.url.includes('vimeo')) return 'Video';
-    }
-    return 'Other';
+  const getYoutubeId = (url: string) => {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
   };
 
-  const formatFileSize = (bytes?: number) => {
-    if (!bytes) return 'N/A';
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(1024));
-    return Math.round(bytes / Math.pow(1024, i) * 100) / 100 + ' ' + sizes[i];
+  const getThumbnailUrl = (url: string) => {
+    const videoId = getYoutubeId(url);
+    return videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : null;
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
-  };
-
-  const categories = useMemo(() => {
-    const types = mediaItems.map(getMediaType);
-    const uniqueTypes = [...new Set(types)];
-    return [
-      { name: "All", count: mediaItems.length },
-      ...uniqueTypes.map(type => ({
-        name: type,
-        count: types.filter(t => t === type).length
-      }))
-    ];
-  }, [mediaItems]);
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'Video': return <Video className="h-5 w-5" />;
-      case 'PDF': return <FileText className="h-5 w-5" />;
-      default: return <BookMarked className="h-5 w-5" />;
-    }
-  };
-
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'Video': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
-      case 'Audio': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
-      case 'PDF': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
-      case 'Image': return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300';
-    }
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
   };
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
-      </div>
-    );
-  }
-
-  if (selectedMedia) {
-    return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <Button
-            variant="ghost"
-            onClick={() => setSelectedMedia(null)}
-            className="flex items-center gap-2 mb-6"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Media
-          </Button>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700 overflow-hidden"
-          >
-            {/* Header */}
-            <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 px-8 py-6 border-b border-gray-200 dark:border-gray-700">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="p-2 bg-indigo-600 rounded-lg">
-                      {getTypeIcon(getMediaType(selectedMedia))}
-                    </div>
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-                      {selectedMedia.title}
-                    </h1>
-                  </div>
-                  {selectedMedia.description && (
-                    <p className="text-gray-600 dark:text-gray-400 text-lg">
-                      {selectedMedia.description}
-                    </p>
-                  )}
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-6 mt-4">
-                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                  <Clock className="h-4 w-4" />
-                  <span>Created: {formatDate(selectedMedia.createdAt)}</span>
-                </div>
-                {selectedMedia.fileSize && (
-                  <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                    <Download className="h-4 w-4" />
-                    <span>{formatFileSize(selectedMedia.fileSize)}</span>
-                  </div>
-                )}
-                <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTypeColor(getMediaType(selectedMedia))}`}>
-                  {getMediaType(selectedMedia)}
-                </span>
-              </div>
-            </div>
-
-            {/* Content */}
-            <div className="px-8 py-6">
-              {selectedMedia.url && getMediaType(selectedMedia) === 'Video' && (
-                <div className="aspect-video bg-black rounded-lg overflow-hidden mb-6">
-                  <iframe
-                    src={selectedMedia.url.replace('watch?v=', 'embed/')}
-                    className="w-full h-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                </div>
-              )}
-              
-              {selectedMedia.thumbnailPath && (
-                <div className="mb-6">
-                  <img 
-                    src={selectedMedia.thumbnailPath} 
-                    alt={selectedMedia.title}
-                    className="w-full max-w-md mx-auto rounded-lg shadow-md"
-                  />
-                </div>
-              )}
-              
-              <div className="flex gap-4">
-                {selectedMedia.filePath && (
-                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
-                    <Download className="h-4 w-4 mr-2" />
-                    Download File
-                  </Button>
-                )}
-                {selectedMedia.url && (
-                  <Button variant="outline" onClick={() => window.open(selectedMedia.url, '_blank')}>
-                    <Eye className="h-4 w-4 mr-2" />
-                    Open Link
-                  </Button>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        </div>
+        <Loader2 className="h-12 w-12 animate-spin text-purple-600" />
       </div>
     );
   }
@@ -215,163 +60,141 @@ const StudyMaterialPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
               onClick={() => navigate('/dashboard')}
-              className="flex items-center gap-2"
+              className="flex items-center gap-2 hover:bg-gray-200 dark:hover:bg-gray-800"
             >
               <ArrowLeft className="w-4 h-4" />
               Back to Dashboard
             </Button>
-            <div className="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
+            <div className="h-6 w-px bg-gray-300 dark:bg-gray-600 hidden sm:block"></div>
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-indigo-600 rounded-lg">
-                <BookMarked className="h-6 w-6 text-white" />
+              <div className="p-2 bg-purple-600 rounded-lg shadow-md">
+                <Video className="h-6 w-6 text-white" />
               </div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Study Material</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+                Video Resources
+              </h1>
             </div>
           </div>
         </div>
 
-        {/* Search Bar */}
-        <div className="mb-8">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              type="text"
-              placeholder="Search media..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700"
-            />
+        {/* Video Grid */}
+        {mediaItems.length === 0 ? (
+          <div className="text-center py-20 bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700">
+            <Video className="h-16 w-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 dark:text-white">No video resources found</h3>
+            <p className="text-gray-500 dark:text-gray-400 mt-2">Check back later for new content.</p>
           </div>
-          {searchQuery && (
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-              Found {filteredMedia.length} of {mediaItems.length} items
-            </p>
-          )}
-        </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {mediaItems.map((item, index) => {
+              const thumbnailUrl = item.url ? getThumbnailUrl(item.url) : null;
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Categories Sidebar */}
-          <div className="lg:col-span-1">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700"
-            >
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Categories</h3>
-              <div className="space-y-2">
-                {categories.map((category) => (
-                  <button
-                    key={category.name}
-                    onClick={() => setSelectedCategory(category.name)}
-                    className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors text-left ${
-                      selectedCategory === category.name
-                        ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300'
-                        : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'
-                    }`}
+              return (
+                <motion.div
+                  key={item._id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-100 dark:border-gray-700 hover:border-purple-200 dark:hover:border-purple-800 transition-all duration-300 group flex flex-col h-full"
+                >
+                  {/* Thumbnail */}
+                  <div
+                    className="relative aspect-video bg-gray-100 dark:bg-gray-900 overflow-hidden cursor-pointer group"
+                    onClick={() => setSelectedVideo(item)}
                   >
-                    <span>{category.name}</span>
-                    <span className="text-sm text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-full">
-                      {category.count}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </motion.div>
-          </div>
+                    {thumbnailUrl ? (
+                      <img
+                        src={thumbnailUrl}
+                        alt={item.title}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Video className="w-12 h-12 text-gray-300" />
+                      </div>
+                    )}
 
-          {/* Media Grid */}
-          <div className="lg:col-span-3">
-            {filteredMedia.length === 0 ? (
-              <div className="text-center py-12 bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-                <BookMarked className="h-12 w-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-500 dark:text-gray-400">
-                  {searchQuery ? 'No media found matching your search' : 'No media available'}
-                </p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {filteredMedia.map((item, index) => {
-                  const mediaType = getMediaType(item);
-                  return (
-                    <motion.div
-                      key={item._id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                      onClick={() => setSelectedMedia(item)}
-                      className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-lg hover:border-indigo-300 dark:hover:border-indigo-700 transition-all cursor-pointer group"
-                    >
-                      {/* Header */}
-                      <div className="flex items-start justify-between mb-4">
-                        <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg group-hover:bg-indigo-600 transition-colors">
-                          <div className="text-indigo-600 dark:text-indigo-400 group-hover:text-white transition-colors">
-                            {getTypeIcon(mediaType)}
-                          </div>
-                        </div>
-                        <span className={`px-2 py-1 text-xs rounded-full ${getTypeColor(mediaType)}`}>
-                          {mediaType}
-                        </span>
+                    {/* Overlay Play Button */}
+                    <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors flex items-center justify-center">
+                      <div className="w-14 h-14 bg-white/90 rounded-full flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+                        <Play className="w-6 h-6 text-purple-600 ml-1" fill="currentColor" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-5 flex flex-col flex-grow">
+                    <h3 className="text-lg font-bold text-gray-900 dark:text-white line-clamp-2 mb-2 group-hover:text-purple-600 dark:group-hover:text-purple-400 transition-colors">
+                      {item.title}
+                    </h3>
+
+                    {item.description && (
+                      <p className="text-gray-600 dark:text-gray-400 text-sm line-clamp-3 mb-4 flex-grow">
+                        {item.description}
+                      </p>
+                    )}
+
+                    <div className="flex items-center justify-between pt-4 border-t border-gray-100 dark:border-gray-700 mt-auto">
+                      <div className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400">
+                        <Calendar className="w-3.5 h-3.5" />
+                        <span>{formatDate(item.createdAt)}</span>
                       </div>
 
-                      {/* Content */}
-                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
-                        {item.title}
-                      </h3>
-                      {item.description && (
-                        <p className="text-gray-600 dark:text-gray-400 text-sm mb-4 line-clamp-2">
-                          {item.description}
-                        </p>
-                      )}
-
-                      {/* Stats */}
-                      <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-                          <Clock className="h-4 w-4" />
-                          <span>{formatDate(item.createdAt)}</span>
-                        </div>
-                        {item.fileSize && (
-                          <span className="text-xs text-gray-500 dark:text-gray-400">
-                            {formatFileSize(item.fileSize)}
-                          </span>
-                        )}
-                      </div>
-
-                      {/* Actions */}
-                      <div className="flex gap-2 mt-4">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedMedia(item);
-                          }}
+                      {item.url && (
+                        <a
+                          href={item.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-medium text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-300 flex items-center gap-1"
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          <Eye className="w-4 h-4 mr-1" />
-                          View
-                        </Button>
-                        {item.filePath && (
-                          <Button 
-                            size="sm" 
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <Download className="w-4 h-4 mr-1" />
-                            Download
-                          </Button>
-                        )}
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
-            )}
+                          Open in YouTube <ExternalLink className="w-3 h-3" />
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
-        </div>
+        )}
+
+        {/* Video Modal Player */}
+        <AnimatePresence>
+          {selectedVideo && selectedVideo.url && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/80 backdrop-blur-sm p-4 sm:p-6" onClick={() => setSelectedVideo(null)}>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                onClick={(e) => e.stopPropagation()}
+                className="bg-black rounded-2xl overflow-hidden shadow-2xl w-full max-w-5xl aspect-video relative ring-1 ring-white/10"
+              >
+                <iframe
+                  src={`https://www.youtube.com/embed/${getYoutubeId(selectedVideo.url)}?autoplay=1`}
+                  title={selectedVideo.title}
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+                <button
+                  onClick={() => setSelectedVideo(null)}
+                  className="absolute top-4 right-4 w-10 h-10 bg-black/50 hover:bg-black/70 text-white rounded-full flex items-center justify-center backdrop-blur-md transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
       </div>
     </div>
   );

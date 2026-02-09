@@ -19,6 +19,17 @@ export interface User {
   linkedinProfile?: string;
   githubProfile?: string;
   website?: string;
+  visitorType?: 'student' | 'teacher';
+  // Student fields
+  university?: string;
+  degree?: string;
+  major?: string;
+  graduationYear?: number;
+  // Teacher fields
+  department?: string;
+  designation?: string;
+  teachingExperience?: number;
+  specialization?: string[];
   isEmailVerified: boolean;
   isPhoneVerified: boolean;
   role: 'user' | 'admin';
@@ -81,6 +92,17 @@ export interface UpdateProfileDto {
   linkedinProfile?: string;
   githubProfile?: string;
   website?: string;
+  visitorType?: 'student' | 'teacher';
+  // Student fields
+  university?: string;
+  degree?: string;
+  major?: string;
+  graduationYear?: number;
+  // Teacher fields
+  department?: string;
+  designation?: string;
+  teachingExperience?: number;
+  specialization?: string[];
 }
 
 export interface AdminUpdateUserDto extends UpdateProfileDto {

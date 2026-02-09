@@ -26,10 +26,10 @@ const ActivitiesPage = () => {
     try {
       setLoading(true);
       const activitiesData = await activitiesService.getAllActivities();
-      
+
       // Get unique lesson IDs from activities
       const lessonIds = [...new Set(activitiesData.filter(a => a.lessonId).map(a => a.lessonId!))];
-      
+
       // Fetch lesson details for each ID
       const lessonTitleMap: Record<string, string> = {};
       await Promise.all(
@@ -42,7 +42,7 @@ const ActivitiesPage = () => {
           }
         })
       );
-      
+
       setLessonMap(lessonTitleMap);
       setActivities(activitiesData);
     } catch (error: any) {
@@ -54,9 +54,9 @@ const ActivitiesPage = () => {
 
   const filteredActivities = useMemo(() => {
     if (!searchQuery.trim()) return activities;
-    
+
     const query = searchQuery.toLowerCase();
-    return activities.filter(activity => 
+    return activities.filter(activity =>
       activity.title.toLowerCase().includes(query) ||
       activity.description.toLowerCase().includes(query) ||
       activity.content.toLowerCase().includes(query)
@@ -119,7 +119,7 @@ const ActivitiesPage = () => {
                   )}
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-6 mt-4">
                 <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                   <Clock className="h-4 w-4" />
@@ -208,24 +208,6 @@ const ActivitiesPage = () => {
             </div>
           </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700"
-          >
-            <div className="flex items-center gap-3">
-              <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <BookOpen className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Linked to Lessons</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {filteredActivities.filter(a => a.lessonId).length}
-                </p>
-              </div>
-            </div>
-          </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -277,15 +259,15 @@ const ActivitiesPage = () => {
                       </span>
                     )} */}
                   </div>
-                  
+
                   <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-green-600 dark:group-hover:text-green-400 transition-colors">
                     {activity.title}
                   </h3>
-                  
+
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
                     {activity.description}
                   </p>
-                  
+
                   <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
                     <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                       <Clock className="h-4 w-4" />
