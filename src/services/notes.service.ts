@@ -1,6 +1,5 @@
-import axios from 'axios';
+import axiosInstance from '@/lib/axios';
 
-const API_URL = 'http://localhost:3000';
 
 export interface Note {
   _id: string;
@@ -43,85 +42,60 @@ export interface UpdateNoteDto {
   attachments?: string[];
 }
 
-const getAuthHeader = () => {
-  const token = localStorage.getItem('token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
 
 export const notesService = {
   async createNote(data: CreateNoteDto): Promise<Note> {
-    const response = await axios.post(`${API_URL}/notes`, data, {
-      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
-    });
+    const response = await axiosInstance.post<Note>('/notes', data);
     return response.data;
   },
 
   async getAllNotes(): Promise<Note[]> {
-    const response = await axios.get(`${API_URL}/notes`, {
-      headers: getAuthHeader(),
-    });
+    const response = await axiosInstance.get<Note[]>('/notes');
     return response.data;
   },
 
   async getMyNotes(): Promise<Note[]> {
-    const response = await axios.get(`${API_URL}/notes/my-notes`, {
-      headers: getAuthHeader(),
-    });
+    const response = await axiosInstance.get<Note[]>('/notes/my-notes');
     return response.data;
   },
 
   async getBookmarkedNotes(): Promise<Note[]> {
-    const response = await axios.get(`${API_URL}/notes/bookmarked`, {
-      headers: getAuthHeader(),
-    });
+    const response = await axiosInstance.get<Note[]>('/notes/bookmarked');
     return response.data;
   },
 
   async getLikedNotes(): Promise<Note[]> {
-    const response = await axios.get(`${API_URL}/notes/liked`, {
-      headers: getAuthHeader(),
-    });
+    const response = await axiosInstance.get<Note[]>('/notes/liked');
     return response.data;
   },
 
   async getNotesBySource(source: Note['source']): Promise<Note[]> {
-    const response = await axios.get(`${API_URL}/notes/source/${source}`, {
-      headers: getAuthHeader(),
-    });
+    const response = await axiosInstance.get<Note[]>(`/notes/source/${source}`);
     return response.data;
   },
 
   async updateNote(id: string, data: UpdateNoteDto): Promise<Note> {
-    const response = await axios.patch(`${API_URL}/notes/${id}`, data, {
-      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
-    });
+    const response = await axiosInstance.patch<Note>(`/notes/${id}`, data);
     return response.data;
   },
 
   async deleteNote(id: string): Promise<void> {
-    await axios.delete(`${API_URL}/notes/${id}`, {
-      headers: getAuthHeader(),
-    });
+    await axiosInstance.delete(`/notes/${id}`);
   },
 
   async toggleBookmark(id: string): Promise<Note> {
-    const response = await axios.post(`${API_URL}/notes/${id}/bookmark`, {}, {
-      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
-    });
+    const response = await axiosInstance.post<Note>(`/notes/${id}/bookmark`, {});
     return response.data;
   },
 
   async toggleLike(id: string): Promise<Note> {
-    const response = await axios.post(`${API_URL}/notes/${id}/like`, {}, {
-      headers: { ...getAuthHeader(), 'Content-Type': 'application/json' },
-    });
+    const response = await axiosInstance.post<Note>(`/notes/${id}/like`, {});
     return response.data;
   },
 
   async searchNotes(query: string): Promise<Note[]> {
-    const response = await axios.get(`${API_URL}/notes/search`, {
+    const response = await axiosInstance.get<Note[]>('/notes/search', {
       params: { q: query },
-      headers: getAuthHeader(),
     });
     return response.data;
   },

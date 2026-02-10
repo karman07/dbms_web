@@ -5,11 +5,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { GRADIENTS, BUTTON_STYLES, fadeIn, fadeInUp } from "@/constants";
-import { 
-  Mail, 
-  Phone, 
-  MapPin, 
-  Clock, 
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Clock,
   Send,
 
   MessageCircle
@@ -20,7 +20,7 @@ interface ContactPageProps {
 }
 
 
-export function ContactPage({}: ContactPageProps) {
+export function ContactPage({ }: ContactPageProps) {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -41,13 +41,13 @@ export function ContactPage({}: ContactPageProps) {
     {
       icon: Mail,
       title: "Email Us",
-      details: "support@coursehub.com",
+      details: "parteek.bhatia@gmail.com",
       description: "Send us an email anytime"
     },
     {
       icon: Phone,
       title: "Call Us",
-      details: "+1 (555) 123-4567",
+      details: "+1 (509) 703-3892",
       description: "Mon-Fri from 8am to 5pm"
     },
     {
@@ -117,7 +117,7 @@ export function ContactPage({}: ContactPageProps) {
             >
               <h2 className={`text-3xl md:text-4xl font-bold mb-6`}>Send us a Message</h2>
               <p className="text-lg text-gray-600 dark:text-gray-300 mb-8">
-                Fill out the form below and we'll get back to you as soon as possible. 
+                Fill out the form below and we'll get back to you as soon as possible.
                 We typically respond within 24 hours.
               </p>
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -129,7 +129,7 @@ export function ContactPage({}: ContactPageProps) {
                       type="text"
                       placeholder="Your full name"
                       value={formData.name}
-                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       required
                       className="h-12"
                     />
@@ -139,9 +139,9 @@ export function ContactPage({}: ContactPageProps) {
                     <Input
                       id="email"
                       type="email"
-                      placeholder="your.email@example.com"
+                      placeholder="parteek.bhatia@gmail.com"
                       value={formData.email}
-                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                       required
                       className="h-12"
                     />
@@ -154,7 +154,7 @@ export function ContactPage({}: ContactPageProps) {
                     type="text"
                     placeholder="What is this regarding?"
                     value={formData.subject}
-                    onChange={(e) => setFormData({...formData, subject: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                     required
                     className="h-12"
                   />
@@ -165,7 +165,7 @@ export function ContactPage({}: ContactPageProps) {
                     id="message"
                     placeholder="Tell us more about your inquiry..."
                     value={formData.message}
-                    onChange={(e) => setFormData({...formData, message: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                     required
                     className="min-h-[120px] resize-none"
                   />

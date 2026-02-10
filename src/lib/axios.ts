@@ -3,7 +3,7 @@ import { ApiError } from '@/types/user';
 
 // Create axios instance with base configuration
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000',
+  baseURL: import.meta.env.DEV ? import.meta.env.VITE_API_BASE_URL : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000'),
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -32,12 +32,9 @@ axiosInstance.interceptors.response.use(
     if (error.response) {
       const { status, data } = error.response;
 
-      // Handle 401 Unauthorized - token expired or invalid
       if (status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        // Optionally redirect to login
-        window.location.href = '/';
+        // Let the application handle the 401 error
+        // e.g., AuthContext can listen for this or the specific query can fail
       }
 
       // Handle 403 Forbidden

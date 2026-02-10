@@ -4,12 +4,15 @@ import App from './App.tsx'
 import './index.css'
 import { ThemeProvider } from './contexts/ThemeContext.tsx'
 import { NotificationProvider } from './contexts/NotificationContext.tsx'
+import { AuthProvider } from './contexts/AuthContext.tsx'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ThemeProvider defaultTheme="light" storageKey="dbms-theme">
       <NotificationProvider>
-        <App />
+        <AuthProvider>
+          <App />
+        </AuthProvider>
       </NotificationProvider>
     </ThemeProvider>
   </React.StrictMode>,

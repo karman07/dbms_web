@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { 
-  BookOpen, 
-  Activity, 
-  GraduationCap, 
-  FileText, 
-  MessageCircle,
+import {
+  BookOpen,
+  Activity,
+  GraduationCap,
+  FileText,
   Bell,
   BookMarked,
   X,
@@ -145,14 +144,14 @@ const DashboardPage = () => {
       description: 'Manage your personal notes and bookmarks',
       icon: FileText,
       color: 'from-orange-500 to-orange-600'
-    },
-    {
-      id: 'contact',
-      title: 'Contact',
-      description: 'Get support and connect with the team',
-      icon: MessageCircle,
-      color: 'from-pink-500 to-pink-600'
     }
+    // {
+    //   id: 'contact',
+    //   title: 'Contact',
+    //   description: 'Get support and connect with the team',
+    //   icon: MessageCircle,
+    //   color: 'from-pink-500 to-pink-600'
+    // }
   ];
 
   return (
@@ -171,7 +170,7 @@ const DashboardPage = () => {
             </div>
             <div className="flex items-center space-x-3">
               <div className="relative">
-                <button 
+                <button
                   onClick={() => setShowNotifications(!showNotifications)}
                   className="relative p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
                 >
@@ -182,7 +181,7 @@ const DashboardPage = () => {
                     </span>
                   )}
                 </button>
-                
+
                 <AnimatePresence>
                   {showNotifications && (
                     <motion.div
@@ -203,9 +202,8 @@ const DashboardPage = () => {
                         {notifications.map((notification) => (
                           <div
                             key={notification.id}
-                            className={`p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 ${
-                              !notification.read ? 'bg-blue-50 dark:bg-blue-900/10' : ''
-                            }`}
+                            className={`p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 ${!notification.read ? 'bg-blue-50 dark:bg-blue-900/10' : ''
+                              }`}
                           >
                             <div className="flex items-start space-x-3">
                               {getNotificationIcon(notification.type)}
@@ -233,13 +231,13 @@ const DashboardPage = () => {
                   )}
                 </AnimatePresence>
               </div>
-              <button 
+              <button
                 onClick={() => navigate('/profile')}
                 className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
               >
                 <User className="w-5 h-5" />
               </button>
-              <button 
+              <button
                 onClick={toggleTheme}
                 className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
               >
@@ -270,7 +268,7 @@ const DashboardPage = () => {
                 onClick={() => navigate(`/${item.id}`)}
                 className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all cursor-pointer group"
               >
-                <motion.div 
+                <motion.div
                   className={`bg-gradient-to-r ${item.color} p-4 rounded-lg mb-6 w-fit`}
                   whileHover={{ scale: 1.1, rotate: 5 }}
                   transition={{ duration: 0.2 }}

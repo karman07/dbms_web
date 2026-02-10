@@ -14,6 +14,8 @@ import AssignmentsPage from "@/pages/AssignmentsPage";
 import QuizzesPage from "@/pages/QuizzesPage";
 import QuizPage from "@/pages/QuizPage";
 import QuizResultsPage from "@/pages/QuizResultsPage";
+import { PrivacyPage } from "@/pages/PrivacyPage";
+import { TermsPage } from "@/pages/TermsPage";
 
 import { Footer } from "./components/Footer";
 import { Navigation } from "./components/Header";
@@ -23,25 +25,29 @@ import { NotesProvider } from "@/contexts/NotesContext";
 
 function AppContent() {
   const location = useLocation();
-  const isDashboardRoute = ['/dashboard', '/docs', '/activities', '/course', '/notes', '/study-material', '/assignments', '/quizzes', '/quiz', '/quiz-results', '/profile'].includes(location.pathname);
+  const isDashboardRoute = [
+    '/dashboard', '/docs', '/activities', '/course', '/notes',
+    '/study-material', '/assignments', '/quizzes', '/quiz',
+    '/quiz-results', '/profile'
+  ].includes(location.pathname);
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
       {!isDashboardRoute && <Navigation />}
-      
+
       <Routes>
-        <Route 
-          path="/" 
+        <Route
+          path="/"
           element={
-            <HomePage 
+            <HomePage
               onAuthOpen={(mode) => {
                 const event = new CustomEvent('openAuth', { detail: { mode } });
                 window.dispatchEvent(event);
-              }} 
+              }}
             />
-          } 
+          }
         />
-        <Route path="/about" element={<AboutPage/>} />
+        <Route path="/about" element={<AboutPage />} />
         <Route path="/contact" element={<ContactPage onBack={() => window.history.back()} />} />
         <Route path="/profile" element={<UserProfilePage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
@@ -54,8 +60,10 @@ function AppContent() {
         <Route path="/quiz-results" element={<QuizResultsPage />} />
         <Route path="/study-material" element={<StudyMaterialPage />} />
         <Route path="/notes" element={<NotesPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
       </Routes>
-      
+
       {!isDashboardRoute && <Footer />}
     </div>
   );

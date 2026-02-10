@@ -1,7 +1,26 @@
-import { BookOpen, Calendar, ClipboardList, FileDown, FileText, Target, Trophy, Users, Zap, Tag, ChevronDown, ChevronRight, Clock, Video, PlayCircle } from 'lucide-react';
+import {
+  BookOpen,
+  Calendar,
+  ClipboardList,
+  FileDown,
+  FileText,
+  Target,
+  Trophy,
+  Users,
+  Zap,
+  ChevronDown,
+  ChevronRight,
+  Clock,
+  Video,
+  PlayCircle,
+  ArrowRight,
+  CheckCircle,
+  ZapIcon
+} from 'lucide-react';
 import { Course, CourseProgress } from '@/services/course.service';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
+import CircularProgress from '@/components/ui/CircularProgress';
 
 interface CourseOverviewProps {
   course: Course;
@@ -10,19 +29,20 @@ interface CourseOverviewProps {
   onEnroll: () => void;
   enrolling: boolean;
   getSectionProgress: (sectionId: string) => number;
+  onResume: () => void;
 }
 
-export const CourseOverview = ({ 
-  course, 
-  progress, 
-  enrolled, 
-  onEnroll, 
+export const CourseOverview = ({
+  course,
+  progress,
+  enrolled,
+  onEnroll,
   enrolling,
-  getSectionProgress 
+  getSectionProgress,
+  onResume
 }: CourseOverviewProps) => {
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const [expandedLessons, setExpandedLessons] = useState<Set<string>>(new Set());
-  const [expandedMaterials, setExpandedMaterials] = useState<Set<string>>(new Set());
 
   const toggleSection = (sectionId: string) => {
     setExpandedSections(prev => {
@@ -48,619 +68,382 @@ export const CourseOverview = ({
     });
   };
 
-  const toggleMaterial = (materialKey: string) => {
-    setExpandedMaterials(prev => {
-      const next = new Set(prev);
-      if (next.has(materialKey)) {
-        next.delete(materialKey);
-      } else {
-        next.add(materialKey);
-      }
-      return next;
-    });
-  };
 
   return (
     <div className="space-y-8">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-br from-blue-600 to-blue-700 dark:from-blue-800 dark:to-blue-900 rounded-2xl p-8 lg:p-12 shadow-lg">
-        <div>
-          <div className="flex items-start justify-between mb-6">
-            <div className="flex-1">
-              <div className="flex flex-wrap items-center gap-3 mb-4">
-                <h1 className="text-4xl lg:text-5xl font-bold text-white">
-                  {course.title}
-                </h1>
-                {/* {course.isPublished && (
-                  <span className="px-3 py-1 bg-green-500 text-white text-sm font-semibold rounded-full">
-                    Published
-                  </span>
-                )} */}
+      {/* Hero Section - Professional & Premium */}
+      <div className="relative overflow-hidden bg-slate-900 rounded-[2.5rem] shadow-2xl border border-slate-800">
+        {/* Background Decorative Elements */}
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-[40rem] h-[40rem] bg-blue-600/20 rounded-full blur-[100px] pointer-events-none" />
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-96 h-96 bg-indigo-600/10 rounded-full blur-[80px] pointer-events-none" />
+
+        <div className="relative z-10 p-8 lg:p-14">
+          <div className="flex flex-col lg:flex-row gap-12 items-center lg:items-start">
+            {/* Left Content */}
+            <div className="flex-1 text-center lg:text-left">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-wider mb-6">
+                <Target className="h-4 w-4" />
+                <span>Professional Course</span>
               </div>
-              <p className="text-white/90 text-lg lg:text-xl mb-6 max-w-3xl">
+
+              <h1 className="text-4xl lg:text-6xl font-extrabold text-white mb-6 leading-tight tracking-tight">
+                {course.title}
+              </h1>
+
+              <p className="text-slate-400 text-lg lg:text-xl mb-8 max-w-2xl leading-relaxed">
                 {course.description}
               </p>
 
-              {/* Tags */}
-              {course.tags && course.tags.length > 0 && (
-                <div className="flex flex-wrap items-center gap-2 mb-6">
-                  {course.tags.map((tag, idx) => (
-                    <span
-                      key={idx}
-                      className="px-3 py-1 bg-white/20 backdrop-blur-sm text-white text-sm font-medium rounded-lg flex items-center gap-1"
-                    >
-                      <Tag className="h-3 w-3" />
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {/* Enrollment Count Badge */}
-              <div className="flex items-center gap-4 mb-6">
-                <div className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-xl">
-                  <Users className="h-5 w-5 text-white" />
-                  <span className="text-white font-semibold">
-                    {course.enrolledCount?.toLocaleString() || 0} Students Enrolled
+              <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 mb-8">
+                <div className="flex items-center gap-2 px-4 py-2 bg-slate-800/50 rounded-xl border border-slate-700/50">
+                  <Users className="h-5 w-5 text-blue-400" />
+                  <span className="text-white font-semibold text-sm">
+                    {course.enrolledCount?.toLocaleString() || 0} Students
                   </span>
                 </div>
-                <div className="flex items-center gap-2 px-4 py-2 bg-white/20 backdrop-blur-sm rounded-xl">
-                  <Calendar className="h-5 w-5 text-white" />
-                  <span className="text-white font-medium text-sm">
-                    Updated {new Date(course.updatedAt).toLocaleDateString()}
+                <div className="flex items-center gap-2 px-4 py-2 bg-slate-800/50 rounded-xl border border-slate-700/50">
+                  <Calendar className="h-5 w-5 text-slate-400" />
+                  <span className="text-slate-300 font-medium text-sm">
+                    Last sync: {new Date(course.updatedAt).toLocaleDateString()}
                   </span>
                 </div>
               </div>
-              
-              {!enrolled && (
+
+              {!enrolled ? (
                 <Button
                   onClick={onEnroll}
                   disabled={enrolling}
-                  className="bg-white text-blue-600 hover:bg-blue-50 font-semibold px-8 py-6 text-lg rounded-xl shadow-lg hover:shadow-xl transition-all"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold px-10 py-7 text-lg rounded-2xl shadow-xl shadow-blue-900/40 transition-all hover:scale-[1.02]"
                   size="lg"
                 >
-                  {enrolling ? 'Enrolling...' : 'Enroll Now - It\'s Free!'}
+                  {enrolling ? (
+                    <div className="flex items-center gap-2">
+                      <div className="h-5 w-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>Enrolling...</span>
+                    </div>
+                  ) : (
+                    "Start Learning Now"
+                  )}
                 </Button>
-              )}
-              
-              {enrolled && progress && (
-                <div className="bg-white/20 backdrop-blur-sm rounded-xl p-5 max-w-md">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-white font-medium">Your Progress</span>
-                    <span className="text-white font-bold text-xl">{Math.round(progress.overallProgress)}%</span>
+              ) : (
+                <div className="flex flex-col sm:flex-row items-center gap-6 p-1 rounded-3xl bg-slate-800/30 border border-slate-700/30 backdrop-blur-md max-w-fit pr-8">
+                  <div className="flex-shrink-0 p-4">
+                    {/* Pie Chart / Circular Progress */}
+                    <div className="relative w-24 h-24">
+                      <svg className="w-full h-full transform -rotate-90">
+                        <circle
+                          cx="48"
+                          cy="48"
+                          r="38"
+                          fill="transparent"
+                          stroke="currentColor"
+                          strokeWidth="8"
+                          className="text-slate-700"
+                        />
+                        <circle
+                          cx="48"
+                          cy="48"
+                          r="38"
+                          fill="transparent"
+                          stroke="currentColor"
+                          strokeWidth="8"
+                          strokeDasharray={2 * Math.PI * 38}
+                          strokeDashoffset={2 * Math.PI * 38 * (1 - (progress?.overallProgress || 0) / 100)}
+                          strokeLinecap="round"
+                          className="text-blue-500 transition-all duration-1000 ease-out"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <span className="text-white font-bold text-lg">{Math.round(progress?.overallProgress || 0)}%</span>
+                      </div>
+                    </div>
                   </div>
-                  <div className="h-2 bg-white/30 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-white transition-all duration-300"
-                      style={{ width: `${progress.overallProgress}%` }}
-                    />
+                  <div className="text-left">
+                    <h3 className="text-white font-bold text-lg mb-1">Your Mastery Progress</h3>
+                    <p className="text-slate-400 text-sm">
+                      {progress?.sections.reduce((acc, s) => acc + s.lessons.filter(l => l.completed).length, 0)} of{' '}
+                      {course.sections.reduce((acc, s) => acc + s.lessons.length, 0)} modules completed
+                    </p>
                   </div>
-                  <p className="text-white/80 text-sm mt-2">
-                    {progress.sections.reduce((acc, s) => 
-                      acc + s.lessons.filter(l => l.completed).length, 0
-                    )} of{' '}
-                    {course.sections.reduce((acc, s) => acc + s.lessons.length, 0)} lessons completed
-                  </p>
                 </div>
               )}
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Stats Cards */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-lg bg-blue-600 dark:bg-blue-600 flex items-center justify-center">
-              <BookOpen className="h-7 w-7 text-white" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Sections</p>
-              <p className="font-bold text-gray-900 dark:text-white text-2xl">
-                {course.sections.length}
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-lg bg-violet-600 dark:bg-violet-600 flex items-center justify-center">
-              <FileText className="h-7 w-7 text-white" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Total Lessons</p>
-              <p className="font-bold text-gray-900 dark:text-white text-2xl">
-                {course.sections.reduce((acc, s) => acc + s.lessons.length, 0)}
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-lg bg-amber-600 dark:bg-amber-600 flex items-center justify-center">
-              <Trophy className="h-7 w-7 text-white" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Total Quizzes</p>
-              <p className="font-bold text-gray-900 dark:text-white text-2xl">
-                {course.sections.reduce((acc, s) => 
-                  acc + s.lessons.reduce((lessonAcc, l) => 
-                    lessonAcc + (l.linkedQuizzes?.length || 0) + ((l.quiz?.length || 0) > 0 ? 1 : 0), 0
-                  ), 0
-                )}
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition-all">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-lg bg-emerald-600 dark:bg-emerald-600 flex items-center justify-center">
-              <Users className="h-7 w-7 text-white" />
-            </div>
-            <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Enrolled</p>
-              <p className="font-bold text-gray-900 dark:text-white text-2xl">
-                {course.enrolledCount?.toLocaleString() || 0}
-              </p>
+            {/* Right Side Visual - Dynamic Insight */}
+            <div className="hidden lg:block w-80 h-96 relative group">
+              <div className="absolute inset-0 bg-blue-600 rounded-[2.5rem] blur-3xl opacity-10 group-hover:opacity-20 transition-opacity" />
+              <div className="relative h-full bg-slate-800/40 backdrop-blur-xl border border-slate-700/50 rounded-[2.5rem] p-8 flex flex-col justify-between">
+                <div>
+                  <div className="flex items-center justify-between mb-8">
+                    <div className="w-12 h-12 rounded-2xl bg-blue-600/20 flex items-center justify-center text-blue-400 group-hover:scale-110 transition-transform">
+                      <ZapIcon className="h-6 w-6" />
+                    </div>
+                    <span className="px-3 py-1 bg-blue-500/10 text-blue-400 text-[10px] font-black uppercase tracking-widest rounded-full border border-blue-500/20">
+                      Up Next
+                    </span>
+                  </div>
+
+                  <h4 className="text-white font-black text-xl leading-tight mb-4">
+                    Ready to deep dive into the next chapter?
+                  </h4>
+                  <p className="text-slate-400 text-sm font-medium leading-relaxed">
+                    Pick up where you left off. The next module is optimized for your current mastery level.
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="p-4 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400">
+                        <Target className="h-4 w-4" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-white text-xs font-bold truncate">Continue Module</p>
+                        <p className="text-slate-500 text-[10px] truncate">{course.sections[0]?.title || 'Fundamentals'}</p>
+                      </div>
+                      <ArrowRight className="h-4 w-4 text-slate-600" />
+                    </div>
+                  </div>
+                  <button
+                    onClick={onResume}
+                    className="w-full py-4 bg-white text-slate-900 font-bold rounded-2xl hover:bg-slate-100 transition-colors shadow-xl shadow-white/5 active:scale-95"
+                  >
+                    Resume Journey
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Additional Stats Row */}
+      {/* Stats Cards - Simplified & Modern */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+        {[
+          { icon: BookOpen, label: "Sections", val: course.sections.length, color: "blue" },
+          { icon: FileText, label: "Total Lessons", val: course.sections.reduce((acc, s) => acc + s.lessons.length, 0), color: "violet" },
+          {
+            icon: Trophy, label: "Total Quizzes", val: course.sections.reduce((acc, s) =>
+              acc + s.lessons.reduce((lessonAcc, l) =>
+                lessonAcc + (l.linkedQuizzes?.length || 0) + ((l.quiz?.length || 0) > 0 ? 1 : 0), 0
+              ), 0
+            ), color: "amber"
+          },
+          { icon: Users, label: "Learners", val: course.enrolledCount || 0, color: "emerald" }
+        ].map((stat, idx) => (
+          <div key={idx} className="group bg-white dark:bg-slate-900 rounded-[1.5rem] p-5 lg:p-6 border border-slate-100 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-900/50 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+            <div className={`w-12 h-12 lg:w-14 lg:h-14 rounded-2xl bg-${stat.color}-50 dark:bg-${stat.color}-900/20 flex items-center justify-center text-${stat.color}-600 dark:text-${stat.color}-400 mb-4 group-hover:scale-110 transition-transform`}>
+              <stat.icon className="h-6 w-6 lg:h-7 lg:w-7" />
+            </div>
+            <p className="text-xs lg:text-sm text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider mb-1">{stat.label}</p>
+            <p className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white mt-auto">
+              {typeof stat.val === 'number' ? stat.val.toLocaleString() : stat.val}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* Secondary Resource Row */}
       <div className="grid md:grid-cols-3 gap-6">
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-indigo-600 dark:bg-indigo-600 flex items-center justify-center">
-              <ClipboardList className="h-5 w-5 text-white" />
+        {[
+          { icon: ClipboardList, label: "Assignments", sub: "Total assignments", color: "indigo", count: course.sections.reduce((acc, s) => acc + s.lessons.reduce((la, l) => la + (l.linkedAssignments?.length || 0), 0), 0) },
+          { icon: Zap, label: "Activities", sub: "Interactive drills", color: "pink", count: course.sections.reduce((acc, s) => acc + s.lessons.reduce((la, l) => la + (l.linkedActivities?.length || 0), 0), 0) },
+          { icon: FileDown, label: "Resources", sub: "Downloadables", color: "teal", count: course.sections.reduce((acc, s) => acc + s.lessons.reduce((la, l) => la + (l.resources?.length || 0), 0), 0) }
+        ].map((res, i) => (
+          <div key={i} className="flex items-center gap-5 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all">
+            <div className={`w-14 h-14 rounded-2xl bg-${res.color}-600 flex items-center justify-center text-white shadow-lg shadow-${res.color}-600/20`}>
+              <res.icon className="h-7 w-7" />
             </div>
-            <h3 className="font-semibold text-gray-900 dark:text-white">Assignments</h3>
-          </div>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">
-            {course.sections.reduce((acc, s) => 
-              acc + s.lessons.reduce((lessonAcc, l) => 
-                lessonAcc + (l.linkedAssignments?.length || 0), 0
-              ), 0
-            )}
-          </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Total assignments to complete</p>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-pink-600 dark:bg-pink-600 flex items-center justify-center">
-              <Zap className="h-5 w-5 text-white" />
+            <div>
+              <p className="text-3xl font-black text-slate-900 dark:text-white leading-none mb-1">{res.count}</p>
+              <h3 className="font-bold text-slate-900 dark:text-white text-base leading-tight">{res.label}</h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{res.sub}</p>
             </div>
-            <h3 className="font-semibold text-gray-900 dark:text-white">Activities</h3>
           </div>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">
-            {course.sections.reduce((acc, s) => 
-              acc + s.lessons.reduce((lessonAcc, l) => 
-                lessonAcc + (l.linkedActivities?.length || 0), 0
-              ), 0
-            )}
-          </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Interactive learning exercises</p>
-        </div>
-
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 rounded-lg bg-teal-600 dark:bg-teal-600 flex items-center justify-center">
-              <FileDown className="h-5 w-5 text-white" />
-            </div>
-            <h3 className="font-semibold text-gray-900 dark:text-white">Resources</h3>
-          </div>
-          <p className="text-3xl font-bold text-gray-900 dark:text-white">
-            {course.sections.reduce((acc, s) => 
-              acc + s.lessons.reduce((lessonAcc, l) => 
-                lessonAcc + (l.resources?.length || 0), 0
-              ), 0
-            )}
-          </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Downloadable materials</p>
-        </div>
+        ))}
       </div>
 
-      {/* Course Content Preview */}
-      <div className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-sm border border-gray-200 dark:border-gray-700">
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-blue-600 dark:bg-blue-600 flex items-center justify-center">
-            <Target className="h-6 w-6 text-white" />
+      {/* Course Curriculum - Refined & Modern */}
+      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 lg:p-12 shadow-xl border border-slate-100 dark:border-slate-800">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+          <div>
+            <h2 className="text-3xl font-black text-slate-900 dark:text-white flex items-center gap-4">
+              <span className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-900/20">
+                <Target className="h-6 w-6 text-white" />
+              </span>
+              Curriculum Map
+            </h2>
+            <p className="text-slate-500 dark:text-slate-400 mt-2 font-medium">Systematic path from fundamentals to mastery</p>
           </div>
-          Course Curriculum
-        </h2>
-        <div className="space-y-4">
-          {course.sections.map((section, idx) => {
+          <div className="flex items-center gap-3">
+            <div className="px-5 py-2.5 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/50 flex items-center gap-2">
+              <FileText className="h-4 w-4 text-blue-500" />
+              <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                {course.sections?.length || 0} Modules
+              </span>
+            </div>
+            <div className="px-5 py-2.5 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-700/50 flex items-center gap-2">
+              <Clock className="h-4 w-4 text-violet-500" />
+              <span className="text-sm font-bold text-slate-700 dark:text-slate-200">
+                {course.sections?.reduce((acc, s) => acc + s.lessons.reduce((la, l) => la + (l.estimatedMinutes || 0), 0), 0)} Min
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-6">
+          {course.sections?.map((section, idx) => {
             const sectionProgress = getSectionProgress(section._id);
             const isSectionExpanded = expandedSections.has(section._id);
-            
+
             return (
               <div
                 key={section._id}
-                className="border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden hover:border-blue-400 dark:hover:border-blue-500 transition-all"
+                className={`group border rounded-[2rem] overflow-hidden transition-all duration-300 ${isSectionExpanded
+                  ? 'border-blue-400/50 dark:border-blue-500/30 ring-4 ring-blue-500/5 dark:ring-blue-500/5 bg-slate-50/50 dark:bg-slate-800/10'
+                  : 'border-slate-100 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-900/50'
+                  }`}
               >
                 {/* Section Header */}
                 <button
                   onClick={() => toggleSection(section._id)}
-                  className="w-full p-5 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-800/30 hover:from-blue-50 hover:to-blue-100 dark:hover:from-blue-900/20 dark:hover:to-blue-800/20 transition-all"
+                  className="w-full text-left p-6 lg:p-8"
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-4 flex-1 text-left">
-                      <div className="flex-shrink-0 w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-blue-700 dark:from-blue-600 dark:to-blue-700 flex items-center justify-center font-bold shadow-md">
-                        <span className="text-white">{idx + 1}</span>
+                  <div className="flex items-start gap-6">
+                    {/* Index Circle */}
+                    <div className="flex-shrink-0">
+                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center font-black text-xl transition-all duration-500 ${isSectionExpanded
+                        ? 'bg-blue-600 text-white shadow-xl shadow-blue-900/30 rotate-12 scale-110'
+                        : 'bg-slate-100 dark:bg-slate-800 text-slate-400 dark:text-slate-500'
+                        }`}>
+                        {idx + 1}
                       </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <h3 className="font-bold text-gray-900 dark:text-white text-lg">
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div>
+                          <h3 className={`text-xl lg:text-2xl font-black mb-1 transition-colors ${isSectionExpanded ? 'text-blue-600 dark:text-blue-400' : 'text-slate-900 dark:text-white text-opacity-90'
+                            }`}>
                             {section.title}
                           </h3>
-                          {isSectionExpanded ? (
-                            <ChevronDown className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-                          ) : (
-                            <ChevronRight className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                          {section.description && (
+                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium line-clamp-1">
+                              {section.description}
+                            </p>
                           )}
                         </div>
-                        {section.description && (
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                            {section.description}
-                          </p>
-                        )}
-                        <div className="flex flex-wrap items-center gap-2 text-sm">
-                          <span className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-gray-800 border-2 border-violet-500 dark:border-violet-500 text-violet-700 dark:text-violet-400 rounded-lg font-medium shadow-sm">
-                            <FileText className="h-4 w-4" />
-                            {section.lessons.length} lessons
-                          </span>
-                        </div>
-                        {enrolled && sectionProgress > 0 && (
-                          <div className="mt-3">
-                            <div className="flex items-center justify-between text-xs mb-1.5">
-                              <span className="text-gray-600 dark:text-gray-400 font-medium">Progress</span>
-                              <span className="font-bold text-gray-900 dark:text-white">
-                                {Math.round(sectionProgress)}%
-                              </span>
+                        <div className="flex flex-shrink-0 items-center gap-5">
+                          {enrolled && (
+                            <div className="flex items-center gap-3">
+                              {sectionProgress > 0 && (
+                                <CircularProgress
+                                  percentage={sectionProgress}
+                                  size={44}
+                                  strokeWidth={4}
+                                  color={sectionProgress === 100 ? "text-emerald-500" : "text-blue-600"}
+                                />
+                              )}
+                              {sectionProgress === 100 && (
+                                <div className="hidden sm:flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 px-3 py-1.5 rounded-xl border border-emerald-100 dark:border-emerald-800/50">
+                                  <CheckCircle className="h-3.5 w-3.5" />
+                                  <span className="text-[10px] font-black uppercase tracking-widest">Mastered</span>
+                                </div>
+                              )}
                             </div>
-                            <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-gradient-to-r from-blue-600 to-blue-500 dark:from-blue-600 dark:to-blue-500 transition-all duration-300"
-                                style={{ width: `${sectionProgress}%` }}
-                              />
-                            </div>
+                          )}
+                          <div className={`p-2 rounded-xl transition-colors ${isSectionExpanded ? 'bg-blue-600/10 text-blue-600' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>
+                            {isSectionExpanded ? <ChevronDown className="h-6 w-6" /> : <ChevronRight className="h-6 w-6" />}
                           </div>
-                        )}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </button>
 
-                {/* Section Lessons (Expandable) */}
+                {/* Section Content */}
                 {isSectionExpanded && (
-                  <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800/30">
-                    <div className="p-4 space-y-3">
+                  <div className="px-6 lg:px-8 pb-8 pt-2">
+                    <div className="grid gap-4">
                       {section.lessons.map((lesson, lessonIdx) => {
                         const isLessonExpanded = expandedLessons.has(lesson._id);
-                        const hasQuizzes = (lesson.linkedQuizzes && lesson.linkedQuizzes.length > 0) || (lesson.quiz && (lesson.quiz?.length || 0) > 0);
-                        const hasAssignments = lesson.linkedAssignments && lesson.linkedAssignments.length > 0;
-                        const hasActivities = lesson.linkedActivities && lesson.linkedActivities.length > 0;
-                        const hasResources = lesson.resources && lesson.resources.length > 0;
-                        const hasMedia = lesson.media && lesson.media.length > 0;
-                        
                         return (
                           <div
                             key={lesson._id}
-                            className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden bg-white dark:bg-gray-800 hover:shadow-md transition-all"
+                            className={`rounded-2xl border transition-all duration-300 ${isLessonExpanded
+                              ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 shadow-md'
+                              : 'bg-transparent border-transparent hover:bg-slate-100/50 dark:hover:bg-slate-800/30'
+                              }`}
                           >
-                            {/* Lesson Header */}
                             <button
                               onClick={() => toggleLesson(lesson._id)}
-                              className="w-full p-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                              className="w-full text-left p-4 lg:p-5 flex items-center justify-between gap-4"
                             >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3 flex-1 text-left">
-                                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-violet-600 dark:from-violet-500 dark:to-violet-600 flex items-center justify-center font-semibold text-white text-sm shadow-sm">
-                                    {lessonIdx + 1}
-                                  </div>
-                                  <div className="flex-1">
-                                    <h4 className="font-semibold text-gray-900 dark:text-white">
-                                      {lesson.title}
-                                    </h4>
-                                    <div className="flex flex-wrap items-center gap-2 mt-2">
-                                      {lesson.estimatedMinutes && (
-                                        <span className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                                          <Clock className="h-3 w-3" />
-                                          {lesson.estimatedMinutes} min
-                                        </span>
-                                      )}
-                                      {hasQuizzes && (
-                                        <span className="text-xs px-2 py-1 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-md font-medium">
-                                          Quiz
-                                        </span>
-                                      )}
-                                      {hasAssignments && (
-                                        <span className="text-xs px-2 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded-md font-medium">
-                                          Assignment
-                                        </span>
-                                      )}
-                                      {hasActivities && (
-                                        <span className="text-xs px-2 py-1 bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-400 rounded-md font-medium">
-                                          Activity
-                                        </span>
-                                      )}
-                                      {hasResources && (
-                                        <span className="text-xs px-2 py-1 bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 rounded-md font-medium">
-                                          Resources
-                                        </span>
-                                      )}
-                                      {hasMedia && (
-                                        <span className="text-xs px-2 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded-md font-medium">
-                                          Media
-                                        </span>
-                                      )}
-                                    </div>
+                              <div className="flex items-center gap-5 min-w-0">
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm transition-all ${isLessonExpanded ? 'bg-blue-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-500'
+                                  }`}>
+                                  {lessonIdx + 1}
+                                </div>
+                                <div className="min-w-0">
+                                  <h4 className="font-bold text-slate-900 dark:text-white truncate">{lesson.title}</h4>
+                                  <div className="flex flex-wrap items-center gap-3 mt-1.5 opacity-60">
+                                    <span className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-tighter">
+                                      <Clock className="h-3 w-3" />
+                                      {lesson.estimatedMinutes}m
+                                    </span>
+                                    {lesson.videoUrl && (
+                                      <span className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-tighter text-blue-500">
+                                        <PlayCircle className="h-3 w-3" />
+                                        Video
+                                      </span>
+                                    )}
+                                    {(lesson.linkedQuizzes?.length || 0) + ((lesson.quiz?.length || 0) > 0 ? 1 : 0) > 0 && (
+                                      <span className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-tighter text-amber-500">
+                                        <Trophy className="h-3 w-3" />
+                                        Quiz
+                                      </span>
+                                    )}
                                   </div>
                                 </div>
-                                {isLessonExpanded ? (
-                                  <ChevronDown className="h-5 w-5 text-gray-400 dark:text-gray-500 flex-shrink-0" />
-                                ) : (
-                                  <ChevronRight className="h-5 w-5 text-gray-400 dark:text-gray-500 flex-shrink-0" />
-                                )}
+                              </div>
+                              <div className={`transition-transform duration-300 ${isLessonExpanded ? 'rotate-180' : ''}`}>
+                                <ChevronDown className="h-5 w-5 text-slate-400" />
                               </div>
                             </button>
 
-                            {/* Lesson Materials (Expandable) */}
+                            {/* Lesson Deep Dive */}
                             {isLessonExpanded && (
-                              <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/30 p-4 space-y-3">
-                                
-                                {/* Quizzes Section */}
-                                {hasQuizzes && (
-                                  <div className="border border-amber-200 dark:border-amber-800 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
-                                    <button
-                                      onClick={() => toggleMaterial(`${lesson._id}-quizzes`)}
-                                      className="w-full p-3 flex items-center justify-between hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-colors"
-                                    >
-                                      <div className="flex items-center gap-2">
-                                        <Trophy className="h-5 w-5 text-amber-600 dark:text-amber-500" />
-                                        <span className="font-semibold text-gray-900 dark:text-white">
-                                          Quizzes ({(lesson.linkedQuizzes?.length || 0) + (lesson.quiz?.length > 0 ? 1 : 0)})
-                                        </span>
+                              <div className="p-4 lg:p-6 border-t border-slate-100 dark:border-slate-800 space-y-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                  {[
+                                    { icon: Trophy, label: "Quizzes", count: (lesson.linkedQuizzes?.length || 0) + ((lesson.quiz?.length || 0) > 0 ? 1 : 0), color: "amber", id: "quizzes" },
+                                    { icon: ClipboardList, label: "Assignments", count: lesson.linkedAssignments?.length || 0, color: "indigo", id: "assignments" },
+                                    { icon: Zap, label: "Activities", count: lesson.linkedActivities?.length || 0, color: "pink", id: "activities" },
+                                    { icon: FileDown, label: "Resources", count: lesson.resources?.length || 0, color: "teal", id: "resources" }
+                                  ].filter(m => m.count > 0).map((mat) => (
+                                    <div key={mat.id} className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                                      <div className={`w-10 h-10 rounded-xl bg-${mat.color}-50 dark:bg-${mat.color}-900/20 flex items-center justify-center text-${mat.color}-600 dark:text-${mat.color}-400 mb-3`}>
+                                        <mat.icon className="h-5 w-5" />
                                       </div>
-                                      {expandedMaterials.has(`${lesson._id}-quizzes`) ? (
-                                        <ChevronDown className="h-4 w-4 text-gray-400" />
-                                      ) : (
-                                        <ChevronRight className="h-4 w-4 text-gray-400" />
-                                      )}
-                                    </button>
-                                    {expandedMaterials.has(`${lesson._id}-quizzes`) && (
-                                      <div className="border-t border-amber-200 dark:border-amber-800 p-3 space-y-2">
-                                        {lesson.linkedQuizzes?.map((quiz, qIdx) => (
-                                          <div key={qIdx} className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
-                                            <div className="flex items-start gap-2">
-                                              <Trophy className="h-4 w-4 text-amber-600 dark:text-amber-500 mt-0.5 flex-shrink-0" />
-                                              <div className="flex-1 min-w-0">
-                                                <p className="font-medium text-gray-900 dark:text-white text-sm">
-                                                  {quiz.title}
-                                                </p>
-                                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                                  {quiz.questions?.length || 0} questions
-                                                </p>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        ))}
-                                        {lesson.quiz && (lesson.quiz?.length || 0) > 0 && (
-                                          <div className="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
-                                            <div className="flex items-start gap-2">
-                                              <Trophy className="h-4 w-4 text-amber-600 dark:text-amber-500 mt-0.5 flex-shrink-0" />
-                                              <div className="flex-1 min-w-0">
-                                                <p className="font-medium text-gray-900 dark:text-white text-sm">
-                                                  Embedded Quiz
-                                                </p>
-                                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                                                  {lesson.quiz?.length || 0} questions
-                                                </p>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        )}
+                                      <p className="text-xl font-black text-slate-900 dark:text-white leading-none mb-1">{mat.count}</p>
+                                      <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider font-sans">{mat.label}</p>
+                                    </div>
+                                  ))}
+                                  {(lesson.media?.length || 0) > 0 && (
+                                    <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                                      <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center text-purple-600 dark:text-purple-400 mb-3">
+                                        <Video className="h-5 w-5" />
                                       </div>
-                                    )}
-                                  </div>
-                                )}
-
-                                {/* Assignments Section */}
-                                {hasAssignments && (
-                                  <div className="border border-indigo-200 dark:border-indigo-800 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
-                                    <button
-                                      onClick={() => toggleMaterial(`${lesson._id}-assignments`)}
-                                      className="w-full p-3 flex items-center justify-between hover:bg-indigo-50 dark:hover:bg-indigo-900/10 transition-colors"
-                                    >
-                                      <div className="flex items-center gap-2">
-                                        <ClipboardList className="h-5 w-5 text-indigo-600 dark:text-indigo-500" />
-                                        <span className="font-semibold text-gray-900 dark:text-white">
-                                          Assignments ({lesson.linkedAssignments?.length || 0})
-                                        </span>
-                                      </div>
-                                      {expandedMaterials.has(`${lesson._id}-assignments`) ? (
-                                        <ChevronDown className="h-4 w-4 text-gray-400" />
-                                      ) : (
-                                        <ChevronRight className="h-4 w-4 text-gray-400" />
-                                      )}
-                                    </button>
-                                    {expandedMaterials.has(`${lesson._id}-assignments`) && (
-                                      <div className="border-t border-indigo-200 dark:border-indigo-800 p-3 space-y-2">
-                                        {lesson.linkedAssignments?.map((assignment, aIdx) => (
-                                          <div key={aIdx} className="p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
-                                            <div className="flex items-start gap-2">
-                                              <ClipboardList className="h-4 w-4 text-indigo-600 dark:text-indigo-500 mt-0.5 flex-shrink-0" />
-                                              <div className="flex-1 min-w-0">
-                                                <p className="font-medium text-gray-900 dark:text-white text-sm">
-                                                  {assignment.title}
-                                                </p>
-                                                {assignment.description && (
-                                                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
-                                                    {assignment.description}
-                                                  </p>
-                                                )}
-                                              </div>
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-
-                                {/* Activities Section */}
-                                {hasActivities && (
-                                  <div className="border border-pink-200 dark:border-pink-800 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
-                                    <button
-                                      onClick={() => toggleMaterial(`${lesson._id}-activities`)}
-                                      className="w-full p-3 flex items-center justify-between hover:bg-pink-50 dark:hover:bg-pink-900/10 transition-colors"
-                                    >
-                                      <div className="flex items-center gap-2">
-                                        <Zap className="h-5 w-5 text-pink-600 dark:text-pink-500" />
-                                        <span className="font-semibold text-gray-900 dark:text-white">
-                                          Activities ({lesson.linkedActivities?.length || 0})
-                                        </span>
-                                      </div>
-                                      {expandedMaterials.has(`${lesson._id}-activities`) ? (
-                                        <ChevronDown className="h-4 w-4 text-gray-400" />
-                                      ) : (
-                                        <ChevronRight className="h-4 w-4 text-gray-400" />
-                                      )}
-                                    </button>
-                                    {expandedMaterials.has(`${lesson._id}-activities`) && (
-                                      <div className="border-t border-pink-200 dark:border-pink-800 p-3 space-y-2">
-                                        {lesson.linkedActivities?.map((activity, actIdx) => (
-                                          <div key={actIdx} className="p-3 bg-pink-50 dark:bg-pink-900/20 rounded-lg">
-                                            <div className="flex items-start gap-2">
-                                              <Zap className="h-4 w-4 text-pink-600 dark:text-pink-500 mt-0.5 flex-shrink-0" />
-                                              <div className="flex-1 min-w-0">
-                                                <p className="font-medium text-gray-900 dark:text-white text-sm">
-                                                  {activity.title}
-                                                </p>
-                                                {activity.description && (
-                                                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
-                                                    {activity.description}
-                                                  </p>
-                                                )}
-                                                {activity.duration && (
-                                                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1">
-                                                    <Clock className="h-3 w-3" />
-                                                    {activity.duration} minutes
-                                                  </p>
-                                                )}
-                                              </div>
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-
-                                {/* Resources Section */}
-                                {hasResources && (
-                                  <div className="border border-teal-200 dark:border-teal-800 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
-                                    <button
-                                      onClick={() => toggleMaterial(`${lesson._id}-resources`)}
-                                      className="w-full p-3 flex items-center justify-between hover:bg-teal-50 dark:hover:bg-teal-900/10 transition-colors"
-                                    >
-                                      <div className="flex items-center gap-2">
-                                        <FileDown className="h-5 w-5 text-teal-600 dark:text-teal-500" />
-                                        <span className="font-semibold text-gray-900 dark:text-white">
-                                          Resources ({lesson.resources?.length || 0})
-                                        </span>
-                                      </div>
-                                      {expandedMaterials.has(`${lesson._id}-resources`) ? (
-                                        <ChevronDown className="h-4 w-4 text-gray-400" />
-                                      ) : (
-                                        <ChevronRight className="h-4 w-4 text-gray-400" />
-                                      )}
-                                    </button>
-                                    {expandedMaterials.has(`${lesson._id}-resources`) && (
-                                      <div className="border-t border-teal-200 dark:border-teal-800 p-3 space-y-2">
-                                        {lesson.resources?.map((resource, rIdx) => (
-                                          <div key={rIdx} className="p-3 bg-teal-50 dark:bg-teal-900/20 rounded-lg">
-                                            <a
-                                              href={resource}
-                                              target="_blank"
-                                              rel="noopener noreferrer"
-                                              className="flex items-start gap-2 hover:underline"
-                                            >
-                                              <FileDown className="h-4 w-4 text-teal-600 dark:text-teal-500 mt-0.5 flex-shrink-0" />
-                                              <div className="flex-1 min-w-0">
-                                                <p className="font-medium text-teal-700 dark:text-teal-400 text-sm truncate">
-                                                  Resource {rIdx + 1}
-                                                </p>
-                                                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 truncate">
-                                                  {resource}
-                                                </p>
-                                              </div>
-                                            </a>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-
-                                {/* Media Section */}
-                                {hasMedia && (
-                                  <div className="border border-purple-200 dark:border-purple-800 rounded-lg overflow-hidden bg-white dark:bg-gray-800">
-                                    <button
-                                      onClick={() => toggleMaterial(`${lesson._id}-media`)}
-                                      className="w-full p-3 flex items-center justify-between hover:bg-purple-50 dark:hover:bg-purple-900/10 transition-colors"
-                                    >
-                                      <div className="flex items-center gap-2">
-                                        <Video className="h-5 w-5 text-purple-600 dark:text-purple-500" />
-                                        <span className="font-semibold text-gray-900 dark:text-white">
-                                          Media ({lesson.media?.length || 0})
-                                        </span>
-                                      </div>
-                                      {expandedMaterials.has(`${lesson._id}-media`) ? (
-                                        <ChevronDown className="h-4 w-4 text-gray-400" />
-                                      ) : (
-                                        <ChevronRight className="h-4 w-4 text-gray-400" />
-                                      )}
-                                    </button>
-                                    {expandedMaterials.has(`${lesson._id}-media`) && (
-                                      <div className="border-t border-purple-200 dark:border-purple-800 p-3 space-y-2">
-                                        {lesson.media?.map((mediaItem, mIdx) => (
-                                          <div key={mIdx} className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
-                                            <div className="flex items-start gap-2">
-                                              <PlayCircle className="h-4 w-4 text-purple-600 dark:text-purple-500 mt-0.5 flex-shrink-0" />
-                                              <div className="flex-1 min-w-0">
-                                                <p className="font-medium text-gray-900 dark:text-white text-sm">
-                                                  {mediaItem.title}
-                                                </p>
-                                                {mediaItem.description && (
-                                                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
-                                                    {mediaItem.description}
-                                                  </p>
-                                                )}
-                                                {mediaItem.url && (
-                                                  <a
-                                                    href={mediaItem.url}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-xs text-purple-600 dark:text-purple-400 mt-1 hover:underline flex items-center gap-1"
-                                                  >
-                                                    <PlayCircle className="h-3 w-3" />
-                                                    Watch Video
-                                                  </a>
-                                                )}
-                                              </div>
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
+                                      <p className="text-xl font-black text-slate-900 dark:text-white leading-none mb-1">{lesson.media?.length || 0}</p>
+                                      <p className="text-[10px] font-black uppercase text-slate-400 tracking-wider font-sans">Media Docs</p>
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="pt-2">
+                                  <Button className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-black rounded-xl py-6 hover:translate-y-[-2px] hover:shadow-lg transition-all active:scale-95">
+                                    Continue to Module {lessonIdx + 1}
+                                  </Button>
+                                </div>
                               </div>
                             )}
                           </div>

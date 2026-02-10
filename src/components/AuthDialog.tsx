@@ -6,13 +6,13 @@ import { Label } from "./ui/label";
 import { Dialog, DialogContent } from "./ui/dialog";
 import { CompleteProfileDialog } from "./CompleteProfileDialog";
 import { EmailVerificationDialog } from "./EmailVerificationDialog";
-import { BUTTON_STYLES } from "../constants";
 import { Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 import { useNotification } from "@/contexts/NotificationContext";
 import authService from "@/services/auth.service";
 import userService from "@/services/user.service";
 import { auth, googleProvider } from "@/lib/firebase";
 import { signInWithPopup, createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AuthDialogProps {
   isOpen: boolean;
@@ -22,6 +22,7 @@ interface AuthDialogProps {
 }
 
 export function AuthDialog({ isOpen, onClose, mode, onModeChange }: AuthDialogProps) {
+  const { login, register, firebaseLogin } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showCompleteProfile, setShowCompleteProfile] = useState(false);
@@ -45,14 +46,14 @@ export function AuthDialog({ isOpen, onClose, mode, onModeChange }: AuthDialogPr
         // Register new user with Firebase first (email/password signup only)
         const firebaseUser = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
 
-        // Send verification email via Firebase for email/password signups
+        // Send verification email via Firebase
         await sendEmailVerification(firebaseUser.user, {
           url: window.location.origin + '/login',
           handleCodeInApp: false,
         });
 
-        // Register user in backend
-        await authService.register({
+        // Register user in backend via Context
+        await register({
           email: formData.email,
           firstName: formData.firstName,
           lastName: formData.lastName,
@@ -60,7 +61,7 @@ export function AuthDialog({ isOpen, onClose, mode, onModeChange }: AuthDialogPr
           referralSource: formData.referralSource || undefined,
         });
 
-        // Show verification dialog for email/password signups (Google signups skip this)
+        // Show verification dialog
         setUserEmailForVerification(formData.email);
         onClose();
         setTimeout(() => {
@@ -68,53 +69,52 @@ export function AuthDialog({ isOpen, onClose, mode, onModeChange }: AuthDialogPr
           resetForm();
         }, 500);
       } else {
-        // Login existing user
-        const response = await authService.login({
+        // Login via Context
+        await login({
           email: formData.email,
           password: formData.password,
         });
 
-        // Check if email is verified
-        if (!response.user.isEmailVerified) {
-          notification.warning('Email not verified', 'Please verify your email before accessing your account. Check your inbox for the verification link.');
+        // Note: Context updates 'user'. We need to check verification/profile status from API or the updated user.
+        // For simplicity, we can fetch profile again or assume 'login' in context throws if failed.
+        // But we need the USER object to check `isEmailVerified`.
+        // The context doesn't return the user from login() but updates state.
+        // We can check currentUser from authService or just proceed.
+        // Actually, if we want to check email verification immediately, we might need to inspect the response.
+        // Let's modify context to return the user or we just assume success if no error.
+
+        const currentUser = authService.getCurrentUser(); // Context uses authService internally so this should be sync-ish after await
+
+        if (currentUser && !currentUser.isEmailVerified) {
+          notification.warning('Email not verified', 'Please verify your email before accessing your account.');
           onClose();
           resetForm();
           return;
         }
 
-        notification.success('Login successful!', `Welcome back, ${response.user.firstName}!`);
+        notification.success('Login successful!', `Welcome back!`);
 
-        // Dispatch login success event
-        const event = new CustomEvent('loginSuccess', { detail: { user: response.user } });
-        window.dispatchEvent(event);
-
-        // Check if profile is complete using the API
+        // Check profile completion
         try {
           const profileStatus = await userService.isProfileComplete();
           const isProfileIncomplete = !profileStatus.isComplete;
 
-          // Close dialog and show complete profile if needed
           onClose();
           setTimeout(() => {
             if (isProfileIncomplete) {
               setShowCompleteProfile(true);
             } else {
-              // Reload page after successful login if profile is complete
-              window.location.reload();
+              // No refresh needed, context updates UI
             }
             resetForm();
           }, isProfileIncomplete ? 500 : 1000);
         } catch (error) {
-          // If profile check fails, just reload
           onClose();
-          setTimeout(() => {
-            window.location.reload();
-            resetForm();
-          }, 1000);
+          resetForm();
         }
       }
     } catch (err: any) {
-      notification.error('Authentication failed', err.message || 'An error occurred. Please try again.');
+      notification.error('Authentication failed', err.message || 'An error occurred.');
     } finally {
       setLoading(false);
     }
@@ -124,51 +124,32 @@ export function AuthDialog({ isOpen, onClose, mode, onModeChange }: AuthDialogPr
     setLoading(true);
 
     try {
-      // Sign in with Google via Firebase
       const result = await signInWithPopup(auth, googleProvider);
       const firebaseToken = await result.user.getIdToken();
 
-      // Send Firebase token to backend
-      const response = await authService.firebaseLogin({
+      await firebaseLogin({
         firebaseToken,
         isGoogleSignup: mode === 'signup',
       });
 
-      // Google users are typically auto-verified, so skip email verification
-      notification.success('Google authentication successful!', `Welcome, ${response.user.firstName}!`);
+      notification.success('Google authentication successful!', `Welcome!`);
 
-      // Dispatch login success event
-      const event = new CustomEvent('loginSuccess', { detail: { user: response.user } });
-      window.dispatchEvent(event);
-
-      // For Google signup, always show complete profile dialog
-      // For Google login, only show if profile is incomplete
       try {
         const profileStatus = await userService.isProfileComplete();
         const isProfileIncomplete = !profileStatus.isComplete;
 
-        // Close dialog and show complete profile if it's a signup or profile is incomplete
         onClose();
         setTimeout(() => {
           if (mode === 'signup' || isProfileIncomplete) {
             setShowCompleteProfile(true);
           } else {
-            // Reload page after successful Google login if profile is complete
             window.location.reload();
           }
           resetForm();
         }, 500);
       } catch (error) {
-        // If profile check fails, show complete profile for signup, reload for login
         onClose();
-        setTimeout(() => {
-          if (mode === 'signup') {
-            setShowCompleteProfile(true);
-          } else {
-            window.location.reload();
-          }
-          resetForm();
-        }, 500);
+        resetForm();
       }
     } catch (err: any) {
       notification.error('Google authentication failed', err.message || 'Please try again.');
@@ -344,7 +325,7 @@ export function AuthDialog({ isOpen, onClose, mode, onModeChange }: AuthDialogPr
                 <Button
                   type="submit"
                   disabled={loading}
-                  className={`w-full h-11 ${BUTTON_STYLES.gradient} rounded-xl text-sm font-semibold transition-all hover:shadow-lg disabled:opacity-50 mt-1`}
+                  className={`w-full h-11 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-all hover:shadow-lg disabled:opacity-50 mt-1 shadow-blue-600/20`}
                 >
                   {loading ? (
                     <div className="flex items-center justify-center gap-2">

@@ -10,4 +10,30 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    proxy: {
+      '/api': {
+        target: 'https://dbmsapi.parteekbhatia.com',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+        secure: false, // In case of self-signed certs (dev only)
+      },
+      // Also proxy specific endpoints that may not be prefixed with /api if needed
+      '/auth': {
+        target: 'https://dbmsapi.parteekbhatia.com',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/users': {
+        target: 'https://dbmsapi.parteekbhatia.com',
+        changeOrigin: true,
+        secure: false,
+      },
+      '/notes': {
+        target: 'https://dbmsapi.parteekbhatia.com',
+        changeOrigin: true,
+        secure: false,
+      },
+    }
+  }
 })
