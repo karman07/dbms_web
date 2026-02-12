@@ -204,7 +204,7 @@ const NotificationBell: React.FC = () => {
                             {notification.body}
                           </p>
                           <p className="text-xs text-gray-400 dark:text-gray-500">
-                            {new Date(notification.sentAt).toLocaleString()}
+                            {new Date(notification.sentAt || notification.createdAt).toLocaleString()}
                           </p>
                         </div>
                         {isUnread && (

@@ -262,18 +262,17 @@ const NotificationSettingsPage: React.FC = () => {
               {history.map((notification) => (
                 <div
                   key={notification._id}
-                  className={`p-4 rounded-lg border-2 transition-all ${
-                    notification.readAt
+                  className={`p-4 rounded-lg border-2 transition-all ${notification.readAt
                       ? 'bg-gray-50 border-gray-200'
                       : 'bg-blue-50 border-blue-200'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
                       <h4 className="font-semibold text-gray-800 mb-1">{notification.title}</h4>
                       <p className="text-gray-600 text-sm mb-2">{notification.body}</p>
                       <p className="text-gray-400 text-xs">
-                        {new Date(notification.sentAt).toLocaleString()}
+                        {new Date(notification.sentAt || notification.createdAt).toLocaleString()}
                       </p>
                     </div>
                     {!notification.readAt && (
