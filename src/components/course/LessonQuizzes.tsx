@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Trophy, Loader2, CheckCircle, XCircle} from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Trophy, Loader2, CheckCircle, XCircle } from 'lucide-react';
 import { Lesson } from '@/services/course.service';
 import { Button } from '@/components/ui/button';
 import courseService from '@/services/course.service';
@@ -8,7 +8,7 @@ import { useNotification } from '@/contexts/NotificationContext';
 interface LessonQuizzesProps {
   lesson: Lesson;
   enrolled: boolean;
-  onStartQuiz: () => void;
+  onStartQuiz?: () => void;
   onSubmitQuiz?: (answers: Record<number, number>) => Promise<void>;
   sectionId?: string;
   onProgressUpdate?: () => void;
@@ -17,10 +17,10 @@ interface LessonQuizzesProps {
 }
 
 // Separate component for linked quizzes to properly use hooks
-const LinkedQuizItem = ({ quiz, sectionId, lessonId, onProgressUpdate, title, totalQuizzes, currentIndex, enrolled, lesson }: { 
-  quiz: any; 
-  sectionId?: string; 
-  lessonId?: string; 
+const LinkedQuizItem = ({ quiz, sectionId, lessonId, onProgressUpdate, title, totalQuizzes, currentIndex, enrolled, lesson }: {
+  quiz: any;
+  sectionId?: string;
+  lessonId?: string;
   onProgressUpdate?: () => void;
   title: string;
   totalQuizzes: number;
@@ -32,13 +32,20 @@ const LinkedQuizItem = ({ quiz, sectionId, lessonId, onProgressUpdate, title, to
   const [linkedSubmitting, setLinkedSubmitting] = useState(false);
   const [linkedResults, setLinkedResults] = useState<{ score: number; total: number; passed: boolean } | null>(null);
   const notification = useNotification();
+
+  // Reset state when quiz changes
+  useEffect(() => {
+    setLinkedQuizAnswers({});
+    setLinkedResults(null);
+  }, [lessonId, currentIndex]);
+
   console.log('lesson in linked quiz item:', lesson);
   const handleLinkedSubmit = async () => {
     if (!enrolled) {
       notification.error('Not enrolled', 'Please enroll in the course first');
       return;
     }
-    
+
     try {
       setLinkedSubmitting(true);
       // Calculate results for linked quiz
@@ -78,7 +85,7 @@ const LinkedQuizItem = ({ quiz, sectionId, lessonId, onProgressUpdate, title, to
 
       // Check if all quizzes are attempted
       const attemptedQuizzes = Object.keys(quizRecords).filter(k => k.startsWith(`${sectionId}_${lessonId}`)).length;
-      
+
       // Only mark progress if all quizzes are attempted
       if (attemptedQuizzes >= totalQuizzes) {
         if (sectionId && lessonId) {
@@ -148,18 +155,16 @@ const LinkedQuizItem = ({ quiz, sectionId, lessonId, onProgressUpdate, title, to
                     <button
                       key={oIdx}
                       onClick={() => setLinkedQuizAnswers(prev => ({ ...prev, [qIdx]: oIdx }))}
-                      className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
-                        linkedQuizAnswers[qIdx] === oIdx
-                          ? 'border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/30'
-                          : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                      }`}
+                      className={`w-full text-left p-3 rounded-lg border-2 transition-all ${linkedQuizAnswers[qIdx] === oIdx
+                        ? 'border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/30'
+                        : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                        }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                          linkedQuizAnswers[qIdx] === oIdx
-                            ? 'border-blue-600 dark:border-blue-400 bg-blue-600 dark:bg-blue-400'
-                            : 'border-gray-300 dark:border-gray-600'
-                        }`}>
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${linkedQuizAnswers[qIdx] === oIdx
+                          ? 'border-blue-600 dark:border-blue-400 bg-blue-600 dark:bg-blue-400'
+                          : 'border-gray-300 dark:border-gray-600'
+                          }`}>
                           {linkedQuizAnswers[qIdx] === oIdx && (
                             <div className="w-2 h-2 rounded-full bg-white"></div>
                           )}
@@ -197,11 +202,10 @@ const LinkedQuizItem = ({ quiz, sectionId, lessonId, onProgressUpdate, title, to
         </div>
       ) : (
         <div className="text-center py-8">
-          <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 ${
-            linkedResults.passed 
-              ? 'bg-green-100 dark:bg-green-900/30' 
-              : 'bg-red-100 dark:bg-red-900/30'
-          }`}>
+          <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 ${linkedResults.passed
+            ? 'bg-green-100 dark:bg-green-900/30'
+            : 'bg-red-100 dark:bg-red-900/30'
+            }`}>
             {linkedResults.passed ? (
               <CheckCircle className="h-10 w-10 text-green-600 dark:text-green-400" />
             ) : (
@@ -227,6 +231,12 @@ export const LessonQuizzes = ({ lesson, enrolled, onSubmitQuiz, sectionId, onPro
   const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
   const [submitting, setSubmitting] = useState(false);
   const [results, setResults] = useState<{ score: number; total: number; passed: boolean } | null>(null);
+
+  // Reset state when quiz changes
+  useEffect(() => {
+    setQuizAnswers({});
+    setResults(null);
+  }, [lesson._id, selectedQuizIndex]);
 
   const hasMainQuiz = lesson.quiz && lesson.quiz.length > 0;
   const hasLinkedQuizzes = lesson.linkedQuizzes && lesson.linkedQuizzes.length > 0;
@@ -289,18 +299,16 @@ export const LessonQuizzes = ({ lesson, enrolled, onSubmitQuiz, sectionId, onPro
                           <button
                             key={oIdx}
                             onClick={() => setQuizAnswers(prev => ({ ...prev, [qIdx]: oIdx }))}
-                            className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
-                              quizAnswers[qIdx] === oIdx
-                                ? 'border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/30'
-                                : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                            }`}
+                            className={`w-full text-left p-3 rounded-lg border-2 transition-all ${quizAnswers[qIdx] === oIdx
+                              ? 'border-blue-600 dark:border-blue-400 bg-blue-50 dark:bg-blue-900/30'
+                              : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
+                              }`}
                           >
                             <div className="flex items-center gap-3">
-                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
-                                quizAnswers[qIdx] === oIdx
-                                  ? 'border-blue-600 dark:border-blue-400 bg-blue-600 dark:bg-blue-400'
-                                  : 'border-gray-300 dark:border-gray-600'
-                              }`}>
+                              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${quizAnswers[qIdx] === oIdx
+                                ? 'border-blue-600 dark:border-blue-400 bg-blue-600 dark:bg-blue-400'
+                                : 'border-gray-300 dark:border-gray-600'
+                                }`}>
                                 {quizAnswers[qIdx] === oIdx && (
                                   <div className="w-2 h-2 rounded-full bg-white"></div>
                                 )}
@@ -356,11 +364,10 @@ export const LessonQuizzes = ({ lesson, enrolled, onSubmitQuiz, sectionId, onPro
             </div>
           ) : (
             <div className="text-center py-8">
-              <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 ${
-                results.passed 
-                  ? 'bg-green-100 dark:bg-green-900/30' 
-                  : 'bg-red-100 dark:bg-red-900/30'
-              }`}>
+              <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 ${results.passed
+                ? 'bg-green-100 dark:bg-green-900/30'
+                : 'bg-red-100 dark:bg-red-900/30'
+                }`}>
                 {results.passed ? (
                   <CheckCircle className="h-10 w-10 text-green-600 dark:text-green-400" />
                 ) : (
@@ -380,8 +387,8 @@ export const LessonQuizzes = ({ lesson, enrolled, onSubmitQuiz, sectionId, onPro
           )}
         </div>
       ) : (
-        <LinkedQuizItem 
-          quiz={currentQuiz.data} 
+        <LinkedQuizItem
+          quiz={currentQuiz.data}
           sectionId={sectionId}
           lessonId={lesson._id}
           onProgressUpdate={onProgressUpdate}
