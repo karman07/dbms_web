@@ -2,7 +2,7 @@ import { messaging, getToken, onMessage } from '@/lib/firebase';
 import axiosInstance from '@/lib/axios';
 
 // VAPID Key - Get this from Firebase Console -> Project Settings -> Cloud Messaging -> Web Push certificates
-const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || 'BBHqca9yH9z9fgHuaVapELGuA2p7WhHX9LMSi0L3N7E3SkQG_51IjJ8wdxjZ-EAIoNmyd-2gj97UU4xVMwWMsqnE';
+//const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || 'BBHqca9yH9z9fgHuaVapELGuA2p7WhHX9LMSi0L3N7E3SkQG_51IjJ8wdxjZ-EAIoNmyd-2gj97UU4xVMwWMsqnE';
 
 export interface NotificationPayload {
   notification?: {
@@ -71,7 +71,7 @@ class NotificationService {
 
         // Get FCM token
         const token = await getToken(messaging, {
-          vapidKey: VAPID_KEY,
+          vapidKey: import.meta.env.VITE_FIREBASE_VAPID_KEY,
         });
 
         if (token) {
