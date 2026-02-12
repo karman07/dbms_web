@@ -16,6 +16,8 @@ import QuizPage from "@/pages/QuizPage";
 import QuizResultsPage from "@/pages/QuizResultsPage";
 import NotificationSettingsPage from "@/pages/NotificationSettingsPage";
 import NotificationsPage from "@/pages/NotificationsPage";
+import { PrivacyPage } from "@/pages/PrivacyPage";
+import { TermsPage } from "@/pages/TermsPage";
 
 import { Footer } from "./components/Footer";
 import { Navigation } from "@/components/Header";
@@ -58,6 +60,8 @@ function AppContent() {
         <Route path="/notes" element={<NotesPage />} />
         <Route path="/notification-settings" element={<NotificationSettingsPage />} />
         <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
       </Routes>
 
       {!isDashboardRoute && <Footer />}

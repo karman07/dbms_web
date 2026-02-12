@@ -105,13 +105,7 @@ export function HomePage({ onAuthOpen }: HomePageProps) {
             viewport={{ once: true }}
             className="text-center lg:text-left z-10"
           >
-            <motion.div variants={fadeInUp} className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800 text-blue-600 dark:text-blue-400 text-xs sm:text-sm font-medium mb-6">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-              </span>
-              Academic Excellence 2026
-            </motion.div>
+
 
             <motion.h1 variants={fadeInUp} className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-6 leading-[1.1]">
               DBMS Teaching & <br />Learning Hub
@@ -156,7 +150,7 @@ export function HomePage({ onAuthOpen }: HomePageProps) {
           >
             <div className="relative w-full max-w-lg lg:max-w-none">
               {/* Main Window */}
-              <div className="relative bg-slate-950 rounded-2xl shadow-2xl overflow-hidden border border-slate-800 aspect-[4/3] lg:aspect-auto lg:h-[500px]">
+              <div className="relative bg-slate-950 rounded-2xl shadow-2xl overflow-hidden border border-slate-800 aspect-square sm:aspect-[4/3] lg:aspect-auto lg:h-[500px]">
                 {/* Window Header */}
                 <div className="flex items-center px-4 py-3 bg-slate-900 border-b border-slate-800">
                   <div className="flex space-x-2">
@@ -168,7 +162,7 @@ export function HomePage({ onAuthOpen }: HomePageProps) {
                 </div>
 
                 {/* Code Content */}
-                <div className="p-6 font-mono text-sm leading-relaxed overflow-hidden">
+                <div className="p-4 sm:p-6 font-mono text-[10px] sm:text-sm leading-relaxed overflow-hidden">
                   <div className="text-slate-400 mb-2">-- World-class expertise query</div>
                   <div className="flex flex-wrap mb-1">
                     <span className="text-purple-400 font-bold">SELECT</span>
@@ -183,22 +177,21 @@ export function HomePage({ onAuthOpen }: HomePageProps) {
                     <span className="text-green-400 ml-2">'the best'</span>;
                   </div>
 
-                  <div className="text-slate-500 mb-2">-- Query Results:</div>
-                  <div className="bg-slate-900/40 rounded-xl p-5 border border-slate-800/60 shadow-inner">
-                    <div className="grid grid-cols-3 gap-6 border-b border-slate-700/50 pb-3 mb-3 text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em]">
+                  <div className="bg-slate-900/40 rounded-xl p-3 sm:p-5 border border-slate-800/60 shadow-inner">
+                    <div className="grid grid-cols-[0.8fr_1.4fr_1fr] gap-2 sm:gap-6 border-b border-slate-700/50 pb-2 sm:pb-3 mb-2 sm:mb-3 text-[8px] sm:text-[10px] text-slate-500 font-bold uppercase tracking-[0.1em] sm:tracking-[0.2em]">
                       <span>ID</span>
                       <span>Instructor</span>
                       <span>Expertise</span>
                     </div>
-                    <div className="grid grid-cols-3 gap-6 text-xs text-slate-300 items-center">
-                      <span className="text-blue-500/80 font-mono">WSU_01</span>
-                      <span className="font-semibold tracking-tight">Dr. Parteek Bhatia</span>
-                      <div className="flex flex-col gap-1.5">
-                        <span className="text-emerald-400 font-bold flex items-center gap-1.5">
-                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(52,211,153,0.4)]" />
+                    <div className="grid grid-cols-[0.8fr_1.4fr_1fr] gap-2 sm:gap-6 text-[9px] sm:text-xs text-slate-300 items-center">
+                      <span className="text-blue-500/80 font-mono truncate">WSU_01</span>
+                      <span className="font-semibold tracking-tight truncate">Dr. Parteek Bhatia</span>
+                      <div className="flex flex-col gap-1 sm:gap-1.5 min-w-0">
+                        <span className="text-emerald-400 font-bold flex items-center gap-1 sm:gap-1.5 text-[8px] sm:text-[10px] whitespace-nowrap">
+                          <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(52,211,153,0.4)]" />
                           The Best
                         </span>
-                        <span className="text-[10px] text-slate-500 font-medium">Experienced</span>
+                        <span className="text-[7px] sm:text-[10px] text-slate-500 font-medium">Experienced</span>
                       </div>
                     </div>
                   </div>
@@ -208,14 +201,14 @@ export function HomePage({ onAuthOpen }: HomePageProps) {
                     initial={{ y: 20, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ delay: 0.8, duration: 0.8 }}
-                    className="absolute bottom-6 right-6 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 w-64 ring-4 ring-slate-900/5 dark:ring-black/20"
+                    className="absolute bottom-3 right-3 sm:bottom-6 sm:right-6 bg-white dark:bg-slate-800 p-2 sm:p-4 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 w-[140px] sm:w-64 ring-4 ring-slate-900/5 dark:ring-black/20 z-20"
                   >
-                    <div className="flex justify-between items-center mb-3">
-                      <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">DBMS Monitor</span>
-                      <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                    <div className="flex justify-between items-center mb-1.5 sm:mb-3">
+                      <span className="text-[7px] sm:text-[10px] font-bold text-slate-500 uppercase tracking-widest">DBMS Monitor</span>
+                      <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
                     </div>
-                    <div className="space-y-3">
-                      <div className="flex items-end gap-1 h-12">
+                    <div className="space-y-2 sm:space-y-3">
+                      <div className="flex items-end gap-0.5 sm:gap-1 h-6 sm:h-12">
                         <div className="flex-1 bg-blue-100 dark:bg-blue-900/30 rounded-sm overflow-hidden relative">
                           <motion.div initial={{ height: "0%" }} animate={{ height: "40%" }} transition={{ duration: 1, delay: 1 }} className="absolute bottom-0 w-full bg-blue-400" />
                         </div>
@@ -232,9 +225,9 @@ export function HomePage({ onAuthOpen }: HomePageProps) {
                           <motion.div initial={{ height: "0%" }} animate={{ height: "55%" }} transition={{ duration: 1, delay: 1.8 }} className="absolute bottom-0 w-full bg-blue-500" />
                         </div>
                       </div>
-                      <div className="flex justify-between items-center border-t border-slate-100 dark:border-slate-700 pt-2">
-                        <code className="text-xs text-slate-400">latency_ms</code>
-                        <code className="text-xs font-bold text-blue-600 dark:text-blue-400">12ms</code>
+                      <div className="flex justify-between items-center border-t border-slate-100 dark:border-slate-700 pt-1.5 sm:pt-2">
+                        <code className="text-[7px] sm:text-xs text-slate-400 font-mono tracking-tighter sm:tracking-normal">latency_ms</code>
+                        <code className="text-[8px] sm:text-xs font-bold text-blue-600 dark:text-blue-400 font-mono">12ms</code>
                       </div>
                     </div>
                   </motion.div>
@@ -510,7 +503,7 @@ export function HomePage({ onAuthOpen }: HomePageProps) {
               viewport={{ once: true }}
               className="w-full md:w-80 flex-shrink-0"
             >
-              <div className="aspect-[4/5] rounded-2xl overflow-hidden relative shadow-2xl bg-slate-200">
+              <div className="aspect-[4/5] rounded-3xl overflow-hidden relative shadow-2xl bg-slate-200 w-full max-w-sm mx-auto md:max-w-none">
                 <img
                   src="https://parteekbhatia.com/assets/image-BndRrwmw.png"
                   alt="Dr. Parteek Kumar Bhatia"
@@ -518,8 +511,8 @@ export function HomePage({ onAuthOpen }: HomePageProps) {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-transparent to-transparent" />
                 <div className="absolute bottom-6 left-6 text-white z-10">
-                  <p className="text-xs font-bold tracking-widest opacity-80 uppercase mb-1">Instructor</p>
-                  <p className="font-serif italic text-lg opacity-90">"Data is the new oil"</p>
+                  <p className="text-[10px] font-bold tracking-widest opacity-80 uppercase mb-1">Instructor</p>
+                  <p className="font-serif italic text-base sm:text-lg opacity-90">"Data is the new oil"</p>
                 </div>
               </div>
             </motion.div>
@@ -622,12 +615,12 @@ export function HomePage({ onAuthOpen }: HomePageProps) {
                     className="w-full flex items-center justify-between p-6 sm:p-8 text-left hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors"
                   >
                     <div className="flex items-center gap-6">
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${activeModule === idx ? 'bg-blue-600 text-white rotate-6' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
-                        <Clock className="w-6 h-6" />
+                      <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center transition-all ${activeModule === idx ? 'bg-blue-600 text-white rotate-6' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
+                        <Clock className="w-5 h-5 sm:w-6 sm:h-6" />
                       </div>
                       <div>
-                        <h3 className={`font-black text-xl ${activeModule === idx ? 'text-blue-700 dark:text-blue-400' : 'text-slate-900 dark:text-white'}`}>{module.title}</h3>
-                        <p className="text-xs text-slate-500 font-bold mt-1 uppercase tracking-widest">{module.duration}</p>
+                        <h3 className={`font-black text-lg sm:text-xl ${activeModule === idx ? 'text-blue-700 dark:text-blue-400' : 'text-slate-900 dark:text-white'}`}>{module.title}</h3>
+                        <p className="text-[10px] text-slate-500 font-bold mt-1 uppercase tracking-widest">{module.duration}</p>
                       </div>
                     </div>
                     <div className={`transition-transform duration-300 ${activeModule === idx ? 'rotate-180 text-blue-600' : 'text-slate-400'}`}>
@@ -643,9 +636,9 @@ export function HomePage({ onAuthOpen }: HomePageProps) {
                         transition={{ duration: 0.3, ease: "easeInOut" }}
                         className="overflow-hidden"
                       >
-                        <div className="px-8 pb-10 sm:pl-[7.5rem]">
+                        <div className="px-6 sm:px-8 pb-10 md:pl-[7.5rem]">
                           {module.description && (
-                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-8 border-l-4 border-blue-500 dark:border-blue-700 pl-6 py-1 font-medium">
+                            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mb-8 border-l-4 border-blue-500 dark:border-blue-700 pl-4 sm:pl-6 py-1 font-medium">
                               {module.description}
                             </p>
                           )}

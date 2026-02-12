@@ -79,7 +79,7 @@ export const PrivacyPage = () => {
                         <p className="text-slate-600 dark:text-slate-400 leading-relaxed font-medium">
                             If you have any questions about this Privacy Policy, please contact us at:
                             <br />
-                            <span className="text-blue-600 dark:text-blue-400 font-bold mt-2 inline-block">privacy@dbmastery.io</span>
+                            <span className="text-blue-600 dark:text-blue-400 font-bold mt-2 inline-block">parteek.bhatia@gmail.com</span>
                         </p>
                     </section>
 

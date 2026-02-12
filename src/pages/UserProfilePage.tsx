@@ -210,8 +210,8 @@ export default function UserProfilePage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC] dark:bg-[#020617] pb-20 font-sans selection:bg-blue-100 selection:text-blue-900">
 
-      <div className="max-w-7xl mx-auto px-4 lg:px-8 pt-10 relative z-10">
-        <div className="mb-8 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-4 lg:px-8 pt-6 lg:pt-10 relative z-10">
+        <div className="mb-6 lg:mb-8 flex items-center justify-between">
           <Button
             variant="ghost"
             onClick={() => window.history.back()}
@@ -226,17 +226,17 @@ export default function UserProfilePage() {
 
           {/* Sidebar / Left Column */}
           <div className="lg:col-span-4 space-y-6">
-            <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl shadow-slate-200/60 dark:shadow-none p-10 border border-white dark:border-slate-800 text-center relative overflow-hidden group">
+            <div className="bg-white dark:bg-slate-900 rounded-[2rem] lg:rounded-[2.5rem] shadow-2xl shadow-slate-200/60 dark:shadow-none p-6 lg:p-10 border border-white dark:border-slate-800 text-center relative overflow-hidden group">
               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-3xl rounded-full -mr-16 -mt-16" />
 
               <ProfilePicture showUpload={isEditing} />
 
               <div className="mt-8">
-                <h1 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                <h1 className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
                   {user?.firstName} {user?.lastName}
                 </h1>
-                <p className="text-slate-500 font-bold flex items-center justify-center gap-2 mt-2 text-sm">
-                  <Mail className="w-3.5 h-3.5 text-blue-500" /> {user?.email}
+                <p className="text-slate-500 font-bold flex items-center justify-center gap-2 mt-2 text-xs lg:text-sm truncate px-4">
+                  <Mail className="w-3.5 h-3.5 text-blue-500 shrink-0" /> {user?.email}
                 </p>
 
                 <div className="flex flex-wrap gap-2 justify-center mt-6">
@@ -260,7 +260,7 @@ export default function UserProfilePage() {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as any)}
-                    className={`w-full flex items-center justify-between px-6 py-4 rounded-[1.5rem] transition-all duration-300 font-bold text-sm group ${activeTab === tab.id
+                    className={`w-full flex items-center justify-between px-5 lg:px-6 py-3.5 lg:py-4 rounded-2xl lg:rounded-[1.5rem] transition-all duration-300 font-bold text-sm group ${activeTab === tab.id
                       ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/20 translate-x-1 ring-2 ring-blue-600/5'
                       : 'text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'
                       }`}
@@ -299,10 +299,10 @@ export default function UserProfilePage() {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 1.02 }}
                 transition={{ duration: 0.3 }}
-                className="bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl shadow-slate-200/50 dark:shadow-none border border-white dark:border-slate-800/50 overflow-hidden"
+                className="bg-white dark:bg-slate-900 rounded-[2rem] lg:rounded-[3rem] shadow-2xl shadow-slate-200/50 dark:shadow-none border border-white dark:border-slate-800/50 overflow-hidden"
               >
-                <div className="p-10 lg:p-14">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-16 pb-8 border-b border-slate-50 dark:border-slate-800">
+                <div className="p-6 lg:p-14">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 mb-8 lg:mb-16 pb-6 lg:pb-8 border-b border-slate-50 dark:border-slate-800">
                     <div>
                       <div className="flex items-center gap-3 mb-2">
                         <div className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-600/20 flex items-center justify-center text-blue-600 font-black text-sm">
@@ -310,7 +310,7 @@ export default function UserProfilePage() {
                           {activeTab === 'academic' && <GraduationCap className="w-4 h-4" />}
                           {activeTab === 'social' && <Globe className="w-4 h-4" />}
                         </div>
-                        <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter">
+                        <h2 className="text-2xl lg:text-3xl font-black text-slate-900 dark:text-white tracking-tighter">
                           {activeTab === 'profile' && 'Identity & Personal'}
                           {activeTab === 'academic' && 'Professional Track'}
                           {activeTab === 'social' && 'Global Networking'}
@@ -321,9 +321,9 @@ export default function UserProfilePage() {
                       </p>
                     </div>
                     {isEditing && (
-                      <div className="flex gap-3">
-                        <Button variant="ghost" onClick={() => setIsEditing(false)} className="rounded-2xl px-6 h-12 font-black uppercase text-[10px] tracking-widest hover:bg-slate-50">Cancel</Button>
-                        <Button onClick={handleSubmit} disabled={saving} className={`rounded-2xl px-10 h-12 ${GRADIENTS.gradientPrimary} text-white font-black uppercase text-[10px] tracking-widest shadow-xl shadow-blue-600/30`}>
+                      <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                        <Button variant="ghost" onClick={() => setIsEditing(false)} className="rounded-2xl px-6 h-12 font-black uppercase text-[10px] tracking-widest hover:bg-slate-50 w-full sm:w-auto order-2 sm:order-1">Cancel</Button>
+                        <Button onClick={handleSubmit} disabled={saving} className={`rounded-2xl px-10 h-12 ${GRADIENTS.gradientPrimary} text-white font-black uppercase text-[10px] tracking-widest shadow-xl shadow-blue-600/30 w-full sm:w-auto order-1 sm:order-2`}>
                           {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : 'Confirm Changes'}
                         </Button>
                       </div>
@@ -378,7 +378,7 @@ export default function UserProfilePage() {
                         <div className="md:col-span-2 space-y-3">
                           <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1">Geographical Anchor</Label>
                           {isEditing ? (
-                            <div className="grid grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                               <Input name="city" placeholder="City" value={formData.city} onChange={handleInputChange} className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border-none focus:ring-4 focus:ring-blue-500/10 font-bold px-6 text-sm" />
                               <Input name="state" placeholder="State/Prov" value={formData.state} onChange={handleInputChange} className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border-none focus:ring-4 focus:ring-blue-500/10 font-bold px-6 text-sm" />
                               <Input name="country" placeholder="Country" value={formData.country} onChange={handleInputChange} className="h-14 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border-none focus:ring-4 focus:ring-blue-500/10 font-bold px-6 text-sm" />
@@ -407,7 +407,7 @@ export default function UserProfilePage() {
                             <div className="absolute right-4 bottom-4 text-[10px] font-black text-slate-300 uppercase tracking-widest">{formData.bio?.length || 0}/500</div>
                           </div>
                         ) : (
-                          <div className="p-10 bg-slate-50/50 dark:bg-slate-800/30 rounded-[2.5rem] text-slate-500 dark:text-slate-400 leading-[1.8] font-medium italic text-lg relative group border border-slate-100 dark:border-slate-800/50">
+                          <div className="p-6 lg:p-10 bg-slate-50/50 dark:bg-slate-800/30 rounded-[2rem] lg:rounded-[2.5rem] text-slate-500 dark:text-slate-400 leading-[1.8] font-medium italic text-base lg:text-lg relative group border border-slate-100 dark:border-slate-800/50">
                             <div className="absolute top-0 left-0 w-8 h-8 opacity-10 p-1"><QuoteIcon /></div>
                             {user?.bio || 'Professional summary pending initialization.'}
                             <div className="absolute bottom-4 right-8 w-12 h-1 bg-blue-600/20 rounded-full" />
@@ -551,9 +551,9 @@ export default function UserProfilePage() {
                           { name: 'githubProfile', label: 'GitHub Intelligence URL', icon: Github, color: 'text-slate-900', darkColor: 'text-white', bg: 'bg-slate-100', darkBg: 'bg-slate-800' },
                           { name: 'website', label: 'Personal Portfolio Nexus', icon: Globe, color: 'text-indigo-600', bg: 'bg-indigo-50', darkBg: 'bg-indigo-900/20' },
                         ].map((link) => (
-                          <div key={link.name} className="flex items-start gap-8 group">
-                            <div className={`w-16 h-16 rounded-[1.25rem] ${link.bg} dark:${link.darkBg} flex items-center justify-center ${link.color} dark:${link.darkColor || link.color} border border-transparent dark:border-slate-800 group-hover:scale-110 group-hover:shadow-lg transition-all duration-500`}>
-                              <link.icon className="w-7 h-7" />
+                          <div key={link.name} className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-8 group text-center sm:text-left">
+                            <div className={`w-14 h-14 lg:w-16 lg:h-16 rounded-[1.25rem] ${link.bg} dark:${link.darkBg} flex items-center justify-center ${link.color} dark:${link.darkColor || link.color} border border-transparent dark:border-slate-800 group-hover:scale-110 group-hover:shadow-lg transition-all duration-500`}>
+                              <link.icon className="w-6 h-6 lg:w-7 lg:h-7" />
                             </div>
                             <div className="flex-1 space-y-2 mt-1">
                               <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-1 leading-none">{link.label}</Label>

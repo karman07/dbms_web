@@ -11,7 +11,7 @@ import { useNotification } from "@/contexts/NotificationContext";
 import authService from "@/services/auth.service";
 import userService from "@/services/user.service";
 import { auth, googleProvider } from "@/lib/firebase";
-import { signInWithPopup, createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
+import { signInWithPopup, createUserWithEmailAndPassword } from "firebase/auth";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface AuthDialogProps {
@@ -44,13 +44,7 @@ export function AuthDialog({ isOpen, onClose, mode, onModeChange }: AuthDialogPr
     try {
       if (mode === 'signup') {
         // Register new user with Firebase first (email/password signup only)
-        const firebaseUser = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-
-        // Send verification email via Firebase
-        await sendEmailVerification(firebaseUser.user, {
-          url: window.location.origin + '/login',
-          handleCodeInApp: false,
-        });
+        await createUserWithEmailAndPassword(auth, formData.email, formData.password);
 
         // Register user in backend via Context
         await register({

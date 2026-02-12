@@ -177,10 +177,10 @@ const DashboardPage = () => {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-xl lg:text-2xl font-bold text-gray-900 dark:text-white truncate max-w-[200px] sm:max-w-none">
                 Welcome back, {user?.displayName || 'User'}!
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm">
                 Choose what you'd like to explore
               </p>
             </div>
@@ -216,7 +216,7 @@ const DashboardPage = () => {
                 whileHover={{ scale: 1.05, y: -5 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => navigate(`/${item.id}`)}
-                className="bg-white dark:bg-gray-800 rounded-xl p-8 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all cursor-pointer group"
+                className="bg-white dark:bg-gray-800 rounded-xl p-6 lg:p-8 shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-xl transition-all cursor-pointer group"
               >
                 <motion.div
                   className={`bg-gradient-to-r ${item.color} p-4 rounded-lg mb-6 w-fit`}

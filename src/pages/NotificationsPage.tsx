@@ -118,7 +118,7 @@ const NotificationsPage: React.FC = () => {
                             <button
                                 key={t}
                                 onClick={() => setFilter(t)}
-                                className={`px-6 py-2 rounded-xl text-sm font-bold capitalize transition-all ${filter === t
+                                className={`flex-1 px-4 sm:px-6 py-2 rounded-xl text-sm font-bold capitalize transition-all ${filter === t
                                     ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
                                     : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
                                     }`}
@@ -156,7 +156,7 @@ const NotificationsPage: React.FC = () => {
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, scale: 0.95 }}
-                                    className={`group relative bg-white dark:bg-gray-900 p-6 rounded-[2rem] border-2 transition-all cursor-pointer ${!n.readAt
+                                    className={`group relative bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] border-2 transition-all cursor-pointer ${!n.readAt
                                         ? 'border-blue-100 dark:border-blue-900/30 ring-4 ring-blue-50 dark:ring-blue-900/10'
                                         : 'border-transparent dark:border-gray-800 hover:border-gray-200 dark:hover:border-gray-700 shadow-sm'
                                         }`}

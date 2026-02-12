@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Button } from "./ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { BUTTON_STYLES } from "../constants";
-import { Mail, Clock, CheckCircle, RefreshCw, ArrowLeft } from "lucide-react";
+import { Mail, CheckCircle, ArrowLeft } from "lucide-react";
 import { useNotification } from "@/contexts/NotificationContext";
 import { auth } from "@/lib/firebase";
 import { sendEmailVerification, reload } from "firebase/auth";
@@ -46,7 +46,8 @@ export function EmailVerificationDialog({ isOpen, onClose, onBackToLogin, userEm
         url: window.location.origin + '/login', // Redirect URL after verification
         handleCodeInApp: false,
       });
-      
+
+      console.log("Verification email sent to:", auth.currentUser.email);
       setEmailSent(true);
       setRateLimited(false);
       setNextAttemptTime(null);
@@ -54,7 +55,7 @@ export function EmailVerificationDialog({ isOpen, onClose, onBackToLogin, userEm
       notification.success('Email sent!', 'Please check your inbox and spam folder.');
     } catch (err: any) {
       console.error('Email verification error:', err);
-      
+
       // Handle specific Firebase errors
       if (err.code === 'auth/too-many-requests' || err.message?.includes('TOO_MANY_ATTEMPTS_TRY_LATER')) {
         setRateLimited(true);
@@ -62,7 +63,7 @@ export function EmailVerificationDialog({ isOpen, onClose, onBackToLogin, userEm
         setNextAttemptTime(waitTime);
         setCountdown(15 * 60); // 15 minute countdown
         notification.error(
-          'Too many attempts', 
+          'Too many attempts',
           'Please wait 15 minutes before requesting another verification email.'
         );
       } else if (err.code === 'auth/invalid-email') {
@@ -87,7 +88,7 @@ export function EmailVerificationDialog({ isOpen, onClose, onBackToLogin, userEm
     try {
       // Reload user to get latest verification status
       await reload(auth.currentUser);
-      
+
       if (auth.currentUser.emailVerified) {
         notification.success('Email verified!', 'You can now log in to your account.');
         setTimeout(() => {
@@ -111,11 +112,9 @@ export function EmailVerificationDialog({ isOpen, onClose, onBackToLogin, userEm
       setHasAutoSent(true);
       handleSendVerificationEmail();
     }
-    
-    // Reset auto-send flag when dialog closes
+
+    // Reset flags only when explicitly needed, but keep hasAutoSent true to honor "one mail only"
     if (!isOpen) {
-      setHasAutoSent(false);
-      setEmailSent(false);
       setCountdown(0);
     }
   }, [isOpen, hasAutoSent, emailSent, rateLimited]);
@@ -138,20 +137,19 @@ export function EmailVerificationDialog({ isOpen, onClose, onBackToLogin, userEm
           <div className="flex justify-center">
             <div className="relative">
               <motion.div
-                animate={{ 
+                animate={{
                   rotate: emailSent ? 0 : 360,
-                  scale: emailSent ? 1.1 : 1 
+                  scale: emailSent ? 1.1 : 1
                 }}
-                transition={{ 
-                  duration: emailSent ? 0.5 : 2, 
+                transition={{
+                  duration: emailSent ? 0.5 : 2,
                   repeat: emailSent ? 0 : Infinity,
-                  ease: "linear" 
+                  ease: "linear"
                 }}
-                className={`w-20 h-20 rounded-full flex items-center justify-center ${
-                  emailSent 
-                    ? 'bg-gradient-to-r from-green-500 to-emerald-500' 
-                    : 'bg-gradient-to-r from-purple-600 to-blue-600'
-                }`}
+                className={`w-20 h-20 rounded-full flex items-center justify-center ${emailSent
+                  ? 'bg-gradient-to-r from-green-500 to-emerald-500'
+                  : 'bg-gradient-to-r from-purple-600 to-blue-600'
+                  }`}
               >
                 {emailSent ? (
                   <CheckCircle className="w-10 h-10 text-white" />
@@ -218,7 +216,8 @@ export function EmailVerificationDialog({ isOpen, onClose, onBackToLogin, userEm
                 )}
               </Button>
 
-              {/* Resend Email */}
+              {/* Resend Email - Disabled as per requirement for only one mail */}
+              {/* 
               <Button
                 onClick={handleSendVerificationEmail}
                 disabled={loading || countdown > 0 || rateLimited}
@@ -242,6 +241,7 @@ export function EmailVerificationDialog({ isOpen, onClose, onBackToLogin, userEm
                   </div>
                 )}
               </Button>
+              */}
 
               {/* Back to Login */}
               <Button
@@ -256,11 +256,10 @@ export function EmailVerificationDialog({ isOpen, onClose, onBackToLogin, userEm
           )}
 
           {/* Help Text */}
-          <div className={`p-4 rounded-lg ${
-            rateLimited 
-              ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
-              : 'bg-blue-50 dark:bg-blue-900/20'
-          }`}>
+          <div className={`p-4 rounded-lg ${rateLimited
+            ? 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'
+            : 'bg-blue-50 dark:bg-blue-900/20'
+            }`}>
             {rateLimited ? (
               <>
                 <h4 className="text-sm font-medium text-red-900 dark:text-red-100 mb-2 flex items-center gap-2">
