@@ -76,15 +76,18 @@ const DashboardPage = () => {
   }, [user]);
 
   const registerFCM = async () => {
+    // Hide dialog immediately as requested
+    setShowNotificationPrompt(false);
+
+    // Perform transaction in background
     try {
       setIsRegistering(true);
       const token = await notificationService.requestPermission();
       if (token) {
         sessionStorage.setItem('fcm_registered', 'true');
-        setShowNotificationPrompt(false);
       }
     } catch (error: any) {
-      console.error('FCM Registration failed:', error);
+      console.error('Background FCM Registration failed:', error);
     } finally {
       setIsRegistering(false);
     }

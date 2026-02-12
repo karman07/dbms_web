@@ -19,7 +19,8 @@ export interface NotificationHistoryItem {
   _id: string;
   title: string;
   body: string;
-  sentAt: string;
+  sentAt?: string;
+  createdAt: string;
   readAt?: string;
   data?: {
     action?: string;
@@ -68,6 +69,7 @@ class NotificationService {
 
       if (permission === 'granted') {
         console.log('Notification permission granted');
+        console.log("VAPID KEY:", import.meta.env.VITE_FIREBASE_VAPID_KEY);
 
         // Get FCM token
         const token = await getToken(messaging, {
