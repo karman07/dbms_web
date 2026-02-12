@@ -22,7 +22,7 @@ export const GRADIENTS = {
 
 // Professional Button Styles (shadcn-inspired)
 export const BUTTON_STYLES = {
-  gradient: 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 border-0',
+  gradient: 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/30 hover:shadow-xl hover:shadow-blue-500/40 transition-all duration-300 border-0 hover:scale-[1.02] active:scale-[0.98]',
   secondary: 'bg-white hover:bg-gray-50 text-[#4D7BEB] border-2 border-[#4D7BEB] hover:border-[#3A5FD9] shadow-md hover:shadow-lg transition-all duration-200',
   outline: 'border-2 border-[#4D7BEB] text-[#4D7BEB] hover:bg-gradient-to-r hover:from-blue-500 hover:to-indigo-600 hover:text-white bg-transparent shadow-sm hover:shadow-md transition-all duration-200',
   ghost: 'text-[#4D7BEB] hover:bg-gradient-to-r hover:from-blue-500/10 hover:to-indigo-600/10 bg-transparent border-0 shadow-none hover:shadow-sm transition-all duration-200'

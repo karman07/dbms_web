@@ -21,6 +21,12 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(false);
 
   const refreshNotes = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setNotes([]);
+      return;
+    }
+
     try {
       setLoading(true);
       const data = await notesService.getAllNotes();
@@ -34,6 +40,23 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     refreshNotes();
+
+    // Listen for login success to refresh notes
+    const handleLoginSuccess = () => {
+      refreshNotes();
+    };
+
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'token') refreshNotes();
+    };
+
+    window.addEventListener('loginSuccess' as any, handleLoginSuccess);
+    window.addEventListener('storage', handleStorageChange);
+
+    return () => {
+      window.removeEventListener('loginSuccess' as any, handleLoginSuccess);
+      window.removeEventListener('storage', handleStorageChange);
+    };
   }, []);
 
   const addNote = async (content: string, screen: string, title: string) => {
@@ -104,12 +127,12 @@ export const NotesProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <NotesContext.Provider value={{ 
-      notes, 
+    <NotesContext.Provider value={{
+      notes,
       loading,
-      addNote, 
-      updateNote, 
-      deleteNote, 
+      addNote,
+      updateNote,
+      deleteNote,
       getNotesByScreen,
       getNotesBySource,
       toggleBookmark,

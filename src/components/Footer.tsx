@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { List, Facebook, Globe, Twitter, Instagram } from "lucide-react";
+import { List, Facebook, Github, Linkedin, GraduationCap } from "lucide-react";
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -20,20 +20,44 @@ export function Footer() {
               </span>
             </Link>
             <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-6 max-w-sm">
-              Empowering developers and data scientists with professional-grade database knowledge and practical skills.
+              Empowering students and professional-grade database knowledge and practical skills.
             </p>
             <div className="flex gap-4">
-              <a href="#" className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors">
+              <a
+                href="https://www.facebook.com/parteek.bhatia.54/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                title="Facebook"
+              >
                 <Facebook className="w-4 h-4" />
               </a>
-              <a href="#" className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                <Globe className="w-4 h-4" />
+              <a
+                href="https://www.linkedin.com/in/parteek-kumar-0237ab33/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                title="LinkedIn"
+              >
+                <Linkedin className="w-4 h-4" />
               </a>
-              <a href="#" className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                <Twitter className="w-4 h-4" />
+              <a
+                href="https://scholar.google.com/citations?user=w5-YIk0AAAAJ&hl=en"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                title="Google Scholar"
+              >
+                <GraduationCap className="w-4 h-4" />
               </a>
-              <a href="#" className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                <Instagram className="w-4 h-4" />
+              <a
+                href="https://github.com/bhatiaparteek"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-500 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                title="GitHub"
+              >
+                <Github className="w-4 h-4" />
               </a>
             </div>
           </div>

@@ -1,73 +1,36 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import {
   BookOpen,
   Activity,
   GraduationCap,
   FileText,
-  Bell,
   BookMarked,
-  X,
-  CheckCircle,
-  AlertCircle,
-  Info,
   ClipboardList,
   HelpCircle,
   User,
   Sun,
-  Moon
+  Moon,
+  Bell
 } from "lucide-react";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
 import { useTheme } from "@/contexts/ThemeContext";
+import NotificationBell from "@/components/NotificationBell";
+import notificationService from "@/services/notification.service";
+import { NotificationPromptDialog } from "@/components/NotificationPromptDialog";
 
 const DashboardPage = () => {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [showNotifications, setShowNotifications] = useState(false);
+  const [showNotificationPrompt, setShowNotificationPrompt] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
   const navigate = useNavigate();
   const { theme, setTheme } = useTheme();
 
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
-  };
-
-  const notifications = [
-    {
-      id: 1,
-      type: 'success',
-      title: 'Course Completed!',
-      message: 'You have successfully completed React Fundamentals course.',
-      time: '2 hours ago',
-      read: false
-    },
-    {
-      id: 2,
-      type: 'info',
-      title: 'New Study Material Available',
-      message: 'Advanced JavaScript concepts guide has been added to your library.',
-      time: '1 day ago',
-      read: false
-    },
-    {
-      id: 3,
-      type: 'warning',
-      title: 'Assignment Due Soon',
-      message: 'Your Database Design assignment is due in 2 days.',
-      time: '2 days ago',
-      read: true
-    }
-  ];
-
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case 'success': return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'warning': return <AlertCircle className="w-5 h-5 text-yellow-500" />;
-      default: return <Info className="w-5 h-5 text-blue-500" />;
-    }
   };
 
   useEffect(() => {
@@ -82,6 +45,55 @@ const DashboardPage = () => {
 
     return () => unsubscribe();
   }, [navigate]);
+
+  useEffect(() => {
+    if (user && notificationService.isSupported()) {
+      const hasRegisteredFCM = sessionStorage.getItem('fcm_registered');
+      const permission = notificationService.getPermissionStatus();
+
+      console.log('Notification Status Check:', {
+        hasRegisteredFCM,
+        permission,
+        isSupported: notificationService.isSupported()
+      });
+
+      // If they declined in a previous visit but we're debugging, 
+      // or if it's the first time and permission is default, show it.
+      if (permission === 'default' && (!hasRegisteredFCM || hasRegisteredFCM === 'declined')) {
+        console.log('Showing Notification Prompt...');
+        setShowNotificationPrompt(true);
+      } else if (permission === 'granted' && hasRegisteredFCM !== 'true') {
+        console.log('Permission already granted, registering FCM...');
+        registerFCM();
+      }
+
+      if (hasRegisteredFCM === 'declined') {
+        console.info('💡 Tip: You previously clicked "Maybe Later". To fully reset and see the prompt again with fresh state, run: sessionStorage.removeItem("fcm_registered"); location.reload();');
+      }
+    } else if (user) {
+      console.warn('Notification service not supported or messaging not initialized');
+    }
+  }, [user]);
+
+  const registerFCM = async () => {
+    try {
+      setIsRegistering(true);
+      const token = await notificationService.requestPermission();
+      if (token) {
+        sessionStorage.setItem('fcm_registered', 'true');
+        setShowNotificationPrompt(false);
+      }
+    } catch (error: any) {
+      console.error('FCM Registration failed:', error);
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
+  const handleDeclineNotifications = () => {
+    setShowNotificationPrompt(false);
+    sessionStorage.setItem('fcm_registered', 'declined');
+  };
 
   if (loading) {
     return (
@@ -144,15 +156,16 @@ const DashboardPage = () => {
       description: 'Manage your personal notes and bookmarks',
       icon: FileText,
       color: 'from-orange-500 to-orange-600'
+    },
+    {
+      id: 'notifications',
+      title: 'Notifications',
+      description: 'View your personal notification history and updates',
+      icon: Bell,
+      color: 'from-pink-500 to-pink-600'
     }
-    // {
-    //   id: 'contact',
-    //   title: 'Contact',
-    //   description: 'Get support and connect with the team',
-    //   icon: MessageCircle,
-    //   color: 'from-pink-500 to-pink-600'
-    // }
   ];
+
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -169,68 +182,7 @@ const DashboardPage = () => {
               </p>
             </div>
             <div className="flex items-center space-x-3">
-              <div className="relative">
-                <button
-                  onClick={() => setShowNotifications(!showNotifications)}
-                  className="relative p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                >
-                  <Bell className="w-5 h-5" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                      {unreadCount}
-                    </span>
-                  )}
-                </button>
-
-                <AnimatePresence>
-                  {showNotifications && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      className="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 z-50"
-                    >
-                      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Notifications</h3>
-                          <button onClick={() => setShowNotifications(false)}>
-                            <X className="w-4 h-4 text-gray-500" />
-                          </button>
-                        </div>
-                      </div>
-                      <div className="max-h-96 overflow-y-auto">
-                        {notifications.map((notification) => (
-                          <div
-                            key={notification.id}
-                            className={`p-4 border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 ${!notification.read ? 'bg-blue-50 dark:bg-blue-900/10' : ''
-                              }`}
-                          >
-                            <div className="flex items-start space-x-3">
-                              {getNotificationIcon(notification.type)}
-                              <div className="flex-1">
-                                <div className="flex items-center justify-between">
-                                  <p className="text-sm font-medium text-gray-900 dark:text-white">
-                                    {notification.title}
-                                  </p>
-                                  {!notification.read && (
-                                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                  )}
-                                </div>
-                                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                                  {notification.message}
-                                </p>
-                                <p className="text-xs text-gray-500 mt-2">
-                                  {notification.time}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
+              <NotificationBell />
               <button
                 onClick={() => navigate('/profile')}
                 className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
@@ -248,12 +200,7 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {showNotifications && (
-        <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)}></div>
-      )}
-
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Main Dashboard Items */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {dashboardItems.map((item, index) => {
             const IconComponent = item.icon;
@@ -286,6 +233,13 @@ const DashboardPage = () => {
           })}
         </div>
       </div>
+
+      <NotificationPromptDialog
+        isOpen={showNotificationPrompt}
+        onClose={handleDeclineNotifications}
+        onConfirm={registerFCM}
+        loading={isRegistering}
+      />
     </div>
   );
 };

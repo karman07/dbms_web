@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  ArrowLeft,
-  Plus,
-  Search,
-  Edit,
-  Trash2,
-  Bookmark,
-  Heart,
+import { 
+  ArrowLeft, 
+  Plus, 
+  Search, 
+  Edit, 
+  Trash2, 
+  Bookmark, 
+  Heart, 
   X,
   Tag,
   FileText,
@@ -28,7 +28,7 @@ type SourceType = Note['source'] | 'all';
 const NotesPage = () => {
   const navigate = useNavigate();
   const notification = useNotification();
-
+  
   const [notes, setNotes] = useState<Note[]>([]);
   const [filteredNotes, setFilteredNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,7 +38,7 @@ const NotesPage = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
-
+  
   // Form state
   const [formData, setFormData] = useState<CreateNoteDto>({
     title: '',
@@ -115,7 +115,7 @@ const NotesPage = () => {
   const handleUpdateNote = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedNote) return;
-
+    
     try {
       setSubmitting(true);
       const updateData: UpdateNoteDto = {
@@ -127,7 +127,7 @@ const NotesPage = () => {
         isPublic: formData.isPublic,
         attachments: formData.attachments
       };
-
+      
       await notesService.updateNote(selectedNote._id, updateData);
       notification.success('Note updated!', 'Your changes have been saved');
       setShowEditModal(false);
@@ -143,7 +143,7 @@ const NotesPage = () => {
 
   const handleDeleteNote = async (id: string) => {
     if (!confirm('Are you sure you want to delete this note?')) return;
-
+    
     try {
       await notesService.deleteNote(id);
       notification.success('Note deleted', 'The note has been removed');
@@ -348,19 +348,21 @@ const NotesPage = () => {
                     <div className="flex items-center gap-2 flex-shrink-0">
                       <button
                         onClick={() => handleToggleLike(note)}
-                        className={`p-2 rounded-lg transition-all hover:scale-110 ${isLiked(note)
-                          ? 'bg-red-50 dark:bg-red-900/20 text-red-500'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500'
-                          }`}
+                        className={`p-2 rounded-lg transition-all hover:scale-110 ${
+                          isLiked(note)
+                            ? 'bg-red-50 dark:bg-red-900/20 text-red-500'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-500'
+                        }`}
                       >
                         <Heart className={`h-5 w-5 ${isLiked(note) ? 'fill-red-500' : ''}`} />
                       </button>
                       <button
                         onClick={() => handleToggleBookmark(note)}
-                        className={`p-2 rounded-lg transition-all hover:scale-110 ${isBookmarked(note)
-                          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-500'
-                          : 'bg-gray-100 dark:bg-gray-700 text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-500'
-                          }`}
+                        className={`p-2 rounded-lg transition-all hover:scale-110 ${
+                          isBookmarked(note)
+                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-500'
+                            : 'bg-gray-100 dark:bg-gray-700 text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:text-blue-500'
+                        }`}
                       >
                         <Bookmark className={`h-5 w-5 ${isBookmarked(note) ? 'fill-blue-500' : ''}`} />
                       </button>
@@ -375,11 +377,11 @@ const NotesPage = () => {
                   </div>
 
                   {/* Source Details */}
-                  {/* {note.sourceDetails && (
+                  {note.sourceDetails && (
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">
                       {note.sourceDetails}
                     </p>
-                  )} */}
+                  )}
 
                   {/* Content Preview */}
                   <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed line-clamp-4 mb-5">

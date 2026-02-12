@@ -1,29 +1,44 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import CircularProgress from '@/components/ui/CircularProgress';
 import {
-  ChevronLeft, ChevronRight, PlayCircle, BookOpen, Clock, Zap, FileDown, Trophy, Video,
-  Menu, X, ClipboardList, Loader2, ChevronDown
+  ArrowLeft,
+  CheckCircle,
+  Circle,
+  Clock,
+  PlayCircle,
+  Trophy,
+  Loader2,
+  ChevronDown,
+  ChevronRight,
+  Menu,
+  X,
+  Lock,
+  ChevronLeft,
+  Award,
+  StickyNote,
+  FileDown,
+  ClipboardList,
+  Zap,
+  FileText,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-// import { Dialog, DialogContent } from '@/components/ui/dialog';
-import courseService, {
-  Course, Section, Lesson, CourseProgress,
-  QuizSubmissionResponse, QuizAnswer, SectionProgress, LessonProgress, QuizResult
-} from '@/services/course.service';
-import { useAuth } from '@/contexts/AuthContext';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import courseService, { Course, Section, Lesson, CourseProgress, QuizSubmissionResponse, QuizAnswer } from '@/services/course.service';
 import { useNotification } from '@/contexts/NotificationContext';
+import { BUTTON_STYLES } from '@/constants';
 import { EnrollmentDialog } from '@/components/EnrollmentDialog';
 import { NotesDrawer } from '@/components/NotesDrawer';
 import { CourseOverview } from '@/components/course/CourseOverview';
+import { LessonContent } from '@/components/course/LessonContent';
 import { LessonResources } from '@/components/course/LessonResources';
+import { LessonQuizzes } from '@/components/course/LessonQuizzes';
 import { LessonAssignments } from '@/components/course/LessonAssignments';
 import { LessonActivities } from '@/components/course/LessonActivities';
 import CourseMarkdownRenderer from '@/components/CourseMarkdownRenderer';
 
-type ViewMode = 'overview' | 'lesson';
-type LessonTab = 'video' | 'quiz' | 'media' | 'docs' | 'resources' | 'assignments' | 'activities';
+type ViewMode = 'overview' | 'lesson' | 'quiz' | 'results';
+type LessonTab = 'media' | 'video' | 'content' | 'docs' | 'resources' | 'quizzes' | 'assignments' | 'activities';
 
 interface QuizRecord {
   lessonId: string;
@@ -37,1056 +52,1229 @@ interface QuizRecord {
 
 const CoursePage = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const notification = useNotification();
+  const videoRef = useRef<HTMLIFrameElement>(null);
+  const [startTime] = useState(Date.now());
 
   const [course, setCourse] = useState<Course | null>(null);
+  const [progress, setProgress] = useState<CourseProgress | null>(null);
   const [loading, setLoading] = useState(true);
   const [enrolled, setEnrolled] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
-  const [progress, setProgress] = useState<CourseProgress | null>(null);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [showEnrollDialog, setShowEnrollDialog] = useState(false);
+
   const [viewMode, setViewMode] = useState<ViewMode>('overview');
-  const [activeTab, setActiveTab] = useState<LessonTab>('video');
   const [selectedSection, setSelectedSection] = useState<Section | null>(null);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
-  const [showEnrollDialog, setShowEnrollDialog] = useState(false);
+  const [showQuizDialog, setShowQuizDialog] = useState(false);
+  const [currentLessonIndex, setCurrentLessonIndex] = useState<{ sectionIdx: number, lessonIdx: number } | null>(null);
   const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
   const [quizResults, setQuizResults] = useState<QuizSubmissionResponse | null>(null);
   const [submittingQuiz, setSubmittingQuiz] = useState(false);
+
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notesOpen, setNotesOpen] = useState(false);
-  const [quizRecords, setQuizRecords] = useState<QuizRecord[]>([]);
-  const [activeItemIndex, setActiveItemIndex] = useState(0);
-  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set(['Videos', 'Assessment', 'Reading', 'Other']));
+  const [activeTab, setActiveTab] = useState<LessonTab>('content');
+  const [selectedDocIndex, _] = useState<number>(0);
+  const [selectedMediaIndex, setSelectedMediaIndex] = useState<number>(0);
+  const [selectedAssignmentIndex, setSelectedAssignmentIndex] = useState<number>(0);
+  const [selectedActivityIndex, setSelectedActivityIndex] = useState<number>(0);
+  const [selectedQuizIndex, setSelectedQuizIndex] = useState<number>(0);
+
+  // Quiz records in local storage
+  const [quizRecords, setQuizRecords] = useState<Record<string, QuizRecord>>({});
 
   useEffect(() => {
     loadCourseData();
     loadQuizRecords();
   }, []);
 
-  useEffect(() => {
-    setQuizAnswers({});
-    setQuizResults(null);
-  }, [activeTab, activeItemIndex]);
-
   const loadQuizRecords = () => {
-    try {
-      const saved = localStorage.getItem(`quiz_records_${user?._id}`);
-      if (saved) {
-        setQuizRecords(JSON.parse(saved));
+    const stored = localStorage.getItem('quizRecords');
+    if (stored) {
+      try {
+        setQuizRecords(JSON.parse(stored));
+      } catch (error) {
+        console.error('Failed to parse quiz records:', error);
       }
-    } catch (e) {
-      console.error('Failed to load quiz records:', e);
     }
   };
 
   const saveQuizRecord = (lessonId: string, sectionId: string, result: QuizSubmissionResponse, answers: QuizAnswer[]) => {
-    try {
-      const records = [...quizRecords];
-      const existingIdx = records.findIndex(r => r.lessonId === lessonId && r.sectionId === sectionId);
-      const newRecord: QuizRecord = {
-        lessonId,
-        sectionId,
-        score: result.score,
-        passed: result.passed,
-        attempts: existingIdx >= 0 ? records[existingIdx].attempts + 1 : 1,
-        lastAttempt: new Date().toISOString(),
-        answers: answers
-      };
-      if (existingIdx >= 0) records[existingIdx] = newRecord;
-      else records.push(newRecord);
-      setQuizRecords(records);
-      localStorage.setItem(`quiz_records_${user?._id}`, JSON.stringify(records));
-    } catch (e) {
-      console.error('Failed to save quiz record:', e);
-    }
+    const key = `${sectionId}_${lessonId}`;
+    const existing = quizRecords[key];
+
+    const newRecord: QuizRecord = {
+      lessonId,
+      sectionId,
+      score: result.score,
+      passed: result.passed,
+      attempts: existing ? existing.attempts + 1 : 1,
+      lastAttempt: new Date().toISOString(),
+      answers,
+    };
+
+    const updated = { ...quizRecords, [key]: newRecord };
+    setQuizRecords(updated);
+    localStorage.setItem('quizRecords', JSON.stringify(updated));
   };
 
   const loadCourseData = async () => {
     try {
       setLoading(true);
-      const data = await courseService.getCourse() as any;
-      const courseData = Array.isArray(data) ? (data.length > 0 ? data[0] : null) : data;
+      const courseData = await courseService.getCourse();
       setCourse(courseData);
-      if (courseData) {
-        try {
-          const prog = await courseService.getMyProgress();
-          setProgress(prog);
-          setEnrolled(true);
-        } catch (e) {
-          setEnrolled(false);
-        }
+
+      try {
+        const progressData = await courseService.getMyProgress();
+        setProgress(progressData);
+        setEnrolled(true);
+      } catch (error) {
+        setEnrolled(false);
       }
-    } catch (error) {
-      notification.error('Failed to load course details');
+    } catch (error: any) {
+      notification.error('Failed to load course', error.message || 'Please try again');
     } finally {
       setLoading(false);
     }
   };
 
   const handleEnroll = async () => {
-    if (!user) {
-      navigate('/login', { state: { from: '/course' } });
-      return;
-    }
     try {
       setEnrolling(true);
-      await courseService.enrollInCourse();
+      const result = await courseService.enrollInCourse();
+      setProgress(result.progress);
       setEnrolled(true);
       setShowEnrollDialog(false);
-      notification.success('Successfully enrolled!');
-      loadCourseData();
-    } catch (error) {
-      notification.error('Enrollment failed');
+      notification.success('Enrolled!', 'You have successfully enrolled in the course');
+    } catch (error: any) {
+      notification.error('Enrollment failed', error.message || 'Please try again');
     } finally {
       setEnrolling(false);
     }
   };
 
-  const toggleGroup = (group: string) => {
-    setExpandedGroups(prev => {
-      const next = new Set(prev);
-      if (next.has(group)) next.delete(group);
-      else next.add(group);
-      return next;
-    });
-  };
-
-  const getAvailableTabs = (lesson: Lesson): LessonTab[] => {
-    const tabs: LessonTab[] = [];
-    if (lesson.videoUrl) tabs.push('video');
-    if ((lesson.media?.length || 0) > 0) tabs.push('media');
-    if ((lesson.docSubtopics?.length || 0) > 0) tabs.push('docs');
-    if ((lesson.resources?.length || 0) > 0) tabs.push('resources');
-    if ((lesson.quiz?.length || 0) > 0 || (lesson.linkedQuizzes?.length || 0) > 0) tabs.push('quiz');
-    if ((lesson.linkedAssignments?.length || 0) > 0) tabs.push('assignments');
-    if ((lesson.linkedActivities?.length || 0) > 0) tabs.push('activities');
-    return tabs;
-  };
-
-  const getItemCount = (lesson: Lesson, tab: LessonTab): number => {
-    switch (tab) {
-      case 'video': return lesson.videoUrl ? 1 : 0;
-      case 'media': return lesson.media?.length || 0;
-      case 'docs': return lesson.docSubtopics?.length || 0;
-      case 'resources': return lesson.resources?.length || 0;
-      case 'quiz': {
-        const hasMainQuiz = (lesson.quiz?.length || 0) > 0;
-        const linkedQuizzesCount = lesson.linkedQuizzes?.length || 0;
-        return (hasMainQuiz ? 1 : 0) + linkedQuizzesCount;
-      }
-      case 'assignments': return lesson.linkedAssignments?.length || 0;
-      case 'activities': return lesson.linkedActivities?.length || 0;
-      default: return 0;
-    }
-  };
-
-  const goToNextItem = () => {
-    if (!selectedLesson) return;
-    const tabs = getAvailableTabs(selectedLesson);
-    const currentTabIdx = tabs.indexOf(activeTab);
-    const maxItems = getItemCount(selectedLesson, activeTab);
-
-    if (activeItemIndex < maxItems - 1) {
-      setActiveItemIndex(activeItemIndex + 1);
-    } else if (currentTabIdx < tabs.length - 1) {
-      setActiveTab(tabs[currentTabIdx + 1]);
-      setActiveItemIndex(0);
-    } else {
-      // Potentially move to next lesson
-      notification.success('Lesson section completed!');
-    }
-  };
-
-  const goToPrevItem = () => {
-    if (!selectedLesson) return;
-    const tabs = getAvailableTabs(selectedLesson);
-    const currentTabIdx = tabs.indexOf(activeTab);
-
-    if (activeItemIndex > 0) {
-      setActiveItemIndex(activeItemIndex - 1);
-    } else if (currentTabIdx > 0) {
-      const prevTab = tabs[currentTabIdx - 1];
-      setActiveTab(prevTab);
-      setActiveItemIndex(getItemCount(selectedLesson, prevTab) - 1);
-    }
-  };
-
-  const handleLessonSelect = (section: Section, lesson: Lesson) => {
+  const handleLessonSelect = (section: Section, lesson: Lesson, sectionIdx?: number, lessonIdx?: number, openQuiz = false) => {
     if (!enrolled) {
       setShowEnrollDialog(true);
       return;
     }
+
     setSelectedSection(section);
     setSelectedLesson(lesson);
     setViewMode('lesson');
-    setActiveItemIndex(0);
+    // Set default tab - media if exists, then video, otherwise content
+    const defaultTab = lesson.media && lesson.media.length > 0 ? 'media' : lesson.videoUrl ? 'video' : 'content';
+    setActiveTab(defaultTab);
+    // Reset media index to show first item
+    setSelectedMediaIndex(0);
 
-    // Auto-select tab
-    const hasQuiz = (lesson.quiz?.length || 0) > 0 || (lesson.linkedQuizzes?.length || 0) > 0;
-    const hasDocs = (lesson.docSubtopics?.length || 0) > 0;
+    if (!openQuiz) {
+      setShowQuizDialog(false);
+      setQuizResults(null);
+    } else {
+      // Opening quiz - reset quiz state
+      setShowQuizDialog(true);
+      setQuizAnswers({});
+      setQuizResults(null);
+    }
 
-    if (lesson.videoUrl) setActiveTab('video');
-    else if (hasQuiz) setActiveTab('quiz');
-    else if (hasDocs) setActiveTab('docs');
-    else if ((lesson.media?.length || 0) > 0) setActiveTab('media');
-    else if ((lesson.linkedAssignments?.length || 0) > 0) setActiveTab('assignments');
-    else if ((lesson.linkedActivities?.length || 0) > 0) setActiveTab('activities');
-    else setActiveTab('resources');
+    if (sectionIdx === undefined || lessonIdx === undefined) {
+      const secIdx = course?.sections.findIndex(s => s._id === section._id) ?? -1;
+      const lesIdx = section.lessons.findIndex(l => l._id === lesson._id) ?? -1;
+      setCurrentLessonIndex({ sectionIdx: secIdx, lessonIdx: lesIdx });
+    } else {
+      setCurrentLessonIndex({ sectionIdx, lessonIdx });
+    }
 
-    setExpandedSections(prev => {
-      const next = new Set(prev);
-      next.add(section._id);
-      return next;
-    });
-    if (window.innerWidth < 1024) setSidebarOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const toggleSection = (sectionId: string) => {
-    setExpandedSections(prev => {
-      const next = new Set(prev);
-      if (next.has(sectionId)) next.delete(sectionId);
-      else next.add(sectionId);
-      return next;
-    });
+  // Get available tabs for the current lesson
+  const getAvailableTabs = (lesson: Lesson): LessonTab[] => {
+    const tabs: LessonTab[] = [];
+    if (lesson.media && lesson.media.length > 0) tabs.push('media');
+    if (lesson.videoUrl) tabs.push('video');
+    if (lesson.docSubtopics && lesson.docSubtopics.length > 0) tabs.push('docs');
+    if (lesson.resources && lesson.resources.length > 0) tabs.push('resources');
+    if ((lesson.quiz && lesson.quiz.length > 0) || (lesson.linkedQuizzes && lesson.linkedQuizzes.length > 0)) tabs.push('quizzes');
+    if (lesson.linkedAssignments && lesson.linkedAssignments.length > 0) tabs.push('assignments');
+    if (lesson.linkedActivities && lesson.linkedActivities.length > 0) tabs.push('activities');
+    // Only add content if there are no other tabs
+    if (tabs.length === 0) tabs.push('content');
+    return tabs;
   };
 
-  const getLessonProgress = (sectionId: string, lessonId: string) => {
-    return progress?.sections
-      .find((s: SectionProgress) => s.sectionId === sectionId)
-      ?.lessons.find((l: LessonProgress) => l.lessonId === lessonId);
+  // Get next tab in current lesson
+  const getNextTab = (): LessonTab | null => {
+    if (!selectedLesson) return null;
+    const availableTabs = getAvailableTabs(selectedLesson);
+    const currentIndex = availableTabs.indexOf(activeTab);
+
+    // Check if we're on media tab and there are more media items
+    if (activeTab === 'media' && selectedLesson.media && selectedMediaIndex < selectedLesson.media.length - 1) {
+      return null;
+    }
+
+    // Check if we're on quizzes tab and there are more quizzes
+    const totalQuizzes = ((selectedLesson.quiz?.length || 0) > 0 ? 1 : 0) + (selectedLesson.linkedQuizzes?.length || 0);
+    if (activeTab === 'quizzes' && selectedQuizIndex < totalQuizzes - 1) {
+      return null;
+    }
+
+    // Check if we're on assignments tab and there are more assignments
+    if (activeTab === 'assignments' && selectedLesson.linkedAssignments && selectedAssignmentIndex < selectedLesson.linkedAssignments.length - 1) {
+      return null;
+    }
+
+    // Check if we're on activities tab and there are more activities
+    if (activeTab === 'activities' && selectedLesson.linkedActivities && selectedActivityIndex < selectedLesson.linkedActivities.length - 1) {
+      return null;
+    }
+
+    if (currentIndex < availableTabs.length - 1) {
+      return availableTabs[currentIndex + 1];
+    }
+    return null;
   };
 
-  const getSectionProgress = (sectionId: string) => {
-    const section = progress?.sections.find((s: SectionProgress) => s.sectionId === sectionId);
-    if (!section || section.lessons.length === 0) return 0;
-    const completed = section.lessons.filter((l: LessonProgress) => l.completed).length;
-    return (completed / section.lessons.length) * 100;
+  // Get previous tab in current lesson
+  const getPreviousTab = (): LessonTab | null => {
+    if (!selectedLesson) return null;
+    const availableTabs = getAvailableTabs(selectedLesson);
+    const currentIndex = availableTabs.indexOf(activeTab);
+
+    // Check if we're on media tab and there are previous media items
+    if (activeTab === 'media' && selectedMediaIndex > 0) {
+      return null;
+    }
+
+    // Check if we're on quizzes tab and there are previous quizzes
+    if (activeTab === 'quizzes' && selectedQuizIndex > 0) {
+      return null;
+    }
+
+    // Check if we're on assignments tab and there are previous assignments
+    if (activeTab === 'assignments' && selectedAssignmentIndex > 0) {
+      return null;
+    }
+
+    // Check if we're on activities tab and there are previous activities
+    if (activeTab === 'activities' && selectedActivityIndex > 0) {
+      return null;
+    }
+
+    if (currentIndex > 0) {
+      return availableTabs[currentIndex - 1];
+    }
+    return null;
   };
 
-  const handleQuizSubmit = async () => {
-    if (!selectedLesson || !selectedSection) return;
+  const handleNextLesson = () => {
+    if (!course || !currentLessonIndex) return;
+
+    // If on media tab, navigate to next media item first
+    if (activeTab === 'media' && selectedLesson?.media && selectedMediaIndex < selectedLesson.media.length - 1) {
+      setSelectedMediaIndex(prev => prev + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // If on quizzes tab, navigate to next quiz first
+    const totalQuizzes = ((selectedLesson?.quiz?.length || 0) > 0 ? 1 : 0) + (selectedLesson?.linkedQuizzes?.length || 0);
+    if (activeTab === 'quizzes' && selectedQuizIndex < totalQuizzes - 1) {
+      setSelectedQuizIndex(prev => prev + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // If on assignments tab, navigate to next assignment first
+    if (activeTab === 'assignments' && selectedLesson?.linkedAssignments && selectedAssignmentIndex < selectedLesson.linkedAssignments.length - 1) {
+      setSelectedAssignmentIndex(prev => prev + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // If on activities tab, navigate to next activity first
+    if (activeTab === 'activities' && selectedLesson?.linkedActivities && selectedActivityIndex < selectedLesson.linkedActivities.length - 1) {
+      setSelectedActivityIndex(prev => prev + 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // Try to navigate to next tab within current lesson
+    const nextTab = getNextTab();
+    if (nextTab) {
+      setActiveTab(nextTab);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // If no next tab, navigate to next lesson
+    const { sectionIdx, lessonIdx } = currentLessonIndex;
+    const currentSection = course.sections[sectionIdx];
+
+    if (lessonIdx < currentSection.lessons.length - 1) {
+      const nextLesson = currentSection.lessons[lessonIdx + 1];
+      handleLessonSelect(currentSection, nextLesson, sectionIdx, lessonIdx + 1);
+    } else if (sectionIdx < course.sections.length - 1) {
+      const nextSection = course.sections[sectionIdx + 1];
+      if (nextSection.lessons.length > 0) {
+        handleLessonSelect(nextSection, nextSection.lessons[0], sectionIdx + 1, 0);
+      }
+    }
+  };
+
+  const handlePreviousLesson = () => {
+    if (!course || !currentLessonIndex) return;
+
+    // If on media tab, navigate to previous media item first
+    if (activeTab === 'media' && selectedMediaIndex > 0) {
+      setSelectedMediaIndex(prev => prev - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // If on quizzes tab, navigate to previous quiz first
+    if (activeTab === 'quizzes' && selectedQuizIndex > 0) {
+      setSelectedQuizIndex(prev => prev - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // If on assignments tab, navigate to previous assignment first
+    if (activeTab === 'assignments' && selectedAssignmentIndex > 0) {
+      setSelectedAssignmentIndex(prev => prev - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // If on activities tab, navigate to previous activity first
+    if (activeTab === 'activities' && selectedActivityIndex > 0) {
+      setSelectedActivityIndex(prev => prev - 1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // Try to navigate to previous tab within current lesson
+    const prevTab = getPreviousTab();
+    if (prevTab) {
+      setActiveTab(prevTab);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // If no previous tab, navigate to previous lesson
+    const { sectionIdx, lessonIdx } = currentLessonIndex;
+
+    if (lessonIdx > 0) {
+      const currentSection = course.sections[sectionIdx];
+      const prevLesson = currentSection.lessons[lessonIdx - 1];
+      handleLessonSelect(currentSection, prevLesson, sectionIdx, lessonIdx - 1);
+    } else if (sectionIdx > 0) {
+      const prevSection = course.sections[sectionIdx - 1];
+      if (prevSection.lessons.length > 0) {
+        const lastLessonIdx = prevSection.lessons.length - 1;
+        handleLessonSelect(prevSection, prevSection.lessons[lastLessonIdx], sectionIdx - 1, lastLessonIdx);
+      }
+    }
+  };
+
+  const hasNextLesson = () => {
+    if (!course || !currentLessonIndex || !enrolled) return false;
+
+    // Check if there's a next media item
+    if (activeTab === 'media' && selectedLesson?.media && selectedMediaIndex < selectedLesson.media.length - 1) {
+      return true;
+    }
+
+    // Check if there's a next quiz
+    const totalQuizzes = ((selectedLesson?.quiz?.length || 0) > 0 ? 1 : 0) + (selectedLesson?.linkedQuizzes?.length || 0);
+    if (activeTab === 'quizzes' && selectedQuizIndex < totalQuizzes - 1) {
+      return true;
+    }
+
+    // Check if there's a next assignment
+    if (activeTab === 'assignments' && selectedLesson?.linkedAssignments && selectedAssignmentIndex < selectedLesson.linkedAssignments.length - 1) {
+      return true;
+    }
+
+    // Check if there's a next activity
+    if (activeTab === 'activities' && selectedLesson?.linkedActivities && selectedActivityIndex < selectedLesson.linkedActivities.length - 1) {
+      return true;
+    }
+
+    // Check if there's a next tab in current lesson
+    if (getNextTab()) return true;
+
+    // Check if there's a next lesson
+    const { sectionIdx, lessonIdx } = currentLessonIndex;
+    const currentSection = course.sections[sectionIdx];
+    return lessonIdx < currentSection.lessons.length - 1 || sectionIdx < course.sections.length - 1;
+  };
+
+  const hasPreviousLesson = () => {
+    if (!currentLessonIndex || !enrolled) return false;
+
+    // Check if there's a previous media item
+    if (activeTab === 'media' && selectedMediaIndex > 0) {
+      return true;
+    }
+
+    // Check if there's a previous quiz
+    if (activeTab === 'quizzes' && selectedQuizIndex > 0) {
+      return true;
+    }
+
+    // Check if there's a previous assignment
+    if (activeTab === 'assignments' && selectedAssignmentIndex > 0) {
+      return true;
+    }
+
+    // Check if there's a previous activity
+    if (activeTab === 'activities' && selectedActivityIndex > 0) {
+      return true;
+    }
+
+    // Check if there's a previous tab in current lesson
+    if (getPreviousTab()) return true;
+
+    // Check if there's a previous lesson
+    const { sectionIdx, lessonIdx } = currentLessonIndex;
+    return lessonIdx > 0 || sectionIdx > 0;
+  };
+
+  const handleStartQuiz = () => {
+    if (selectedLesson && selectedLesson.quiz && selectedLesson.quiz.length > 0) {
+      setShowQuizDialog(true);
+      setQuizAnswers({});
+      setQuizResults(null);
+    }
+  };
+
+  const handleQuizSubmit = async (answers?: Record<number, number>) => {
+    if (!selectedSection || !selectedLesson || !enrolled) {
+      notification.error('Not enrolled', 'Please enroll in the course first');
+      return;
+    }
+
     try {
       setSubmittingQuiz(true);
-
-      // Select the correct quiz based on activeItemIndex
-      let quizQuestions: any[] = [];
-      const hasMainQuiz = (selectedLesson.quiz?.length || 0) > 0;
-
-      if (hasMainQuiz && activeItemIndex === 0) {
-        quizQuestions = selectedLesson.quiz;
-      } else {
-        const linkedIdx = hasMainQuiz ? activeItemIndex - 1 : activeItemIndex;
-        quizQuestions = selectedLesson.linkedQuizzes?.[linkedIdx]?.questions || [];
-      }
-
-      if (quizQuestions.length === 0) return;
-      const totalQuestions = quizQuestions.length;
-
-      let correctAnswersCount = 0;
-      const results: QuizResult[] = quizQuestions.map((question: any, qIdx: number) => {
-        const selectedIdx = quizAnswers[qIdx] !== undefined ? quizAnswers[qIdx] : -1;
-        const options = question.options || [];
-        const selectedOption = options[selectedIdx];
-
-        // Find the index of the correct option
-        // 1. Try object-based isCorrect
-        let correctOptionIdx = options.findIndex((opt: any) =>
-          typeof opt === 'object' && opt !== null && opt.isCorrect
-        );
-
-        // 2. Try index-based correctAnswer fallback
-        if (correctOptionIdx === -1 && typeof question.correctAnswer === 'number') {
-          correctOptionIdx = question.correctAnswer;
-        }
-
-        const correctOption = options[correctOptionIdx];
-
-        // Scoring logic
-        let isCorrect = false;
-        if (typeof selectedOption === 'object' && selectedOption !== null) {
-          isCorrect = !!selectedOption.isCorrect;
-        } else if (selectedIdx !== -1 && selectedIdx === correctOptionIdx) {
-          isCorrect = true;
-        }
-
-        if (isCorrect) correctAnswersCount++;
-
-        const getOptionText = (opt: any) => {
-          if (!opt) return 'Not Answered';
-          return typeof opt === 'string' ? opt : opt.text;
-        };
-
-        return {
-          questionIndex: qIdx,
-          question: question.question,
-          yourAnswer: getOptionText(selectedOption),
-          correctAnswer: getOptionText(correctOption),
-          isCorrect,
-          explanation: question.explanation || ''
-        };
-      });
-
-      const score = Math.round((correctAnswersCount / totalQuestions) * 100);
-      const passed = score >= 80;
-
-      const result: QuizSubmissionResponse = {
-        score,
-        totalQuestions,
-        correctAnswers: correctAnswersCount,
-        passed,
-        results
-      };
-
-      setQuizResults(result);
-
-      const submissionAnswers: QuizAnswer[] = results.map(r => ({
-        questionIndex: r.questionIndex,
-        selectedOptionIndex: quizAnswers[r.questionIndex] || 0
+      const answersToSubmit = answers || quizAnswers;
+      const answersArray: QuizAnswer[] = Object.entries(answersToSubmit).map(([qIdx, oIdx]) => ({
+        questionIndex: parseInt(qIdx),
+        selectedOptionIndex: oIdx,
       }));
 
-      saveQuizRecord(selectedLesson._id, selectedSection._id, result, submissionAnswers);
+      const results = await courseService.submitQuiz(
+        selectedSection._id,
+        selectedLesson._id,
+        answersArray
+      );
 
-      if (passed) {
-        notification.success(`Assessment Passed! Score: ${score}%`);
-        await courseService.updateProgress(
-          selectedSection._id,
-          selectedLesson._id,
-          true,
-          selectedLesson.estimatedMinutes || 5
-        );
-        loadCourseData();
+      setQuizResults(results);
+      saveQuizRecord(selectedLesson._id, selectedSection._id, results, answersArray);
+
+      // Check if all quizzes are attempted
+      const totalQuizzes = ((selectedLesson.quiz?.length || 0) > 0 ? 1 : 0) + (selectedLesson.linkedQuizzes?.length || 0);
+      const attemptedQuizzes = Object.keys(quizRecords).filter(key => key.startsWith(`${selectedSection._id}_${selectedLesson._id}`)).length + 1;
+
+      // Only mark progress if all quizzes are attempted
+      if (attemptedQuizzes >= totalQuizzes) {
+        try {
+          const timeSpent = Math.floor((Date.now() - startTime) / 60000);
+          await courseService.updateProgress(
+            selectedSection._id,
+            selectedLesson._id,
+            true,
+            timeSpent
+          );
+          await loadCourseData();
+
+          if (results.passed) {
+            notification.success('Quiz Passed!', 'All quizzes completed - Lesson marked as complete');
+          } else {
+            notification.info('Quiz Completed', 'All quizzes completed - Lesson marked as complete');
+          }
+        } catch (progressError: any) {
+          console.error('Failed to update progress:', progressError);
+          if (results.passed) {
+            notification.success('Quiz Passed!', 'Progress update pending');
+          } else {
+            notification.info('Quiz Completed', 'Progress update pending');
+          }
+        }
       } else {
-        notification.error(`Score: ${score}%. You need at least 80% to pass.`);
+        if (results.passed) {
+          notification.success('Quiz Passed!', `Complete ${totalQuizzes - attemptedQuizzes} more quiz(es) to mark lesson complete`);
+        } else {
+          notification.info('Quiz Completed', `Complete ${totalQuizzes - attemptedQuizzes} more quiz(es) to mark lesson complete`);
+        }
       }
-    } catch (e) {
-      console.error('Quiz submission error:', e);
-      notification.error('Failed to process quiz results');
+    } catch (error: any) {
+      notification.error('Quiz submission failed', error.message || 'Please try again');
     } finally {
       setSubmittingQuiz(false);
     }
   };
 
-  const handleResume = () => {
-    if (!course || !enrolled) return;
-    for (const section of course.sections) {
-      for (const lesson of section.lessons) {
-        if (!getLessonProgress(section._id, lesson._id)?.completed) {
-          handleLessonSelect(section, lesson);
-          return;
+  // Auto track video completion
+  useEffect(() => {
+    if (!videoRef.current || !selectedSection || !selectedLesson || !enrolled) return;
+
+    const handleMessage = async (event: MessageEvent) => {
+      // Listen for YouTube player events
+      if (event.data && typeof event.data === 'string') {
+        try {
+          const data = JSON.parse(event.data);
+
+          // YouTube sends state changes - 0 means video ended
+          if (data.event === 'onStateChange' && data.info === 0) {
+            // Video completed - auto mark as complete
+            const timeSpent = Math.floor((Date.now() - startTime) / 60000);
+            await courseService.updateProgress(
+              selectedSection._id,
+              selectedLesson._id,
+              true,
+              timeSpent
+            );
+            await loadCourseData();
+            notification.success('Progress saved', 'Lesson completed automatically');
+          }
+        } catch (e) {
+          // Ignore JSON parse errors
         }
       }
-    }
-    if (course.sections[0]?.lessons[0]) {
-      handleLessonSelect(course.sections[0], course.sections[0].lessons[0]);
-    }
+    };
+
+    window.addEventListener('message', handleMessage);
+
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, [selectedSection, selectedLesson, enrolled, startTime]);
+
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(sectionId)) {
+        newSet.delete(sectionId);
+      } else {
+        newSet.add(sectionId);
+      }
+      return newSet;
+    });
+  };
+
+  const getLessonProgress = (sectionId: string, lessonId: string) => {
+    if (!progress) return null;
+    const sectionProgress = progress.sections.find((s) => s.sectionId === sectionId);
+    if (!sectionProgress) return null;
+    return sectionProgress.lessons.find((l) => l.lessonId === lessonId);
+  };
+
+  const getSectionProgress = (sectionId: string) => {
+    if (!progress) return 0;
+    const sectionProgress = progress.sections.find((s) => s.sectionId === sectionId);
+    if (!sectionProgress) return 0;
+    const completed = sectionProgress.lessons.filter(l => l.completed).length;
+    return (completed / sectionProgress.lessons.length) * 100;
   };
 
   const getYouTubeEmbedUrl = (url?: string) => {
     if (!url) return '';
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-    const match = url.match(regExp);
-    return match && match[2].length === 11 ? `https://www.youtube.com/embed/${match[2]}?enablejsapi=1&origin=${window.location.origin}` : '';
+    // Extract video ID from various YouTube URL formats
+    const patterns = [
+      /(?:youtube\.com\/watch\?v=)([\w-]+)/,
+      /(?:youtu\.be\/)([\w-]+)/,
+      /(?:youtube\.com\/embed\/)([\w-]+)/,
+      /(?:youtube\.com\/v\/)([\w-]+)/
+    ];
+
+    for (const pattern of patterns) {
+      const match = url.match(pattern);
+      if (match && match[1]) {
+        return `https://www.youtube.com/embed/${match[1]}?enablejsapi=1&origin=${window.location.origin}`;
+      }
+    }
+    return '';
   };
 
-  if (loading) return <div className="h-screen flex items-center justify-center bg-slate-950"><Loader2 className="h-10 w-10 animate-spin text-blue-600" /></div>;
-  if (!course) return <div className="h-screen flex items-center justify-center bg-slate-950 text-white"><p>Course not found</p></div>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
+          <p className="text-slate-500 font-bold animate-pulse">Initializing Workspace...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!course) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-xl text-gray-600 dark:text-gray-400 mb-4">Course not found</p>
+          <Button onClick={() => navigate('/dashboard')} className={BUTTON_STYLES.gradient}>
+            Back to Dashboard
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-white dark:bg-slate-950">
-      <AnimatePresence>
-        {sidebarOpen && (
-          <motion.aside
-            initial={{ x: -300 }}
-            animate={{ x: 0 }}
-            exit={{ x: -300 }}
-            className="fixed lg:relative z-50 h-screen w-80 bg-white dark:bg-slate-900 border-r border-slate-100 dark:border-slate-800 shadow-xl lg:shadow-none"
-          >
-            <div className="h-full flex flex-col">
-              <div className="p-8 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-black text-slate-900 dark:text-white truncate max-w-[180px] tracking-tight">{course.title}</h2>
-                  <p className="text-[10px] font-black uppercase text-blue-600 tracking-widest mt-1">{course.sections?.length || 0} Modules</p>
-                </div>
-                <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-2 text-slate-400"><X className="h-5 w-5" /></button>
-              </div>
+    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-900">
+      {/* Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
-              {enrolled && progress && (
-                <div className="px-8 py-6 bg-slate-50/50 dark:bg-slate-800/20 border-b border-slate-100 dark:border-slate-800">
-                  <div className="flex items-center gap-4">
-                    <CircularProgress percentage={progress.overallProgress} size={48} strokeWidth={4} />
-                    <div className="flex-1">
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Mastery Progress</p>
-                      <div className="h-1.5 w-full bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                        <div className="h-full bg-blue-600 transition-all duration-500" style={{ width: `${progress.overallProgress}%` }} />
+      {/* Side Drawer */}
+      <aside className={`fixed top-0 left-0 h-screen w-80 bg-white dark:bg-gray-800 shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } lg:translate-x-0 lg:relative flex flex-col border-r border-gray-200 dark:border-gray-700`}>
+        {/* Drawer Header */}
+        <div className="flex-shrink-0 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-between p-5 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg font-black text-slate-900 dark:text-white truncate tracking-tight">{course.title}</h2>
+              <p className="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-widest mt-1 italic">
+                {course.sections.length} modules • {course.sections.reduce((acc, s) => acc + s.lessons.length, 0)} Units
+              </p>
+            </div>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors flex-shrink-0"
+            >
+              <X className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+            </button>
+          </div>
+        </div>
+
+        {/* Overall Progress Bar */}
+        {enrolled && progress && (
+          <div className="flex-shrink-0 px-5 py-6 border-b border-gray-100 dark:border-gray-800 bg-gradient-to-br from-blue-50/50 via-slate-50/50 to-white dark:from-blue-900/10 dark:via-gray-800/10 dark:to-gray-900/10">
+            <div className="flex items-center justify-between mb-3 px-1">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
+                  <Award className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                </div>
+                <span className="text-xs font-black text-slate-700 dark:text-gray-200 uppercase tracking-widest">Mastery Progress</span>
+              </div>
+              <span className="text-lg font-black text-blue-600 dark:text-blue-400 tabular-nums">{Math.round(progress.overallProgress)}%</span>
+            </div>
+            <div className="h-3 bg-slate-100 dark:bg-gray-800 rounded-full overflow-hidden shadow-inner border border-white/50 dark:border-gray-700">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${progress.overallProgress}%` }}
+                className="h-full bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 shadow-[0_0_12px_rgba(37,99,235,0.4)] rounded-full"
+              />
+            </div>
+            <p className="text-[10px] font-bold text-slate-400 dark:text-gray-500 mt-3 flex items-center gap-1.5 uppercase letter-spacing-wide">
+              <CheckCircle className="h-3 w-3 text-emerald-500" />
+              {progress.sections.reduce((acc, s) => acc + s.lessons.filter(l => l.completed).length, 0)} / {' '}
+              {course.sections.reduce((acc, s) => acc + s.lessons.length, 0)} units mastered
+            </p>
+          </div>
+        )}
+
+        {/* Sections List */}
+        <div className="flex-shrink-0 px-4 py-3 bg-gray-50 dark:bg-gray-900/30 border-b border-gray-200 dark:border-gray-700">
+          <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
+            <FileText className="h-3.5 w-3.5" />
+            Course Content
+          </h3>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          <div className="p-3 space-y-2">
+            {course.sections.map((section, idx) => {
+              const sectionProgress = getSectionProgress(section._id);
+              const isExpanded = expandedSections.has(section._id);
+
+              return (
+                <div key={section._id} className={`border rounded-xl overflow-hidden transition-all ${isExpanded
+                  ? 'border-blue-300 dark:border-blue-700 shadow-md'
+                  : 'border-gray-200 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800'
+                  }`}>
+                  <button
+                    onClick={() => toggleSection(section._id)}
+                    className={`w-full flex items-center justify-between p-4 transition-all duration-300 ${isExpanded
+                      ? 'bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-900/20 dark:to-indigo-900/20'
+                      : 'bg-white dark:bg-gray-800 hover:bg-slate-50 dark:hover:bg-gray-700/50'
+                      }`}
+                  >
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
+                      <div className={`flex-shrink-0 w-8 h-8 rounded-xl shadow-sm flex items-center justify-center font-black text-xs transition-all duration-500 ${enrolled
+                        ? isExpanded
+                          ? 'bg-blue-600 text-white scale-110 shadow-lg shadow-blue-500/40'
+                          : 'bg-slate-100 dark:bg-gray-700 text-slate-500 dark:text-gray-400'
+                        : 'bg-slate-200 dark:bg-gray-800 text-slate-400'
+                        }`}>
+                        {enrolled ? idx + 1 : <Lock className="h-3.5 w-3.5" />}
+                      </div>
+                      <div className="text-left flex-1 min-w-0">
+                        <h3 className={`font-black text-sm truncate tracking-tight transition-colors ${isExpanded
+                          ? 'text-blue-700 dark:text-blue-300'
+                          : 'text-slate-800 dark:text-gray-200'
+                          }`}>
+                          {section.title}
+                        </h3>
+                        <div className="flex items-center gap-3 mt-1">
+                          <p className="text-[10px] font-bold text-slate-400 dark:text-gray-500 uppercase tracking-wide">
+                            {section.lessons.length} Units
+                          </p>
+                          {enrolled && sectionProgress === 100 && (
+                            <span className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-black uppercase tracking-widest">
+                              <CheckCircle className="h-2.5 w-2.5" />
+                              Mastered
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-              )}
+                    {isExpanded ? (
+                      <ChevronDown className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                    ) : (
+                      <ChevronRight className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                    )}
+                  </button>
 
-              <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-                {course.sections?.map((section, idx) => {
-                  const sectionProgress = getSectionProgress(section._id);
-                  const isSectionExpanded = expandedSections.has(section._id);
-                  return (
-                    <div key={section._id} className={`rounded-2xl overflow-hidden transition-all duration-300 ${isSectionExpanded ? 'bg-slate-50/80 dark:bg-slate-800/40 ring-1 ring-slate-100 dark:ring-slate-800' : ''}`}>
-                      <button
-                        onClick={() => toggleSection(section._id)}
-                        className="w-full flex items-center justify-between p-4 group"
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ height: 0 }}
+                        animate={{ height: 'auto' }}
+                        exit={{ height: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
                       >
-                        <div className="flex items-center gap-4">
-                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black transition-all ${isSectionExpanded ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-slate-100 dark:bg-slate-800 text-slate-400'}`}>{idx + 1}</div>
-                          <div className="flex flex-col">
-                            <span className={`text-xs font-bold text-left tracking-tight transition-colors ${isSectionExpanded ? 'text-blue-600' : 'text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white'}`}>{section.title}</span>
-                            {sectionProgress > 0 && <span className="text-[9px] font-black text-slate-400">{Math.round(sectionProgress)}% Complete</span>}
-                          </div>
-                        </div>
-                        {isSectionExpanded ? <ChevronDown className="h-4 w-4 text-blue-600" /> : <ChevronRight className="h-4 w-4 text-slate-300" />}
-                      </button>
+                        <div className="bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700">
+                          {section.lessons.map((lesson, lessonIdx) => {
+                            const lessonProgress = getLessonProgress(section._id, lesson._id);
+                            const isCompleted = lessonProgress?.completed || false;
+                            const isActive = selectedLesson?._id === lesson._id;
+                            const hasResources = lesson.resources && lesson.resources.length > 0;
+                            const hasAssignments = lesson.linkedAssignments && lesson.linkedAssignments.length > 0;
+                            const hasActivities = lesson.linkedActivities && lesson.linkedActivities.length > 0;
+                            const hasLinkedQuizzes = lesson.linkedQuizzes && lesson.linkedQuizzes.length > 0;
+                            const hasMedia = lesson.media && lesson.media.length > 0;
 
-                      <AnimatePresence>
-                        {isSectionExpanded && (
-                          <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="overflow-hidden">
-                            <div className="pb-3 px-2 space-y-1">
-                              {section.lessons?.map((lesson) => {
-                                const isActive = selectedLesson?._id === lesson._id;
-                                const isCompleted = getLessonProgress(section._id, lesson._id)?.completed;
-                                return (
-                                  <div key={lesson._id} className="space-y-1">
-                                    <button
-                                      onClick={() => handleLessonSelect(section, lesson)}
-                                      className={`w-full flex items-center gap-3 py-2.5 px-4 rounded-xl transition-all ${isActive ? 'bg-blue-600/10 text-blue-600 shadow-sm' : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'}`}
-                                    >
-                                      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isActive ? 'bg-blue-600 scale-150' : isCompleted ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`} />
-                                      <span className={`text-[11px] font-bold text-left leading-tight truncate ${isActive ? 'font-black' : ''}`}>{lesson.title}</span>
-                                    </button>
-
-                                    {/* Lesson Sub-items */}
-                                    {isActive && (
-                                      <div className="ml-8 my-3 space-y-4">
-                                        {/* 1. Main Video */}
-                                        {lesson.videoUrl && (
-                                          <div>
-                                            <button
-                                              onClick={() => toggleGroup('MainVideo')}
-                                              className="w-full flex items-center justify-between text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 px-3 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-                                            >
-                                              <span>Video Lesson</span>
-                                              {expandedGroups.has('MainVideo') ? <ChevronDown className="h-2.5 w-2.5" /> : <ChevronRight className="h-2.5 w-2.5" />}
-                                            </button>
-                                            {expandedGroups.has('MainVideo') && (
-                                              <div className="space-y-0.5 border-l-2 border-slate-100 dark:border-slate-800 pl-2">
-                                                <button
-                                                  onClick={() => { setActiveTab('video'); setActiveItemIndex(0); }}
-                                                  className={`w-full flex items-center gap-2.5 py-1.5 px-3 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${activeTab === 'video' ? 'text-blue-600 bg-blue-50/50 dark:bg-blue-900/20' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-50'}`}
-                                                >
-                                                  <Video className="h-3.5 w-3.5" /> Watch Video
-                                                </button>
-                                              </div>
-                                            )}
-                                          </div>
-                                        )}
-
-                                        {/* 2. Interactive Media */}
-                                        {(lesson.media?.length || 0) > 0 && (
-                                          <div>
-                                            <button
-                                              onClick={() => toggleGroup('Media')}
-                                              className="w-full flex items-center justify-between text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 px-3 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-                                            >
-                                              <span>Interactive Media</span>
-                                              {expandedGroups.has('Media') ? <ChevronDown className="h-2.5 w-2.5" /> : <ChevronRight className="h-2.5 w-2.5" />}
-                                            </button>
-                                            {expandedGroups.has('Media') && (
-                                              <div className="space-y-0.5 border-l-2 border-slate-100 dark:border-slate-800 pl-2">
-                                                {lesson.media?.map((m, mIdx) => (
-                                                  <button
-                                                    key={m._id}
-                                                    onClick={() => { setActiveTab('media'); setActiveItemIndex(mIdx); }}
-                                                    className={`w-full flex items-center gap-2.5 py-1.5 px-3 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${activeTab === 'media' && activeItemIndex === mIdx ? 'text-purple-600 bg-purple-50/50 dark:bg-purple-900/10' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-50'}`}
-                                                  >
-                                                    <PlayCircle className="h-3.5 w-3.5" /> <span className="truncate">{m.title}</span>
-                                                  </button>
-                                                ))}
-                                              </div>
-                                            )}
-                                          </div>
-                                        )}
-
-                                        {/* 3. Study Notes (Docs) */}
-                                        {(lesson.docSubtopics?.length || 0) > 0 && (
-                                          <div>
-                                            <button
-                                              onClick={() => toggleGroup('Notes')}
-                                              className="w-full flex items-center justify-between text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 px-3 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-                                            >
-                                              <span>Study Notes</span>
-                                              {expandedGroups.has('Notes') ? <ChevronDown className="h-2.5 w-2.5" /> : <ChevronRight className="h-2.5 w-2.5" />}
-                                            </button>
-                                            {expandedGroups.has('Notes') && (
-                                              <div className="space-y-0.5 border-l-2 border-slate-100 dark:border-slate-800 pl-2">
-                                                {lesson.docSubtopics?.map((doc, dIdx) => (
-                                                  <button
-                                                    key={doc._id}
-                                                    onClick={() => { setActiveTab('docs'); setActiveItemIndex(dIdx); }}
-                                                    className={`w-full flex items-center gap-2.5 py-1.5 px-3 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${activeTab === 'docs' && activeItemIndex === dIdx ? 'text-emerald-500 bg-emerald-50/50 dark:bg-emerald-900/10' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-50'}`}
-                                                  >
-                                                    <BookOpen className="h-3.5 w-3.5" /> <span className="truncate">{doc.name}</span>
-                                                  </button>
-                                                ))}
-                                              </div>
-                                            )}
-                                          </div>
-                                        )}
-
-                                        {/* 4. Quizzes */}
-                                        {((lesson.quiz?.length || 0) > 0 || (lesson.linkedQuizzes?.length || 0) > 0) && (
-                                          <div>
-                                            <button
-                                              onClick={() => toggleGroup('Quiz')}
-                                              className="w-full flex items-center justify-between text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 px-3 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-                                            >
-                                              <span>Assessments</span>
-                                              {expandedGroups.has('Quiz') ? <ChevronDown className="h-2.5 w-2.5" /> : <ChevronRight className="h-2.5 w-2.5" />}
-                                            </button>
-                                            {expandedGroups.has('Quiz') && (
-                                              <div className="space-y-0.5 border-l-2 border-slate-100 dark:border-slate-800 pl-2">
-                                                {(lesson.quiz?.length || 0) > 0 && (
-                                                  <button
-                                                    onClick={() => { setActiveTab('quiz'); setActiveItemIndex(0); }}
-                                                    className={`w-full flex items-center gap-2.5 py-1.5 px-3 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${activeTab === 'quiz' && activeItemIndex === 0 ? 'text-amber-500 bg-amber-50/50 dark:bg-amber-900/10' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-50'}`}
-                                                  >
-                                                    <Trophy className="h-3.5 w-3.5" /> Main Quiz
-                                                  </button>
-                                                )}
-                                                {lesson.linkedQuizzes?.map((lq, lqIdx) => {
-                                                  const actualIdx = (lesson.quiz?.length || 0) > 0 ? lqIdx + 1 : lqIdx;
-                                                  return (
-                                                    <button
-                                                      key={lq._id}
-                                                      onClick={() => { setActiveTab('quiz'); setActiveItemIndex(actualIdx); }}
-                                                      className={`w-full flex items-center gap-2.5 py-1.5 px-3 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${activeTab === 'quiz' && activeItemIndex === actualIdx ? 'text-amber-500 bg-amber-50/50 dark:bg-amber-900/10' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-50'}`}
-                                                    >
-                                                      <Trophy className="h-3.5 w-3.5" /> <span className="truncate">{lq.title}</span>
-                                                    </button>
-                                                  );
-                                                })}
-                                              </div>
-                                            )}
-                                          </div>
-                                        )}
-
-                                        {/* 5. Projects */}
-                                        {(lesson.linkedAssignments?.length || 0) > 0 && (
-                                          <div>
-                                            <button
-                                              onClick={() => toggleGroup('Projects')}
-                                              className="w-full flex items-center justify-between text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 px-3 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-                                            >
-                                              <span>Projects</span>
-                                              {expandedGroups.has('Projects') ? <ChevronDown className="h-2.5 w-2.5" /> : <ChevronRight className="h-2.5 w-2.5" />}
-                                            </button>
-                                            {expandedGroups.has('Projects') && (
-                                              <div className="space-y-0.5 border-l-2 border-slate-100 dark:border-slate-800 pl-2">
-                                                {lesson.linkedAssignments?.map((a, aIdx) => (
-                                                  <button
-                                                    key={a._id}
-                                                    onClick={() => { setActiveTab('assignments'); setActiveItemIndex(aIdx); }}
-                                                    className={`w-full flex items-center gap-2.5 py-1.5 px-3 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${activeTab === 'assignments' && activeItemIndex === aIdx ? 'text-rose-500 bg-rose-50/50 dark:bg-rose-900/10' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-50'}`}
-                                                  >
-                                                    <ClipboardList className="h-3.5 w-3.5" /> {a.title || `Project ${aIdx + 1}`}
-                                                  </button>
-                                                ))}
-                                              </div>
-                                            )}
-                                          </div>
-                                        )}
-
-                                        {/* 6. Exercises */}
-                                        {(lesson.linkedActivities?.length || 0) > 0 && (
-                                          <div>
-                                            <button
-                                              onClick={() => toggleGroup('Exercises')}
-                                              className="w-full flex items-center justify-between text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 px-3 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-                                            >
-                                              <span>Exercises</span>
-                                              {expandedGroups.has('Exercises') ? <ChevronDown className="h-2.5 w-2.5" /> : <ChevronRight className="h-2.5 w-2.5" />}
-                                            </button>
-                                            {expandedGroups.has('Exercises') && (
-                                              <div className="space-y-0.5 border-l-2 border-slate-100 dark:border-slate-800 pl-2">
-                                                {lesson.linkedActivities?.map((act, actIdx) => (
-                                                  <button
-                                                    key={act._id}
-                                                    onClick={() => { setActiveTab('activities'); setActiveItemIndex(actIdx); }}
-                                                    className={`w-full flex items-center gap-2.5 py-1.5 px-3 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${activeTab === 'activities' && activeItemIndex === actIdx ? 'text-orange-500 bg-orange-50/50 dark:bg-orange-900/10' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-50'}`}
-                                                  >
-                                                    <Zap className="h-3.5 w-3.5" /> {act.title || `Exercise ${actIdx + 1}`}
-                                                  </button>
-                                                ))}
-                                              </div>
-                                            )}
-                                          </div>
-                                        )}
-
-                                        {/* 7. Resources */}
-                                        {(lesson.resources?.length || 0) > 0 && (
-                                          <div>
-                                            <button
-                                              onClick={() => toggleGroup('Resources')}
-                                              className="w-full flex items-center justify-between text-[9px] font-black text-slate-400 uppercase tracking-widest mb-2 px-3 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
-                                            >
-                                              <span>Resources</span>
-                                              {expandedGroups.has('Resources') ? <ChevronDown className="h-2.5 w-2.5" /> : <ChevronRight className="h-2.5 w-2.5" />}
-                                            </button>
-                                            {expandedGroups.has('Resources') && (
-                                              <div className="space-y-0.5 border-l-2 border-slate-100 dark:border-slate-800 pl-2">
-                                                <button
-                                                  onClick={() => { setActiveTab('resources'); setActiveItemIndex(0); }}
-                                                  className={`w-full flex items-center gap-2.5 py-1.5 px-3 rounded-lg text-[10px] font-bold uppercase tracking-wider transition-all ${activeTab === 'resources' ? 'text-teal-500 bg-teal-50/50 dark:bg-teal-900/10' : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-50'}`}
-                                                >
-                                                  <FileDown className="h-3.5 w-3.5" /> Materials
-                                                </button>
-                                              </div>
-                                            )}
-                                          </div>
-                                        )}
-                                      </div>
-                                    )}
+                            return (
+                              <div key={lesson._id}>
+                                <button
+                                  onClick={() => {
+                                    handleLessonSelect(section, lesson, idx, lessonIdx);
+                                    setSidebarOpen(false);
+                                  }}
+                                  className={`w-full flex items-center gap-4 p-4 pl-6 hover:bg-slate-50 dark:hover:bg-gray-700/50 transition-all border-l-4 ${isActive
+                                    ? 'bg-blue-50/50 dark:bg-blue-900/20 border-blue-600'
+                                    : 'border-transparent'
+                                    }`}
+                                >
+                                  {isCompleted ? (
+                                    <div className="w-4 h-4 rounded-full bg-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                                      <CheckCircle className="h-2.5 w-2.5 text-white" />
+                                    </div>
+                                  ) : (
+                                    <Circle className={`h-4 w-4 flex-shrink-0 ${isActive ? 'text-blue-400' : 'text-slate-300 dark:text-gray-600'}`} />
+                                  )}
+                                  <div className="flex-1 text-left min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <p className={`text-sm font-medium truncate ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-700 dark:text-gray-300'
+                                        }`}>
+                                        {lessonIdx + 1}. {lesson.title}
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                      <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                                        <Clock className="h-3 w-3" />
+                                        {lesson.estimatedMinutes}m
+                                      </span>
+                                      {lesson.videoUrl && (
+                                        <span className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                                          <PlayCircle className="h-3 w-3" />
+                                        </span>
+                                      )}
+                                      {hasResources && (
+                                        <span className="flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400">
+                                          <FileDown className="h-3 w-3" />
+                                          {lesson.resources?.length || 0}
+                                        </span>
+                                      )}
+                                      {hasAssignments && (
+                                        <span className="flex items-center gap-1 text-xs text-orange-600 dark:text-orange-400">
+                                          <ClipboardList className="h-3 w-3" />
+                                          {lesson.linkedAssignments?.length || 0}
+                                        </span>
+                                      )}
+                                      {hasActivities && (
+                                        <span className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                                          <Zap className="h-3 w-3" />
+                                          {lesson.linkedActivities?.length || 0}
+                                        </span>
+                                      )}
+                                      {hasLinkedQuizzes && (
+                                        <span className="flex items-center gap-1 text-xs text-violet-600 dark:text-violet-400">
+                                          <Trophy className="h-3 w-3" />
+                                          {lesson.linkedQuizzes?.length || 0}
+                                        </span>
+                                      )}
+                                      {hasMedia && (
+                                        <span className="flex items-center gap-1 text-xs text-purple-600 dark:text-purple-400">
+                                          <PlayCircle className="h-3 w-3" />
+                                          {lesson.media?.length || 0}
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
-                                );
-                              })}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </motion.aside>
-        )}
-      </AnimatePresence>
-
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* Restored Main Header */}
-        <header className="flex-shrink-0 bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 h-20 flex items-center justify-between px-8 z-20">
-          <div className="flex items-center gap-6">
-            <button
-              onClick={() => setSidebarOpen(!sidebarOpen)}
-              className="w-12 h-12 flex items-center justify-center rounded-2xl bg-slate-100 dark:bg-white/5 text-slate-500 hover:text-slate-900 dark:hover:text-white transition-all"
-            >
-              <Menu className="h-6 w-6" />
-            </button>
-            <div className="flex flex-col">
-              <h1 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">{course?.title}</h1>
-              <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em]">{selectedSection?.title} • {selectedLesson?.title}</p>
-            </div>
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
           </div>
+        </div>
+      </aside>
 
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex flex-col items-end mr-4">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Progress</span>
-                <span className="text-sm font-black text-blue-600">{progress?.overallProgress || 0}%</span>
-              </div>
-              <div className="w-32 h-1.5 bg-slate-100 dark:bg-white/5 rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progress?.overallProgress || 0}%` }}
-                  className="h-full bg-blue-600 shadow-[0_0_12px_rgba(37,99,235,0.4)]"
-                />
-              </div>
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+        {/* Top Header */}
+        <header className="flex-shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+          <div className="flex items-center justify-between px-4 lg:px-8 py-4">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <Menu className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+              </button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => viewMode === 'overview' ? navigate('/dashboard') : setViewMode('overview')}
+                className="flex items-center gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span className="hidden sm:inline">{viewMode === 'overview' ? 'Dashboard' : 'Overview'}</span>
+              </Button>
             </div>
-            <button className="w-12 h-12 flex items-center justify-center rounded-2xl bg-blue-600 text-white shadow-xl shadow-blue-500/20 hover:scale-105 active:scale-95 transition-all">
-              <Trophy className="h-5 w-5" />
-            </button>
+            <div className="flex items-center gap-3">
+              {!enrolled && (
+                <Button
+                  onClick={handleEnroll}
+                  disabled={enrolling}
+                  className={BUTTON_STYLES.gradient}
+                  size="sm"
+                >
+                  {enrolling ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Enrolling...
+                    </>
+                  ) : (
+                    'Enroll Now'
+                  )}
+                </Button>
+              )}
+              <Button
+                onClick={() => setNotesOpen(true)}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <StickyNote className="h-4 w-4" />
+                <span className="hidden sm:inline">Notes</span>
+              </Button>
+            </div>
           </div>
         </header>
 
-        {/* Sub-header hidden per user request */}
-        {false && viewMode === 'lesson' && selectedLesson && (
-          <div className="flex-shrink-0 bg-white dark:bg-slate-900 px-8 border-b border-slate-100 dark:border-slate-800 overflow-x-auto no-scrollbar z-20">
-            <div className="flex items-center gap-10 h-16">
-              {[
-                { id: 'video', label: 'Watch Video', show: !!selectedLesson?.videoUrl, icon: PlayCircle },
-                { id: 'quiz', label: 'Assessment', show: (selectedLesson?.quiz?.length || 0) > 0 || (selectedLesson?.linkedQuizzes?.length || 0) > 0, icon: Trophy },
-                { id: 'docs', label: 'Study Notes', show: (selectedLesson?.docSubtopics?.length || 0) > 0, icon: BookOpen },
-                { id: 'media', label: 'Interactive', show: (selectedLesson?.media?.length || 0) > 0, icon: Video },
-                { id: 'assignments', label: 'Projects', show: (selectedLesson?.linkedAssignments?.length || 0) > 0, icon: ClipboardList },
-                { id: 'activities', label: 'Exercises', show: (selectedLesson?.linkedActivities?.length || 0) > 0, icon: Zap },
-                { id: 'resources', label: 'Materials', show: (selectedLesson?.resources?.length || 0) > 0, icon: FileDown }
-              ].filter(t => t.show).map(tab => (
-                <button
-                  key={tab.id}
-                  onClick={() => { setActiveTab(tab.id as LessonTab); setActiveItemIndex(0); }}
-                  className={`h-full flex items-center gap-2 relative px-2 flex-shrink-0 text-[10px] font-black uppercase tracking-[0.2em] transition-all ${activeTab === tab.id ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}
-                >
-                  <tab.icon className={`h-4 w-4 ${activeTab === tab.id ? 'text-blue-600' : 'text-slate-400'}`} />
-                  <span className="hidden sm:inline">{tab.label}</span>
-                  {activeTab === tab.id && (
-                    <motion.div layoutId="activeTabUnderline" className="absolute bottom-0 left-0 right-0 h-1 bg-blue-600 rounded-t-full shadow-[0_-4px_12px_rgba(37,99,235,0.4)]" />
-                  )}
-                </button>
-              ))}
+        {/* Progress Bar on Top */}
+        {enrolled && progress && viewMode === 'lesson' && (
+          <div className="flex-shrink-0 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-900/20 dark:to-purple-900/20 border-b border-gray-200 dark:border-gray-700 px-4 lg:px-8 py-3">
+            <div className="max-w-5xl mx-auto">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Award className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <span className="text-sm font-semibold text-gray-900 dark:text-white">Course Progress</span>
+                </div>
+                <span className="text-sm font-bold text-blue-600 dark:text-blue-400">{Math.round(progress.overallProgress)}%</span>
+              </div>
+              <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
+                <div
+                  className="h-full bg-gradient-to-r from-blue-600 to-purple-600 transition-all duration-500 rounded-full"
+                  style={{ width: `${progress.overallProgress}%` }}
+                />
+              </div>
             </div>
           </div>
         )}
 
-        <main className="flex-1 overflow-y-auto bg-slate-50/50 dark:bg-slate-950 p-6 lg:p-10 custom-scrollbar">
-          <div className="max-w-7xl mx-auto">
-            {viewMode === 'overview' ? (
-              <CourseOverview course={course} progress={progress} enrolled={enrolled} onEnroll={handleEnroll} enrolling={enrolling} getSectionProgress={getSectionProgress} onResume={handleResume} />
-            ) : (
-              <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                {/* Lesson Header Card hidden per user request */}
-                {false && (
-                  <div className="bg-slate-100 dark:bg-slate-900 rounded-[3rem] p-10 lg:p-16 relative overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800">
-                    <div className="absolute top-0 right-0 -mr-20 -mt-20 w-[30rem] h-[30rem] bg-blue-600/10 rounded-full blur-[100px] pointer-events-none" />
-                    <div className="relative z-10">
-                      <div className="flex items-center gap-4 mb-6">
-                        <button
-                          onClick={() => setViewMode('overview')}
-                          className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-600 dark:text-white/60 hover:text-slate-900 dark:hover:text-white text-[10px] font-black uppercase tracking-widest border border-slate-200 dark:border-white/10 rounded-2xl transition-all active:scale-95 shadow-sm"
-                        >
-                          <ChevronLeft className="h-4 w-4" />
-                          Back to Map
-                        </button>
-                        <div className="h-4 w-[1px] bg-slate-200 dark:bg-white/10" />
-                        <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.3em]">Currently Studying</p>
+        {/* Content Area */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="p-4 lg:p-8 max-w-5xl mx-auto">
+            <AnimatePresence mode="wait">
+              {viewMode === 'overview' && (
+                <motion.div
+                  key="overview"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                >
+                  <CourseOverview
+                    course={course}
+                    progress={progress}
+                    enrolled={enrolled}
+                    onEnroll={handleEnroll}
+                    enrolling={enrolling}
+                    getSectionProgress={getSectionProgress}
+                  />
+                </motion.div>
+              )}
+
+              {viewMode === 'lesson' && selectedLesson && selectedSection && (
+                <motion.div
+                  key="lesson"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="space-y-6"
+                >
+                  {/* Component-based Content Rendering based on activeTab */}
+                  {activeTab === 'video' && selectedLesson.videoUrl && (
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700">
+                      <div className="aspect-video">
+                        <iframe
+                          ref={videoRef}
+                          src={getYouTubeEmbedUrl(selectedLesson.videoUrl)}
+                          className="w-full h-full"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
                       </div>
-                      <h1 className="text-4xl lg:text-7xl font-black text-slate-900 dark:text-white tracking-tighter mb-10 leading-[0.9]">{selectedLesson?.title}</h1>
-                      <div className="flex flex-wrap items-center gap-8">
-                        <div className="flex items-center gap-3 bg-white dark:bg-white/5 px-4 py-2 rounded-xl border border-slate-100 dark:border-white/5 shadow-sm">
-                          <Clock className="h-4 w-4 text-blue-500" />
-                          <span className="text-slate-600 dark:text-slate-300 text-sm font-bold uppercase tracking-wider">{selectedLesson?.estimatedMinutes} Minutes</span>
+                    </div>
+                  )}
+
+                  {activeTab === 'content' && <LessonContent lesson={selectedLesson} />}
+
+                  {/* Docs Tab */}
+                  {activeTab === 'docs' && selectedLesson.docSubtopics && selectedLesson.docSubtopics.length > 0 && selectedLesson.docSubtopics[selectedDocIndex] && (
+                    <div className="space-y-4">
+                      <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700">
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">{selectedLesson.docSubtopics[selectedDocIndex].name}</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 flex items-center gap-2">
+                            <FileText className="h-4 w-4" />
+                            {selectedLesson.docSubtopics[selectedDocIndex].filename}
+                          </p>
                         </div>
-                        <div className="flex items-center gap-3 bg-white dark:bg-white/5 px-4 py-2 rounded-xl border border-slate-100 dark:white/5 shadow-sm">
-                          <Zap className="h-4 w-4 text-amber-500" />
-                          <span className="text-slate-600 dark:text-slate-300 text-sm font-bold uppercase tracking-wider">Focus Mode</span>
+                        <div className="p-6">
+                          <CourseMarkdownRenderer content={selectedLesson.docSubtopics[selectedDocIndex].content} />
                         </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                  <div className="lg:col-span-12 space-y-10">
-                    {activeTab === 'video' && selectedLesson?.videoUrl && (
-                      <div className="space-y-10">
-                        <div className="aspect-video bg-black rounded-[2.5rem] overflow-hidden shadow-2xl border border-slate-200 dark:border-slate-800 group relative">
-                          <iframe src={getYouTubeEmbedUrl(selectedLesson.videoUrl)} className="w-full h-full" allowFullScreen />
-                        </div>
-                        <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-10 shadow-xl border border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                          <Button
-                            variant="ghost"
-                            onClick={goToPrevItem}
-                            disabled={activeTab === getAvailableTabs(selectedLesson)[0] && activeItemIndex === 0}
-                            className="rounded-xl px-6 font-bold text-slate-400"
-                          >
-                            <ChevronLeft className="mr-2 h-4 w-4" /> Previous
-                          </Button>
-                        </div>
-                      </div>
-                    )}
+                  {activeTab === 'resources' && <LessonResources lesson={selectedLesson} />}
 
-                    {activeTab === 'quiz' && selectedLesson && (
-                      <div className="space-y-10">
-                        {(() => {
-                          const hasMainQuiz = (selectedLesson.quiz?.length || 0) > 0;
-                          let quizQuestions: any[] = [];
-                          let quizTitle = "Assessment";
+                  {activeTab === 'quizzes' && (
+                    <LessonQuizzes
+                      lesson={selectedLesson}
+                      enrolled={enrolled}
+                      onStartQuiz={handleStartQuiz}
+                      onSubmitQuiz={handleQuizSubmit}
+                      sectionId={selectedSection._id}
+                      onProgressUpdate={loadCourseData}
+                      selectedQuizIndex={selectedQuizIndex}
+                      onQuizIndexChange={setSelectedQuizIndex}
+                    />
+                  )}
 
-                          if (hasMainQuiz && activeItemIndex === 0) {
-                            quizQuestions = selectedLesson.quiz;
-                            quizTitle = "Main Lesson Quiz";
-                          } else {
-                            const linkedIdx = hasMainQuiz ? activeItemIndex - 1 : activeItemIndex;
-                            const lq = selectedLesson.linkedQuizzes?.[linkedIdx];
-                            quizQuestions = lq?.questions || [];
-                            quizTitle = lq?.title || "Linked Assessment";
-                          }
+                  {activeTab === 'assignments' && <LessonAssignments lesson={selectedLesson} selectedIndex={selectedAssignmentIndex} onIndexChange={setSelectedAssignmentIndex} />}
 
-                          if (!quizResults) {
-                            return (
-                              <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-10 lg:p-14 shadow-xl border border-slate-100 dark:border-slate-800">
-                                <div className="flex items-center justify-between mb-12">
-                                  <div>
-                                    <p className="text-[10px] font-black text-blue-500 uppercase tracking-[0.4em] mb-2">Subject Assessment</p>
-                                    <h3 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">{quizTitle}</h3>
-                                  </div>
-                                  <div className="w-16 h-16 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500">
-                                    <Trophy className="h-8 w-8" />
-                                  </div>
-                                </div>
+                  {activeTab === 'activities' && <LessonActivities lesson={selectedLesson} selectedIndex={selectedActivityIndex} onIndexChange={setSelectedActivityIndex} />}
 
-                                <div className="space-y-8">
-                                  {quizQuestions.map((question: any, qIdx: number) => (
-                                    <div key={qIdx} className="bg-slate-50 dark:bg-white/5 rounded-[2.5rem] p-8 lg:p-10 border border-slate-100 dark:border-white/5 shadow-inner">
-                                      <div className="flex items-start gap-6 mb-8">
-                                        <span className="flex-shrink-0 w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center text-sm font-black shadow-lg shadow-blue-500/20">{qIdx + 1}</span>
-                                        <h4 className="text-xl lg:text-2xl font-bold text-slate-900 dark:text-white leading-snug">{question.question}</h4>
-                                      </div>
-                                      <div className="grid grid-cols-1 gap-4">
-                                        {(question.options || []).map((option: any, oIdx: number) => {
-                                          const optionText = typeof option === 'string' ? option : (option as { text: string }).text;
-                                          const isSelected = quizAnswers[qIdx] === oIdx;
-                                          return (
-                                            <button
-                                              key={oIdx}
-                                              onClick={() => setQuizAnswers(prev => ({ ...prev, [qIdx]: oIdx }))}
-                                              className={`group text-left p-6 rounded-2xl border-2 transition-all duration-300 ${isSelected
-                                                ? 'border-blue-600 bg-blue-600/10 text-blue-600 dark:text-white shadow-lg'
-                                                : 'border-slate-100 dark:border-white/5 bg-white dark:bg-white/[0.02] text-slate-500 dark:text-white/40 hover:border-blue-500 dark:hover:border-white/10 hover:text-blue-600 dark:hover:text-white'
-                                                }`}
-                                            >
-                                              <div className="flex items-center gap-4">
-                                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? 'border-blue-600 bg-blue-600' : 'border-slate-200 dark:border-white/20'}`}>
-                                                  {isSelected && <div className="w-2 h-2 rounded-full bg-white" />}
-                                                </div>
-                                                <span className="font-bold">{optionText}</span>
-                                              </div>
-                                            </button>
-                                          );
-                                        })}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-
-                                <div className="mt-12 flex items-center justify-between">
-                                  <Button variant="ghost" onClick={goToPrevItem} className="text-slate-400 font-bold">
-                                    <ChevronLeft className="mr-2 h-4 w-4" /> Previous
-                                  </Button>
-                                  <Button
-                                    onClick={() => handleQuizSubmit()}
-                                    disabled={Object.keys(quizAnswers).length !== quizQuestions.length || submittingQuiz}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white font-black px-12 py-7 rounded-[2rem] h-auto text-xl shadow-2xl shadow-blue-500/20 disabled:opacity-30 disabled:grayscale transition-all active:scale-95"
-                                  >
-                                    {submittingQuiz ? 'Evaluating...' : 'Verify Assessment'}
-                                  </Button>
-                                </div>
+                  {/* Media Tab */}
+                  {activeTab === 'media' && selectedLesson.media && selectedLesson.media.length > 0 && (
+                    <div className="space-y-6">
+                      {/* Selected Media Content */}
+                      {selectedLesson.media[selectedMediaIndex] && (
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-lg border border-gray-200 dark:border-gray-700">
+                          <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1">
+                                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                                  {selectedLesson.media[selectedMediaIndex].title}
+                                </h3>
+                                {selectedLesson.media[selectedMediaIndex].description && (
+                                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                    {selectedLesson.media[selectedMediaIndex].description}
+                                  </p>
+                                )}
                               </div>
-                            );
-                          } else {
-                            return (
-                              <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-10 lg:p-14 shadow-xl border border-slate-100 dark:border-slate-800">
-                                <div className="py-10 space-y-12">
-                                  <div className="text-center space-y-8">
-                                    <div className="relative inline-flex items-center justify-center p-12 rounded-full bg-white/5 border border-white/5 shadow-2xl">
-                                      <div className="absolute inset-0 bg-blue-600/20 rounded-full blur-[40px] animate-pulse" />
-                                      <CircularProgress percentage={quizResults.score} size={200} strokeWidth={14} color={quizResults.passed ? "text-emerald-500" : "text-blue-600"} />
-                                      <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                        <span className="text-4xl font-black text-white">{quizResults.score}%</span>
-                                        <span className="text-[10px] font-black uppercase text-white/40 tracking-widest mt-1">Grade</span>
-                                      </div>
-                                    </div>
-                                    <div>
-                                      <h3 className="text-5xl font-black text-white mb-6 tracking-tighter">
-                                        {quizResults.passed ? 'Topic Mastered! 🎉' : 'Keep Learning! 💪'}
-                                      </h3>
-                                      <p className="text-xl text-white/50 font-medium max-w-lg mx-auto leading-relaxed">
-                                        {quizResults.passed
-                                          ? `Exceptional work! You've achieved a score of ${quizResults.score}% and successfully mastered this lesson.`
-                                          : `You reached ${quizResults.score}%. To ensure complete understanding, we recommend reviewing the material once more before your next attempt.`}
-                                      </p>
-                                    </div>
-                                  </div>
-
-                                  <div className="space-y-6">
-                                    <h4 className="text-xl font-bold text-white px-2">Review Summary</h4>
-                                    <div className="grid gap-4">
-                                      {quizResults.results.map((res, rIdx) => (
-                                        <div key={rIdx} className={`p-6 rounded-3xl border ${res.isCorrect ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-rose-500/5 border-rose-500/20'}`}>
-                                          <div className="flex items-start gap-4">
-                                            <div className={`mt-1 h-2 w-2 rounded-full flex-shrink-0 ${res.isCorrect ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                                            <div className="space-y-2">
-                                              <p className="font-bold text-white">{res.question}</p>
-                                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
-                                                <span className={res.isCorrect ? 'text-emerald-400' : 'text-rose-400'}>
-                                                  Your answer: {res.yourAnswer}
-                                                </span>
-                                                {!res.isCorrect && (
-                                                  <span className="text-slate-400 italic">
-                                                    Correct: {res.correctAnswer}
-                                                  </span>
-                                                )}
-                                              </div>
-                                              {res.explanation && (
-                                                <p className="text-xs text-white/40 italic mt-2 border-t border-white/5 pt-2">
-                                                  {res.explanation}
-                                                </p>
-                                              )}
-                                            </div>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-
-                                  <div className="flex items-center justify-center gap-6 pt-4">
-                                    <Button
-                                      onClick={() => { setQuizResults(null); setQuizAnswers({}); }}
-                                      className="bg-white/5 hover:bg-white/10 text-white/60 hover:text-white border border-white/10 font-black px-10 py-5 rounded-2xl h-auto transition-all"
-                                    >
-                                      Retake Quiz
-                                    </Button>
-                                    <Button
-                                      onClick={goToNextItem}
-                                      className="bg-blue-600 hover:bg-blue-700 text-white font-black px-12 py-5 rounded-2xl h-auto shadow-2xl shadow-blue-500/30 transition-all active:scale-95"
-                                    >
-                                      Continue to Next
-                                    </Button>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          }
-                        })()}
-                      </div>
-                    )}
-
-                    {activeTab === 'docs' && selectedLesson?.docSubtopics && selectedLesson.docSubtopics.length > 0 && (
-                      <div className="space-y-8 min-h-0">
-                        {(() => {
-                          const doc = selectedLesson.docSubtopics[activeItemIndex] || selectedLesson.docSubtopics[0];
-                          const totalDocs = selectedLesson.docSubtopics.length;
-                          return (
-                            <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-10 lg:p-14 shadow-xl border border-slate-100 dark:border-slate-800">
-                              <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-100 dark:border-slate-800">
-                                <h3 className="text-3xl font-black text-slate-900 dark:text-white">{doc.name}</h3>
-                                <div className="px-4 py-2 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-xl text-[10px] font-black uppercase tracking-widest">
-                                  Reading {activeItemIndex + 1} of {totalDocs}
-                                </div>
-                              </div>
-                              <div className="prose prose-slate dark:prose-invert max-w-none">
-                                <CourseMarkdownRenderer content={doc.content} />
-                              </div>
-                              <div className="pt-10 flex items-center justify-between border-t border-slate-100 dark:border-slate-800">
-                                <Button
-                                  variant="outline"
-                                  onClick={goToPrevItem}
-                                  className="rounded-xl px-1 offset-border-2 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-white/5 font-bold"
-                                >
-                                  <ChevronLeft className="mr-2 h-4 w-4" /> Back
-                                </Button>
-                                <Button
-                                  onClick={goToNextItem}
-                                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-8 font-bold shadow-lg shadow-blue-500/20"
-                                >
-                                  {activeItemIndex === totalDocs - 1 ? 'Next Section' : 'Next Reading'} <ChevronRight className="ml-2 h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    )}
-
-                    {activeTab === 'resources' && selectedLesson && (
-                      <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-12 shadow-xl border border-slate-100 dark:border-slate-800 h-full overflow-y-auto">
-                        <div className="flex items-center justify-between mb-10">
-                          <h2 className="text-3xl font-black text-slate-900 dark:text-white">Materials & Resources</h2>
-                          <div className="flex gap-3">
-                            <Button variant="outline" onClick={goToPrevItem} className="rounded-xl font-bold">
-                              <ChevronLeft className="mr-2 h-4 w-4" /> Previous
-                            </Button>
-                            <Button onClick={goToNextItem} className="bg-blue-600 text-white rounded-xl font-bold">
-                              Next <ChevronRight className="ml-2 h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        <LessonResources lesson={selectedLesson} />
-                      </div>
-                    )}
-
-                    {activeTab === 'assignments' && selectedLesson?.linkedAssignments && (
-                      <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-12 shadow-xl border border-slate-100 dark:border-slate-800 h-full overflow-y-auto">
-                        <div className="flex items-center justify-between mb-10">
-                          <h2 className="text-3xl font-black text-slate-900 dark:text-white">Projects</h2>
-                          <div className="flex gap-3">
-                            <Button variant="outline" onClick={goToPrevItem} className="rounded-xl font-bold">
-                              <ChevronLeft className="mr-2 h-4 w-4" /> Previous
-                            </Button>
-                            <Button onClick={goToNextItem} className="bg-blue-600 text-white rounded-xl font-bold">
-                              Next <ChevronRight className="ml-2 h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        <LessonAssignments lesson={selectedLesson} selectedIndex={activeItemIndex} onIndexChange={setActiveItemIndex} />
-                      </div>
-                    )}
-
-                    {activeTab === 'activities' && selectedLesson?.linkedActivities && (
-                      <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-12 shadow-xl border border-slate-100 dark:border-slate-800 h-full overflow-y-auto">
-                        <div className="flex items-center justify-between mb-10">
-                          <h2 className="text-3xl font-black text-slate-900 dark:text-white">Exercises</h2>
-                          <div className="flex gap-3">
-                            <Button variant="outline" onClick={goToPrevItem} className="rounded-xl font-bold">
-                              <ChevronLeft className="mr-2 h-4 w-4" /> Previous
-                            </Button>
-                            <Button onClick={goToNextItem} className="bg-blue-600 text-white rounded-xl font-bold">
-                              Next <ChevronRight className="ml-2 h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        <LessonActivities lesson={selectedLesson} selectedIndex={activeItemIndex} onIndexChange={setActiveItemIndex} />
-                      </div>
-                    )}
-
-                    {activeTab === 'media' && selectedLesson?.media && selectedLesson.media.length > 0 && (
-                      <div className="space-y-10 min-h-0">
-                        {(() => {
-                          const item = selectedLesson.media[activeItemIndex] || selectedLesson.media[0];
-                          const totalMedia = selectedLesson.media.length;
-                          return (
-                            <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-10 lg:p-14 shadow-xl border border-slate-100 dark:border-slate-800 overflow-hidden">
-                              <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-100 dark:border-slate-800">
-                                <div>
-                                  <h3 className="text-3xl font-black text-slate-900 dark:text-white">{item.title}</h3>
-                                  <p className="text-slate-500 dark:text-slate-400 font-medium">{item.description}</p>
-                                </div>
-                                <div className="px-4 py-2 bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 rounded-xl text-[10px] font-black uppercase tracking-widest">
-                                  Module {activeItemIndex + 1} of {totalMedia}
-                                </div>
-                              </div>
-                              {item.url && (
-                                <div className="aspect-video bg-black rounded-3xl overflow-hidden shadow-2xl">
-                                  <iframe src={getYouTubeEmbedUrl(item.url)} className="w-full h-full" allowFullScreen />
-                                </div>
+                              {selectedLesson.media.length > 1 && (
+                                <span className="flex-shrink-0 px-3 py-1 bg-white dark:bg-gray-800 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700">
+                                  {selectedMediaIndex + 1} / {selectedLesson.media.length}
+                                </span>
                               )}
-                              <div className="pt-10 flex items-center justify-between border-t border-slate-100 dark:border-slate-800">
-                                <Button
-                                  variant="outline"
-                                  onClick={goToPrevItem}
-                                  className="rounded-xl px-6 font-bold border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-white/5"
-                                >
-                                  <ChevronLeft className="mr-2 h-4 w-4" /> Previous
-                                </Button>
-                                <Button
-                                  onClick={goToNextItem}
-                                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl px-8 font-bold shadow-lg shadow-blue-500/20 transition-all active:scale-95"
-                                >
-                                  {activeItemIndex < totalMedia - 1 ? 'Next Module' : 'Next Section'} <ChevronRight className="ml-2 h-5 w-5" />
-                                </Button>
-                              </div>
                             </div>
-                          );
-                        })()}
-                      </div>
+                          </div>
+                          {selectedLesson.media[selectedMediaIndex].url && (
+                            <div className="aspect-video bg-black">
+                              <iframe
+                                src={getYouTubeEmbedUrl(selectedLesson.media[selectedMediaIndex].url)}
+                                className="w-full h-full"
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                allowFullScreen
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Navigation Buttons */}
+                  <div className="flex items-center justify-between mt-6">
+                    {hasPreviousLesson() ? (
+                      <Button
+                        onClick={handlePreviousLesson}
+                        variant="outline"
+                        className="flex items-center gap-2 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                        Previous
+                      </Button>
+                    ) : (
+                      <div></div>
+                    )}
+                    {hasNextLesson() && (
+                      <Button
+                        onClick={handleNextLesson}
+                        className="bg-blue-600 dark:bg-blue-500 hover:bg-blue-700 dark:hover:bg-blue-600 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        Next
+                        <ChevronRight className="h-4 w-4 ml-2" />
+                      </Button>
                     )}
                   </div>
-                </div>
-              </div>
-            )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </main>
       </div>
 
-      <EnrollmentDialog isOpen={showEnrollDialog} onClose={() => setShowEnrollDialog(false)} onEnroll={handleEnroll} enrolling={enrolling} courseTitle={course?.title || ''} />
-      <NotesDrawer isOpen={notesOpen} onClose={() => setNotesOpen(false)} screen={selectedSection ? `section-${selectedSection._id}` : 'course-overview'} />
+      {/* Quiz Dialog */}
+      <Dialog open={showQuizDialog} onOpenChange={setShowQuizDialog}>
+        <DialogContent className="max-w-4xl w-[90vw] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-start justify-between gap-4">
+              <DialogTitle className="flex-1">
+                {selectedLesson?.title} - Quiz
+              </DialogTitle>
+              <button
+                onClick={() => setShowQuizDialog(false)}
+                className="flex-shrink-0 rounded-lg p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+          </DialogHeader>
+
+          {selectedLesson && selectedLesson.quiz && selectedLesson.quiz.length > 0 && (
+            <div className="px-4 py-4 sm:px-6 sm:py-5">
+              {!quizResults ? (
+                <div className="space-y-4">
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                    <h3 className="text-base font-bold text-gray-900 dark:text-white mb-1">
+                      Test Your Knowledge
+                    </h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      {selectedLesson.quiz.length} questions
+                    </p>
+                  </div>
+
+                  {selectedLesson.quiz.map((question, qIdx) => (
+                    <div key={qIdx} className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                      <div className="flex items-start gap-3 mb-3">
+                        <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-blue-500 text-white font-bold text-sm flex-shrink-0">
+                          {qIdx + 1}
+                        </span>
+                        <h4 className="text-sm font-semibold text-gray-900 dark:text-white flex-1">
+                          {question.question}
+                        </h4>
+                      </div>
+
+                      <div className="space-y-2">
+                        {question.options && question.options.length > 0 ? question.options.map((option, oIdx) => {
+                          const optionText = typeof option === 'string' ? option : (option as { text: string }).text;
+                          return (
+                            <button
+                              key={oIdx}
+                              onClick={() => setQuizAnswers(prev => ({ ...prev, [qIdx]: oIdx }))}
+                              className={`w-full text-left p-3 rounded-lg border-2 transition-all ${quizAnswers[qIdx] === oIdx
+                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                                : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-600'
+                                }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${quizAnswers[qIdx] === oIdx
+                                  ? 'border-blue-500 bg-blue-500'
+                                  : 'border-gray-300 dark:border-gray-600'
+                                  }`}>
+                                  {quizAnswers[qIdx] === oIdx && (
+                                    <div className="w-2 h-2 rounded-full bg-white"></div>
+                                  )}
+                                </div>
+                                <span className="text-sm text-gray-700 dark:text-gray-300">{optionText}</span>
+                              </div>
+                            </button>
+                          );
+                        }) : (
+                          <p className="text-sm text-red-500">No options available for this question</p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  <div className="flex justify-end gap-3 pt-3">
+                    <Button
+                      onClick={() => setShowQuizDialog(false)}
+                      variant="outline"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={() => handleQuizSubmit()}
+                      disabled={Object.keys(quizAnswers).length !== selectedLesson.quiz.length || submittingQuiz}
+                      className={BUTTON_STYLES.gradient}
+                    >
+                      {submittingQuiz ? (
+                        <>
+                          <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                          Submitting...
+                        </>
+                      ) : (
+                        'Submit Quiz'
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className={`p-5 rounded-lg border-2 ${quizResults.passed
+                    ? 'bg-green-50 dark:bg-green-900/20 border-green-500'
+                    : 'bg-orange-50 dark:bg-orange-900/20 border-orange-500'
+                    }`}>
+                    <div className="flex flex-col sm:flex-row items-center gap-5">
+                      {/* Pie Chart */}
+                      <div className="flex-shrink-0">
+                        <div className="relative w-28 h-28">
+                          <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                            <circle
+                              cx="50"
+                              cy="50"
+                              r="40"
+                              fill="none"
+                              className="text-gray-200 dark:text-gray-700"
+                              stroke="currentColor"
+                              strokeWidth="10"
+                            />
+                            <circle
+                              cx="50"
+                              cy="50"
+                              r="40"
+                              fill="none"
+                              stroke={quizResults.passed ? '#22c55e' : '#f97316'}
+                              strokeWidth="10"
+                              strokeDasharray={`${(quizResults.score / 100) * 251.2} 251.2`}
+                              strokeLinecap="round"
+                            />
+                          </svg>
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className={`text-2xl font-bold ${quizResults.passed ? 'text-green-600 dark:text-green-400' : 'text-orange-600 dark:text-orange-400'
+                              }`}>
+                              {quizResults.score}%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Results Info */}
+                      <div className="flex-1 text-center sm:text-left">
+                        <div className="flex items-center gap-2 mb-2 justify-center sm:justify-start">
+                          {quizResults.passed ? (
+                            <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+                          ) : (
+                            <Trophy className="h-6 w-6 text-orange-600 dark:text-orange-400" />
+                          )}
+                          <h3 className={`text-xl font-bold ${quizResults.passed ? 'text-green-900 dark:text-green-100' : 'text-orange-900 dark:text-orange-100'
+                            }`}>
+                            {quizResults.passed ? 'Quiz Passed! 🎉' : 'Keep Trying! 💪'}
+                          </h3>
+                        </div>
+                        <p className={`text-sm mb-2 ${quizResults.passed ? 'text-green-700 dark:text-green-300' : 'text-orange-700 dark:text-orange-300'
+                          }`}>
+                          {quizResults.correctAnswers}/{quizResults.totalQuestions} correct
+                        </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {quizResults.passed ? 'Great work!' : 'Review and try again.'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-3">
+                    <Button
+                      onClick={() => {
+                        setQuizResults(null);
+                        setQuizAnswers({});
+                      }}
+                      variant="outline"
+                      className="flex items-center gap-2"
+                    >
+                      <Trophy className="h-4 w-4" />
+                      Retry
+                    </Button>
+                    <Button
+                      onClick={() => setShowQuizDialog(false)}
+                      className={BUTTON_STYLES.gradient}
+                    >
+                      Continue Learning
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <EnrollmentDialog
+        isOpen={showEnrollDialog}
+        onClose={() => setShowEnrollDialog(false)}
+        onEnroll={handleEnroll}
+        enrolling={enrolling}
+        courseTitle={course.title}
+      />
+
+      <NotesDrawer
+        isOpen={notesOpen}
+        onClose={() => setNotesOpen(false)}
+        screen={selectedLesson?._id || 'course'}
+      />
     </div>
   );
 };

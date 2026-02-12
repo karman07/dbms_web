@@ -14,22 +14,18 @@ import AssignmentsPage from "@/pages/AssignmentsPage";
 import QuizzesPage from "@/pages/QuizzesPage";
 import QuizPage from "@/pages/QuizPage";
 import QuizResultsPage from "@/pages/QuizResultsPage";
-import { PrivacyPage } from "@/pages/PrivacyPage";
-import { TermsPage } from "@/pages/TermsPage";
+import NotificationSettingsPage from "@/pages/NotificationSettingsPage";
+import NotificationsPage from "@/pages/NotificationsPage";
 
 import { Footer } from "./components/Footer";
-import { Navigation } from "./components/Header";
+import { Navigation } from "@/components/Header";
 import { NotesProvider } from "@/contexts/NotesContext";
 
 
 
 function AppContent() {
   const location = useLocation();
-  const isDashboardRoute = [
-    '/dashboard', '/docs', '/activities', '/course', '/notes',
-    '/study-material', '/assignments', '/quizzes', '/quiz',
-    '/quiz-results', '/profile'
-  ].includes(location.pathname);
+  const isDashboardRoute = ['/dashboard', '/docs', '/activities', '/course', '/notes', '/study-material', '/assignments', '/quizzes', '/quiz', '/quiz-results', '/profile', '/notification-settings', '/notifications'].includes(location.pathname);
 
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
@@ -60,8 +56,8 @@ function AppContent() {
         <Route path="/quiz-results" element={<QuizResultsPage />} />
         <Route path="/study-material" element={<StudyMaterialPage />} />
         <Route path="/notes" element={<NotesPage />} />
-        <Route path="/privacy" element={<PrivacyPage />} />
-        <Route path="/terms" element={<TermsPage />} />
+        <Route path="/notification-settings" element={<NotificationSettingsPage />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
       </Routes>
 
       {!isDashboardRoute && <Footer />}

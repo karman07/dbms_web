@@ -99,6 +99,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const logout = () => {
         authService.logout();
         setUser(null);
+        sessionStorage.removeItem('fcm_registered');
         // Optional: Navigate to home?
         window.location.href = '/';
     };

@@ -59,7 +59,7 @@ export function ContactSection() {
                                     </div>
                                     <div>
                                         <p className="font-semibold text-slate-900 dark:text-white">Email Us</p>
-                                        <a href="mailto:support@dbmastery.com" className="text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">support@dbmastery.com</a>
+                                        <a href="mailto:parteek.bhatia@gmail.com" className="text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">parteek.bhatia@gmail.com</a>
                                     </div>
                                 </div>
                                 <div className="flex items-start gap-4">
