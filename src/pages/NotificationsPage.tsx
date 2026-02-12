@@ -3,14 +3,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Bell,
     Search,
-    Check,
     ArrowLeft,
     Clock,
-    ExternalLink,
-    ChevronRight,
-    MoreVertical,
-    Trash2,
-    CheckCircle2
+    ExternalLink
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import notificationService, { NotificationHistoryItem } from '@/services/notification.service';
@@ -124,8 +119,8 @@ const NotificationsPage: React.FC = () => {
                                 key={t}
                                 onClick={() => setFilter(t)}
                                 className={`px-6 py-2 rounded-xl text-sm font-bold capitalize transition-all ${filter === t
-                                        ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
-                                        : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                                    ? 'bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
                                     }`}
                             >
                                 {t}
@@ -162,8 +157,8 @@ const NotificationsPage: React.FC = () => {
                                     animate={{ opacity: 1, y: 0 }}
                                     exit={{ opacity: 0, scale: 0.95 }}
                                     className={`group relative bg-white dark:bg-gray-900 p-6 rounded-[2rem] border-2 transition-all cursor-pointer ${!n.readAt
-                                            ? 'border-blue-100 dark:border-blue-900/30 ring-4 ring-blue-50 dark:ring-blue-900/10'
-                                            : 'border-transparent dark:border-gray-800 hover:border-gray-200 dark:hover:border-gray-700 shadow-sm'
+                                        ? 'border-blue-100 dark:border-blue-900/30 ring-4 ring-blue-50 dark:ring-blue-900/10'
+                                        : 'border-transparent dark:border-gray-800 hover:border-gray-200 dark:hover:border-gray-700 shadow-sm'
                                         }`}
                                     onClick={() => !n.readAt && handleMarkAsRead(n._id)}
                                 >
