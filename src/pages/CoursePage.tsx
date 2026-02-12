@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  BookOpen,
   Plus,
   Edit,
   Trash2,
@@ -8,11 +8,14 @@ import {
   Clock,
   FileText,
   Video,
-  CheckCircle,
   XCircle,
   ChevronDown,
-  ChevronRight,
-  Tag,
+  Layout,
+  Layers,
+  BarChart3,
+  Rocket,
+  BadgeCheck,
+  Presentation,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -28,7 +31,7 @@ const CoursePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [course, setCourse] = useState<Course | null>(null);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
-  
+
   // Course creation/edit modal
   const [showCourseModal, setShowCourseModal] = useState(false);
   const [courseFormData, setCourseFormData] = useState({
@@ -73,7 +76,6 @@ const CoursePage: React.FC = () => {
         setCourse(null);
       } else {
         console.error('Error loading course:', error);
-        alert('Failed to load course data');
       }
     } finally {
       setLoading(false);
@@ -87,51 +89,21 @@ const CoursePage: React.FC = () => {
         .split(',')
         .map((t) => t.trim())
         .filter((t) => t);
-
-      const data = await courseAPI.createCourse({
-        title: courseFormData.title,
-        description: courseFormData.description,
-        thumbnail: courseFormData.thumbnail || undefined,
-        tags,
-        isPublished: courseFormData.isPublished,
-      });
-
-      setCourse(data);
+      const data = { ...courseFormData, tags };
+      const newCourse = await courseAPI.createCourse(data);
+      setCourse(newCourse);
       setShowCourseModal(false);
-      setCourseFormData({
-        title: '',
-        description: '',
-        thumbnail: '',
-        tags: '',
-        isPublished: false,
-      });
     } catch (error) {
       console.error('Error creating course:', error);
-      alert('Failed to create course');
     }
   };
 
   const handleUpdateCourse = async (field: string, value: any) => {
-    if (!course) return;
-
     try {
-      const updateData: any = {};
-      
-      if (field === 'isPublished') {
-        updateData.isPublished = value;
-      } else if (field === 'all') {
-        updateData.title = value.title;
-        updateData.description = value.description;
-        updateData.thumbnail = value.thumbnail;
-        updateData.tags = value.tags;
-        updateData.isPublished = value.isPublished;
-      }
-
-      const data = await courseAPI.updateCourse(updateData);
-      setCourse(data);
+      const updatedCourse = await courseAPI.updateCourse({ [field]: value });
+      setCourse(updatedCourse);
     } catch (error) {
       console.error('Error updating course:', error);
-      alert('Failed to update course');
     }
   };
 
@@ -147,82 +119,19 @@ const CoursePage: React.FC = () => {
     setShowCourseModal(true);
   };
 
-  const handleAddSection = async (data: { title: string; description?: string; order: number }) => {
+  const handleSaveCourseDetails = async (e: React.FormEvent) => {
+    e.preventDefault();
     try {
-      const updatedCourse = await courseAPI.addSection(data);
+      const tags = courseFormData.tags
+        .split(',')
+        .map((t) => t.trim())
+        .filter((t) => t);
+      const data = { ...courseFormData, tags };
+      const updatedCourse = await courseAPI.updateCourse(data);
       setCourse(updatedCourse);
-      // Expand the new section
-      if (updatedCourse.sections.length > 0) {
-        const newSection = updatedCourse.sections[updatedCourse.sections.length - 1];
-        setExpandedSections(new Set([...expandedSections, newSection._id]));
-      }
+      setShowCourseModal(false);
     } catch (error) {
-      console.error('Error adding section:', error);
-      throw error;
-    }
-  };
-
-  const handleEditSection = async (data: { title: string; description?: string; order: number }) => {
-    if (!selectedSection) return;
-
-    try {
-      const updatedCourse = await courseAPI.updateSection(selectedSection.index, data);
-      setCourse(updatedCourse);
-      setSelectedSection(null);
-    } catch (error) {
-      console.error('Error updating section:', error);
-      throw error;
-    }
-  };
-
-  const handleDeleteSection = async (sectionIndex: number) => {
-    if (!confirm('Are you sure you want to delete this section and all its lessons?')) return;
-
-    try {
-      const updatedCourse = await courseAPI.deleteSection(sectionIndex);
-      setCourse(updatedCourse);
-    } catch (error) {
-      console.error('Error deleting section:', error);
-      alert('Failed to delete section');
-    }
-  };
-
-  const handleAddLesson = async (formData: FormData) => {
-    try {
-      const updatedCourse = await courseAPI.addLesson(lessonSectionIndex, formData);
-      setCourse(updatedCourse);
-    } catch (error) {
-      console.error('Error adding lesson:', error);
-      throw error;
-    }
-  };
-
-  const handleEditLesson = async (formData: FormData) => {
-    if (!selectedLesson) return;
-
-    try {
-      const updatedCourse = await courseAPI.updateLesson(
-        selectedLesson.sectionIndex,
-        selectedLesson.lessonIndex,
-        formData
-      );
-      setCourse(updatedCourse);
-      setSelectedLesson(null);
-    } catch (error) {
-      console.error('Error updating lesson:', error);
-      throw error;
-    }
-  };
-
-  const handleDeleteLesson = async (sectionIndex: number, lessonIndex: number) => {
-    if (!confirm('Are you sure you want to delete this lesson?')) return;
-
-    try {
-      const updatedCourse = await courseAPI.deleteLesson(sectionIndex, lessonIndex);
-      setCourse(updatedCourse);
-    } catch (error) {
-      console.error('Error deleting lesson:', error);
-      alert('Failed to delete lesson');
+      console.error('Error updating course details:', error);
     }
   };
 
@@ -236,519 +145,513 @@ const CoursePage: React.FC = () => {
     setExpandedSections(newExpanded);
   };
 
+  const handleAddSection = async (data: { title: string, description?: string, order: number }) => {
+    try {
+      const updatedCourse = await courseAPI.addSection(data);
+      setCourse(updatedCourse);
+      setShowSectionModal(false);
+      // Expand the new section
+      const lastSection = updatedCourse.sections[updatedCourse.sections.length - 1];
+      if (lastSection) {
+        setExpandedSections(new Set([...Array.from(expandedSections), lastSection._id]));
+      }
+    } catch (error) {
+      console.error('Error adding section:', error);
+    }
+  };
+
+  const handleUpdateSection = async (data: { title: string, description?: string, order: number }) => {
+    if (selectedSection === null) return;
+    try {
+      const updatedCourse = await courseAPI.updateSection(selectedSection.index, data);
+      setCourse(updatedCourse);
+      setShowSectionModal(false);
+      setSelectedSection(null);
+    } catch (error) {
+      console.error('Error updating section:', error);
+    }
+  };
+
+  const handleDeleteSection = async (sectionIndex: number) => {
+    if (!window.confirm('Are you sure you want to delete this module and all its contents?')) return;
+    try {
+      const updatedCourse = await courseAPI.deleteSection(sectionIndex);
+      setCourse(updatedCourse);
+    } catch (error) {
+      console.error('Error deleting section:', error);
+    }
+  };
+
+  const handleSaveLesson = async (formData: FormData) => {
+    try {
+      let updatedCourse;
+      if (lessonMode === 'add') {
+        updatedCourse = await courseAPI.addLesson(lessonSectionIndex, formData);
+      } else if (selectedLesson) {
+        updatedCourse = await courseAPI.updateLesson(
+          selectedLesson.sectionIndex,
+          selectedLesson.lessonIndex,
+          formData
+        );
+      }
+      if (updatedCourse) {
+        setCourse(updatedCourse);
+      }
+      setShowLessonModal(false);
+      setSelectedLesson(null);
+    } catch (error) {
+      console.error('Error saving lesson:', error);
+    }
+  };
+
+  const handleDeleteLesson = async (sectionIndex: number, lessonIndex: number) => {
+    if (!window.confirm('Delete this unit?')) return;
+    try {
+      const updatedCourse = await courseAPI.deleteLesson(sectionIndex, lessonIndex);
+      setCourse(updatedCourse);
+    } catch (error) {
+      console.error('Error deleting lesson:', error);
+    }
+  };
+
+  const handleMoveLesson = async (sectionIndex: number, lessonIndex: number, direction: 'up' | 'down') => {
+    try {
+      const updatedCourse = await courseAPI.moveLesson(sectionIndex, lessonIndex, direction);
+      setCourse(updatedCourse);
+    } catch (error) {
+      console.error('Error moving lesson:', error);
+    }
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-gray-50">
-        <div className="flex items-center justify-center h-96">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 font-medium">Loading course data...</p>
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center space-y-4">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin"></div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Rocket className="w-6 h-6 text-blue-600 animate-pulse" />
           </div>
         </div>
+        <p className="text-slate-400 font-black uppercase tracking-widest text-xs animate-pulse">Initializing Hub...</p>
       </div>
     );
   }
 
   if (!course) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-gray-50">
-        <div className="p-8 max-w-4xl mx-auto">
-          {/* Enhanced Header */}
-          <div className="mb-8">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="p-3 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-lg">
-                <BookOpen className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                  Course Management
-                </h1>
-                <p className="text-gray-600 mt-2 text-lg">
-                  Create and manage your course content
-                </p>
-              </div>
-            </div>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+        <div className="max-w-md w-full glass dark:glass-dark rounded-[3rem] p-12 text-center space-y-8 border-2 border-white shadow-2xl">
+          <div className="w-24 h-24 bg-blue-50 rounded-[2.5rem] flex items-center justify-center mx-auto border border-blue-100 shadow-inner">
+            <Presentation className="w-12 h-12 text-blue-600" />
           </div>
-
-          <div className="text-center py-16 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20">
-            <div className="p-4 bg-blue-100 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
-              <BookOpen className="h-10 w-10 text-blue-600" />
-            </div>
-            <h3 className="text-2xl font-bold text-gray-900 mb-3">No Course Found</h3>
-            <p className="text-gray-600 mb-8 max-w-md mx-auto">
-              Get started by creating your first course. You can add sections, lessons, and organize your content effectively.
-            </p>
-            <Button 
-              onClick={() => setShowCourseModal(true)} 
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Create Course
-            </Button>
+          <div className="space-y-3">
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Create Your Curriculum</h2>
+            <p className="text-slate-500 font-medium">No course detected. Start your teaching journey by defining your first master class.</p>
           </div>
+          <Button
+            onClick={() => setShowCourseModal(true)}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-2xl py-6 text-lg font-black shadow-xl shadow-blue-500/30 transition-all active:scale-95 flex items-center justify-center gap-3"
+          >
+            <Plus className="w-6 h-6 stroke-[3px]" /> Initialize Course
+          </Button>
 
-        <Modal
-          isOpen={showCourseModal}
-          onClose={() => setShowCourseModal(false)}
-          title="Create Course"
-          size="lg"
-        >
-          <form onSubmit={handleCreateCourse} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Course Title <span className="text-red-500">*</span>
-              </label>
-              <Input
-                value={courseFormData.title}
-                onChange={(e) => setCourseFormData({ ...courseFormData, title: e.target.value })}
-                placeholder="Complete Web Development Course"
-                required
-              />
-            </div>
+          <Modal isOpen={showCourseModal} onClose={() => setShowCourseModal(false)} title="Initialize New Course">
+            <form onSubmit={handleCreateCourse} className="space-y-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 block ml-1">Curriculum Title</label>
+                  <Input
+                    required
+                    value={courseFormData.title}
+                    onChange={(e) => setCourseFormData({ ...courseFormData, title: e.target.value })}
+                    placeholder="e.g. Master Class in DBMS"
+                    className="rounded-2xl border-slate-100 bg-slate-50 px-6 py-4 h-auto focus:ring-blue-500 text-lg font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 block ml-1">Description Overview</label>
+                  <Textarea
+                    required
+                    rows={4}
+                    value={courseFormData.description}
+                    onChange={(e) => setCourseFormData({ ...courseFormData, description: e.target.value })}
+                    placeholder="Provide a compelling summary of the course content..."
+                    className="rounded-2xl border-slate-100 bg-slate-50 px-6 py-4 h-auto focus:ring-blue-500 font-medium"
+                  />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 block ml-1">Hero Image URL</label>
+                    <Input
+                      type="url"
+                      value={courseFormData.thumbnail}
+                      onChange={(e) => setCourseFormData({ ...courseFormData, thumbnail: e.target.value })}
+                      placeholder="https://..."
+                      className="rounded-2xl border-slate-100 bg-slate-50 px-5 py-3 h-auto"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 block ml-1">Search Keywords</label>
+                    <Input
+                      value={courseFormData.tags}
+                      onChange={(e) => setCourseFormData({ ...courseFormData, tags: e.target.value })}
+                      placeholder="dbms, sql, advanced"
+                      className="rounded-2xl border-slate-100 bg-slate-50 px-5 py-3 h-auto"
+                    />
+                  </div>
+                </div>
+                <div className="p-4 bg-slate-50 rounded-2xl flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Rocket className="w-5 h-5 text-blue-600" />
+                    <span className="text-sm font-bold text-slate-700">Launch Production Ready</span>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={courseFormData.isPublished}
+                    onChange={(e) => setCourseFormData({ ...courseFormData, isPublished: e.target.checked })}
+                    className="w-5 h-5 rounded-lg text-blue-600 focus:ring-blue-500 border-slate-200"
+                  />
+                </div>
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Description <span className="text-red-500">*</span>
-              </label>
-              <Textarea
-                value={courseFormData.description}
-                onChange={(e) => setCourseFormData({ ...courseFormData, description: e.target.value })}
-                placeholder="Learn full-stack web development from scratch..."
-                rows={4}
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Thumbnail URL
-              </label>
-              <Input
-                type="url"
-                value={courseFormData.thumbnail}
-                onChange={(e) => setCourseFormData({ ...courseFormData, thumbnail: e.target.value })}
-                placeholder="https://example.com/thumbnail.jpg"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Tags (comma-separated)
-              </label>
-              <Input
-                value={courseFormData.tags}
-                onChange={(e) => setCourseFormData({ ...courseFormData, tags: e.target.value })}
-                placeholder="web, javascript, react"
-              />
-            </div>
-
-            <div>
-              <label className="flex items-center space-x-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={courseFormData.isPublished}
-                  onChange={(e) => setCourseFormData({ ...courseFormData, isPublished: e.target.checked })}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <span className="text-sm font-medium text-gray-700">Publish immediately</span>
-              </label>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-4 border-t">
-              <Button type="button" variant="outline" onClick={() => setShowCourseModal(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" className="bg-blue-600 hover:bg-blue-700">Create Course</Button>
-            </div>
-          </form>
-        </Modal>
+              <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-50">
+                <Button type="button" variant="outline" onClick={() => setShowCourseModal(false)} className="rounded-2xl border-slate-200 font-bold px-8">
+                  Discard
+                </Button>
+                <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold px-10">
+                  Build Now
+                </Button>
+              </div>
+            </form>
+          </Modal>
         </div>
       </div>
     );
   }
 
+  const totalLessons = course.sections.reduce((acc: number, s: Section) => acc + s.lessons.length, 0);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-gray-50">
-      <div className="p-8 max-w-7xl mx-auto">
-        {/* Enhanced Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="p-3 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl shadow-lg">
-              <BookOpen className="h-8 w-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                Course Management
+    <div className="min-h-screen bg-slate-50">
+      {/* Premium Header/Cover */}
+      <div className="relative min-h-[28rem] bg-slate-900 overflow-hidden flex flex-col">
+        {course.thumbnail && (
+          <img
+            src={course.thumbnail}
+            alt="Cover"
+            className="absolute inset-0 w-full h-full object-cover opacity-30 blur-[2px] transition-all duration-1000 group-hover:scale-110"
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-900/60 to-transparent" />
+        <div className="relative h-full max-w-7xl mx-auto px-8 flex flex-col justify-end pb-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div className="space-y-4 max-w-3xl">
+              <div className="flex items-center gap-2">
+                <Badge className={`${course.isPublished ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-slate-700 text-slate-400 border-slate-600'} px - 3 py - 1 rounded - full backdrop - blur - md`}>
+                  {course.isPublished ? (
+                    <div className="flex items-center gap-1.5"><Rocket className="w-3 h-3" /> Live Production</div>
+                  ) : (
+                    <div className="flex items-center gap-1.5"><Clock className="w-3 h-3" /> Draft Workspace</div>
+                  )}
+                </Badge>
+                {course.tags.map((tag, i) => (
+                  <Badge key={i} className="bg-white/10 text-white/80 border-white/20 px-3 py-1 rounded-full backdrop-blur-md">#{tag}</Badge>
+                ))}
+              </div>
+              <h1 className="text-5xl font-black text-white tracking-tighter leading-tight drop-shadow-2xl">
+                {course.title}
               </h1>
-              <p className="text-gray-600 mt-2 text-lg">
-                Manage your course content, sections, and lessons
+              <p className="text-slate-300 text-lg font-medium line-clamp-2 max-w-2xl">
+                {course.description}
               </p>
+            </div>
+            <div className="flex items-center gap-3 mb-2">
+              <Button
+                onClick={handleEditCourse}
+                className="bg-white hover:bg-blue-50 text-slate-900 rounded-2xl px-6 py-3 font-bold shadow-xl transition-all active:scale-95 flex items-center gap-2"
+              >
+                <Edit className="w-4 h-4" /> Edit Details
+              </Button>
+              <Button
+                onClick={() => handleUpdateCourse('isPublished', !course.isPublished)}
+                className={`${course.isPublished ? 'bg-amber-500 hover:bg-amber-600' : 'bg-emerald-600 hover:bg-emerald-700'} text - white rounded - 2xl px - 6 py - 3 font - bold shadow - xl transition - all active: scale - 95 flex items - center gap - 2`}
+              >
+                {course.isPublished ? <XCircle className="w-4 h-4" /> : <Rocket className="w-4 h-4" />}
+                {course.isPublished ? 'Unpublish' : 'Publish Live'}
+              </Button>
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="space-y-6">
-          {/* Main Course Card */}
-          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden hover:shadow-2xl transition-all duration-300">
-            <div className="p-6 bg-gradient-to-r from-blue-50 to-slate-50 border-b border-blue-100">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-3">
-                    <h2 className="text-3xl font-bold text-gray-900">{course.title}</h2>
-                    <Badge className={course.isPublished ? 'bg-green-100 text-green-700 border-green-200' : 'bg-gray-100 text-gray-600 border-gray-200'}>
-                      {course.isPublished ? (
-                        <>
-                          <CheckCircle className="h-3 w-3 mr-1" />
-                          Published
-                        </>
-                      ) : (
-                        <>
-                          <XCircle className="h-3 w-3 mr-1" />
-                          Draft
-                        </>
-                      )}
-                    </Badge>
-                  </div>
-                  <p className="text-gray-700 text-lg mb-4">{course.description}</p>
-                  
-                  {course.tags && course.tags.length > 0 && (
-                    <div className="flex items-center gap-2 mb-4">
-                      <div className="p-1 bg-blue-100 rounded">
-                        <Tag className="h-4 w-4 text-blue-600" />
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        {course.tags.map((tag: string, index: number) => (
-                          <Badge key={index} className="bg-blue-100 text-blue-700 border-blue-200">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                {course.thumbnail && (
-                  <div className="ml-6">
-                    <img
-                      src={course.thumbnail}
-                      alt={course.title}
-                      className="w-40 h-32 object-cover rounded-xl border-2 border-blue-200 shadow-lg"
-                    />
-                  </div>
-                )}
-              </div>
+      <main className="max-w-7xl mx-auto px-8 -mt-24 relative z-20 pb-24 w-full">
+        {/* Stats Strip */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white/80 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white shadow-xl shadow-blue-900/5 flex items-center justify-between"
+          >
+            <div className="space-y-1">
+              <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Community</p>
+              <p className="text-3xl font-black text-slate-900 tracking-tight">{course.enrolledCount}</p>
+              <p className="text-[10px] font-bold text-slate-400">Total Enrolled Users</p>
             </div>
-            
-            <div className="p-6">
-              {/* Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl border border-blue-200">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-600 rounded-lg">
-                      <Users className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-blue-600 font-medium">Enrolled Students</p>
-                      <p className="text-2xl font-bold text-gray-900">{course.enrolledCount}</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-4 bg-gradient-to-br from-slate-50 to-slate-100/50 rounded-xl border border-slate-200">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-slate-600 rounded-lg">
-                      <BookOpen className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-slate-600 font-medium">Sections</p>
-                      <p className="text-2xl font-bold text-gray-900">{course.sections.length}</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-xl border border-blue-200">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-600 rounded-lg">
-                      <FileText className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-blue-600 font-medium">Total Lessons</p>
-                      <p className="text-2xl font-bold text-gray-900">{course.sections.reduce((acc: number, s: Section) => acc + s.lessons.length, 0)}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div className="w-16 h-16 bg-blue-50 rounded-[1.5rem] flex items-center justify-center border border-blue-100 shadow-inner">
+              <Users className="w-7 h-7 text-blue-600" />
+            </div>
+          </motion.div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center gap-3">
-                <Button 
-                  onClick={handleEditCourse} 
-                  className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Course
-                </Button>
-                <Button
-                  className={course.isPublished ? 'border-orange-200 text-orange-600 hover:bg-orange-50' : 'bg-green-600 hover:bg-green-700 text-white'}
-                  variant={course.isPublished ? 'outline' : 'default'}
-                  onClick={() => handleUpdateCourse('isPublished', !course.isPublished)}
-                >
-                  {course.isPublished ? (
-                    <>
-                      <XCircle className="h-4 w-4 mr-2" />
-                      Unpublish
-                    </>
-                  ) : (
-                    <>
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Publish
-                    </>
-                  )}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="border-blue-200 text-blue-600 hover:bg-blue-50"
-                  onClick={() => {
-                    setSectionMode('add');
-                    setSelectedSection(null);
-                    setShowSectionModal(true);
-                  }}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Section
-                </Button>
-              </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-white/80 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white shadow-xl shadow-slate-900/5 flex items-center justify-between"
+          >
+            <div className="space-y-1">
+              <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Architecture</p>
+              <p className="text-3xl font-black text-slate-900 tracking-tight">{course.sections.length}</p>
+              <p className="text-[10px] font-bold text-slate-400">Structural Modules</p>
+            </div>
+            <div className="w-16 h-16 bg-slate-50 rounded-[1.5rem] flex items-center justify-center border border-slate-100 shadow-inner">
+              <Layers className="w-7 h-7 text-slate-600" />
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="bg-white/80 backdrop-blur-xl p-8 rounded-[2.5rem] border border-white shadow-xl shadow-indigo-900/5 flex items-center justify-between"
+          >
+            <div className="space-y-1">
+              <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em]">Content</p>
+              <p className="text-3xl font-black text-slate-900 tracking-tight">{totalLessons}</p>
+              <p className="text-[10px] font-bold text-slate-400">Total Educational Units</p>
+            </div>
+            <div className="w-16 h-16 bg-indigo-50 rounded-[1.5rem] flex items-center justify-center border border-indigo-100 shadow-inner">
+              <BarChart3 className="w-7 h-7 text-indigo-600" />
+            </div>
+          </motion.div>
+        </div>
+
+        {/* Content Builder Section */}
+        <div className="space-y-12 mt-16">
+          <div className="flex items-center justify-between px-4">
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+              <Layout className="w-7 h-7 text-blue-600" />
+              Content Architecture
+            </h2>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                className="rounded-2xl border-slate-200 font-bold px-6"
+                onClick={loadCourse}
+              >
+                Refresh
+              </Button>
+              <Button
+                className="bg-slate-900 hover:bg-black text-white rounded-2xl px-6 py-3 font-bold shadow-lg transition-all active:scale-95 flex items-center gap-2"
+                onClick={() => {
+                  setSectionMode('add');
+                  setSelectedSection(null);
+                  setShowSectionModal(true);
+                }}
+              >
+                <Plus className="w-4 h-4 stroke-[3px]" /> New Module
+              </Button>
             </div>
           </div>
 
-      {/* Sections List */}
-      <div className="space-y-4">
-        {course.sections.length === 0 ? (
-          <div className="text-center py-16 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20">
-            <div className="p-4 bg-blue-100 rounded-full w-20 h-20 mx-auto mb-6 flex items-center justify-center">
-              <BookOpen className="h-10 w-10 text-blue-600" />
-            </div>
-            <h3 className="text-xl font-bold text-gray-900 mb-3">No sections yet</h3>
-            <p className="text-gray-600 mb-8 max-w-md mx-auto">
-              Add your first section to start organizing your course content into structured lessons.
-            </p>
-            <Button
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"
-              onClick={() => {
-                setSectionMode('add');
-                setShowSectionModal(true);
-              }}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add First Section
-            </Button>
-          </div>
-        ) : (
-          course.sections.map((section: Section, sectionIndex: number) => (
-            <div key={section._id} className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden hover:shadow-2xl transition-all duration-300">
-              <div className="p-6 bg-gradient-to-r from-blue-50/30 to-slate-50/30 border-b border-blue-100">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start gap-3 flex-1">
-                    <button
-                      onClick={() => toggleSection(section._id)}
-                      className="mt-1 p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded-lg transition-all duration-200 flex-shrink-0"
-                    >
-                      {expandedSections.has(section._id) ? (
-                        <ChevronDown className="h-5 w-5" />
-                      ) : (
-                        <ChevronRight className="h-5 w-5" />
-                      )}
-                    </button>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-xl font-bold text-gray-900">
-                          {sectionIndex + 1}. {section.title}
-                        </h3>
-                        <Badge className="bg-blue-100 text-blue-700 border-blue-200">
-                          {section.lessons.length} lesson{section.lessons.length !== 1 ? 's' : ''}
-                        </Badge>
-                      </div>
-                      {section.description && (
-                        <p className="text-gray-600">{section.description}</p>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-2 flex-shrink-0 ml-4">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="border-blue-200 text-blue-600 hover:bg-blue-50"
-                      onClick={() => {
-                        setLessonMode('add');
-                        setLessonSectionIndex(sectionIndex);
-                        setSelectedLesson(null);
-                        setShowLessonModal(true);
-                      }}
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add Lesson
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="border-slate-200 text-slate-600 hover:bg-slate-50"
-                      onClick={() => {
-                        setSectionMode('edit');
-                        setSelectedSection({ section, index: sectionIndex });
-                        setShowSectionModal(true);
-                      }}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDeleteSection(sectionIndex)}
-                      className="border-red-200 text-red-600 hover:bg-red-50"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+          <div className="grid grid-cols-1 gap-8">
+            {course.sections.length === 0 ? (
+              <div className="bg-white rounded-[3rem] border-2 border-dashed border-slate-200 p-24 text-center space-y-4">
+                <div className="p-4 bg-slate-50 rounded-[2rem] w-bit mx-auto inline-block">
+                  <Layers className="w-10 h-10 text-slate-300" />
+                </div>
+                <div className="space-y-2">
+                  <p className="text-slate-400 font-bold tracking-tight text-xl uppercase italic">The canvas is blank</p>
+                  <p className="text-slate-400 font-medium max-w-xs mx-auto text-sm italic">Start building your course structure by adding your first educational module.</p>
                 </div>
               </div>
-
-              {expandedSections.has(section._id) && (
-                <div className="p-6 bg-gradient-to-br from-gray-50/50 to-blue-50/30">
-                  {section.lessons.length === 0 ? (
-                    <div className="text-center py-8 bg-white rounded-xl border-2 border-dashed border-blue-200">
-                      <div className="p-3 bg-blue-100 rounded-full w-fit mx-auto mb-3">
-                        <FileText className="h-8 w-8 text-blue-600" />
-                      </div>
-                      <p className="text-gray-600 mb-4 font-medium">No lessons in this section yet.</p>
-                      <Button
-                        size="sm"
-                        className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"
-                        onClick={() => {
-                          setLessonMode('add');
-                          setLessonSectionIndex(sectionIndex);
-                          setSelectedLesson(null);
-                          setShowLessonModal(true);
-                        }}
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add First Lesson
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {section.lessons.map((lesson: Lesson, lessonIndex: number) => {
-                        const hasMedia = lesson.mediaIds && lesson.mediaIds.length > 0;
-                        const hasDocs = lesson.docSubtopicIds && lesson.docSubtopicIds.length > 0;
-                        const hasLinkedQuiz = lesson.linkedQuizIds && lesson.linkedQuizIds.length > 0;
-                        const hasLinkedAssignment = lesson.linkedAssignmentIds && lesson.linkedAssignmentIds.length > 0;
-                        const hasLinkedActivity = lesson.linkedActivityIds && lesson.linkedActivityIds.length > 0;
-                        
-                        return (
-                        <div
-                          key={lesson._id}
-                          className="flex items-center justify-between p-4 bg-white hover:bg-blue-50/50 rounded-xl transition-all border border-gray-200 hover:border-blue-300 hover:shadow-md"
+            ) : (
+              <AnimatePresence>
+                {course.sections.map((section: Section, sectionIndex: number) => (
+                  <motion.div
+                    layout
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    key={section._id}
+                    className="glass dark:glass-dark rounded-[2.5rem] border border-white/20 shadow-xl shadow-slate-200/20 relative group overflow-hidden"
+                  >
+                    {/* Section Header */}
+                    <div className="p-8 pb-6 flex items-start justify-between">
+                      <div className="flex items-start gap-4">
+                        <button
+                          onClick={() => toggleSection(section._id)}
+                          className={`mt - 2 p - 3 ${expandedSections.has(section._id) ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 rotate-180' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'} rounded - 2xl transition - all duration - 500`}
                         >
-                          <div className="flex items-center gap-3 flex-1">
-                            <div className={`p-2 rounded-lg ${hasMedia ? 'bg-purple-100' : hasDocs ? 'bg-blue-100' : 'bg-slate-100'}`}>
-                              {hasMedia ? (
-                                <Video className="h-5 w-5 text-purple-600" />
-                              ) : hasDocs ? (
-                                <FileText className="h-5 w-5 text-blue-600" />
-                              ) : (
-                                <FileText className="h-5 w-5 text-slate-600" />
-                              )}
-                            </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <h4 className="font-semibold text-gray-900">
-                                  {lessonIndex + 1}. {lesson.title}
-                                </h4>
-                                {lesson.isPublished ? (
-                                  <Badge className="bg-green-100 text-green-700 border-0 text-xs">
-                                    <CheckCircle className="h-3 w-3 mr-1" />
-                                    Published
-                                  </Badge>
-                                ) : (
-                                  <Badge className="bg-yellow-100 text-yellow-700 border-0 text-xs">
-                                    <XCircle className="h-3 w-3 mr-1" />
-                                    Draft
-                                  </Badge>
-                                )}
-                              </div>
-                              <div className="flex items-center gap-3 mt-2 text-sm flex-wrap">
-                                {lesson.estimatedMinutes && lesson.estimatedMinutes > 0 && (
-                                  <div className="flex items-center gap-1 text-blue-600">
-                                    <Clock className="h-3 w-3" />
-                                    <span className="font-medium">{lesson.estimatedMinutes} min</span>
-                                  </div>
-                                )}
-                                {hasMedia && (
-                                  <Badge className="bg-purple-100 text-purple-700 border-0 text-xs">
-                                    <Video className="h-3 w-3 mr-1" />
-                                    {lesson.mediaIds!.length} media
-                                  </Badge>
-                                )}
-                                {hasDocs && (
-                                  <Badge className="bg-blue-100 text-blue-700 border-0 text-xs">
-                                    <FileText className="h-3 w-3 mr-1" />
-                                    {lesson.docSubtopicIds!.length} doc{lesson.docSubtopicIds!.length > 1 ? 's' : ''}
-                                  </Badge>
-                                )}
-                                {lesson.quiz && lesson.quiz.length > 0 && (
-                                  <Badge className="bg-green-100 text-green-700 border-0 text-xs">
-                                    {lesson.quiz.length} quiz questions
-                                  </Badge>
-                                )}
-                                {hasLinkedQuiz && (
-                                  <Badge className="bg-indigo-100 text-indigo-700 border-0 text-xs">
-                                    {lesson.linkedQuizIds!.length} linked quiz
-                                  </Badge>
-                                )}
-                                {hasLinkedAssignment && (
-                                  <Badge className="bg-orange-100 text-orange-700 border-0 text-xs">
-                                    {lesson.linkedAssignmentIds!.length} assignment
-                                  </Badge>
-                                )}
-                                {hasLinkedActivity && (
-                                  <Badge className="bg-cyan-100 text-cyan-700 border-0 text-xs">
-                                    {lesson.linkedActivityIds!.length} activity
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
+                          <ChevronDown className="w-5 h-5" />
+                        </button>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-3">
+                            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 px-2.5 py-1 rounded-lg">Module {sectionIndex + 1}</span>
+                            <h3 className="text-2xl font-black text-slate-900 tracking-tight">{section.title}</h3>
                           </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="border-blue-200 text-blue-600 hover:bg-blue-50"
-                              onClick={() => {
-                                setLessonMode('edit');
-                                setSelectedLesson({ lesson, sectionIndex, lessonIndex });
-                                setShowLessonModal(true);
-                              }}
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDeleteLesson(sectionIndex, lessonIndex)}
-                              className="border-red-200 text-red-600 hover:bg-red-50"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                          {section.description && <p className="text-slate-500 font-medium leading-relaxed max-w-2xl">{section.description}</p>}
+                          <div className="flex items-center gap-4 pt-2">
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
+                              <FileText className="w-3.5 h-3.5" />
+                              {section.lessons.length} Educational Units
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
+                              <Clock className="w-3.5 h-3.5" />
+                              {section.lessons.reduce((acc, l) => acc + (l.estimatedMinutes || 0), 0)} min total
+                            </div>
                           </div>
                         </div>
-                      )})}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          className="w-11 h-11 p-0 rounded-2xl text-slate-400 hover:bg-slate-50 hover:text-blue-600"
+                          onClick={() => {
+                            setLessonMode('add');
+                            setLessonSectionIndex(sectionIndex);
+                            setSelectedLesson(null);
+                            setShowLessonModal(true);
+                          }}
+                        >
+                          <Plus className="w-5 h-5" />
+                        </Button>
+                        <div className="w-px h-6 bg-slate-100 mx-1" />
+                        <Button
+                          variant="ghost"
+                          className="w-11 h-11 p-0 rounded-2xl text-slate-400 hover:bg-slate-50 hover:text-slate-900"
+                          onClick={() => {
+                            setSectionMode('edit');
+                            setSelectedSection({ section, index: sectionIndex });
+                            setShowSectionModal(true);
+                          }}
+                        >
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          className="w-11 h-11 p-0 rounded-2xl text-slate-400 hover:bg-red-50 hover:text-red-500"
+                          onClick={() => handleDeleteSection(sectionIndex)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
-                  )}
-                </div>
-              )}
-            </div>
-          ))
-        )}
-      </div>
+
+                    {/* Section Content (Lessons) */}
+                    <AnimatePresence>
+                      {expandedSections.has(section._id) && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="overflow-hidden bg-slate-50/50 border-t border-slate-50"
+                        >
+                          <div className="p-8 pt-6 space-y-4">
+                            {section.lessons.length === 0 ? (
+                              <div className="text-center py-12 bg-white/50 rounded-3xl border border-dashed border-slate-200">
+                                <p className="text-slate-400 font-bold uppercase italic text-xs tracking-widest">No units in this module</p>
+                                <Button
+                                  variant="ghost"
+                                  className="mt-4 text-blue-600 font-black flex items-center gap-2 hover:bg-blue-50 rounded-2xl px-6"
+                                  onClick={() => {
+                                    setLessonMode('add');
+                                    setLessonSectionIndex(sectionIndex);
+                                    setShowLessonModal(true);
+                                  }}
+                                >
+                                  <Plus className="w-4 h-4" /> Initialize Unit
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {section.lessons.map((lesson: Lesson, lessonIndex: number) => (
+                                  <motion.div
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: lessonIndex * 0.05 }}
+                                    key={lesson._id}
+                                    className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm hover:shadow-md hover:border-blue-100 transition-all group/lesson"
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-4 flex-1 min-w-0">
+                                        <div className="w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover/lesson:bg-blue-50 group-hover/lesson:text-blue-600 transition-colors flex-shrink-0">
+                                          {lesson.videoUrl ? <Video className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <h4 className="font-bold text-slate-900 truncate">{lesson.title}</h4>
+                                          <div className="flex items-center gap-3 mt-0.5">
+                                            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{lesson.estimatedMinutes} Mins</span>
+                                            {lesson.quiz && lesson.quiz.length > 0 && (
+                                              <span className="flex items-center gap-1 text-[10px] font-black text-emerald-500 uppercase tracking-widest">
+                                                <BadgeCheck className="w-3 h-3" /> Quiz Included
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-1 opacity-0 group-hover/lesson:opacity-100 transition-opacity">
+                                        <Button
+                                          variant="ghost"
+                                          className="w-8 h-8 p-0"
+                                          onClick={() => handleMoveLesson(sectionIndex, lessonIndex, 'up')}
+                                          disabled={lessonIndex === 0}
+                                        >
+                                          <ChevronDown className="w-4 h-4 rotate-180" />
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          className="w-8 h-8 p-0"
+                                          onClick={() => handleMoveLesson(sectionIndex, lessonIndex, 'down')}
+                                          disabled={lessonIndex === section.lessons.length - 1}
+                                        >
+                                          <ChevronDown className="w-4 h-4" />
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          className="w-8 h-8 p-0 text-slate-400 hover:text-slate-900"
+                                          onClick={() => {
+                                            setLessonMode('edit');
+                                            setSelectedLesson({ lesson, sectionIndex, lessonIndex });
+                                            setLessonSectionIndex(sectionIndex);
+                                            setShowLessonModal(true);
+                                          }}
+                                        >
+                                          <Edit className="w-3.5 h-3.5" />
+                                        </Button>
+                                        <Button
+                                          variant="ghost"
+                                          className="w-8 h-8 p-0 text-slate-400 hover:text-red-500"
+                                          onClick={() => handleDeleteLesson(sectionIndex, lessonIndex)}
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  </motion.div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            )}
+          </div>
+        </div>
+      </main>
 
       {/* Modals */}
       <SectionModal
@@ -757,116 +660,97 @@ const CoursePage: React.FC = () => {
           setShowSectionModal(false);
           setSelectedSection(null);
         }}
-        onSubmit={sectionMode === 'add' ? handleAddSection : handleEditSection}
+        onSubmit={sectionMode === 'add' ? handleAddSection : handleUpdateSection}
         section={selectedSection?.section}
-        sectionIndex={selectedSection?.index}
         mode={sectionMode}
       />
 
-      <LessonForm
+      <Modal
         isOpen={showLessonModal}
         onClose={() => {
           setShowLessonModal(false);
           setSelectedLesson(null);
         }}
-        onSubmit={lessonMode === 'add' ? handleAddLesson : handleEditLesson}
-        lesson={selectedLesson?.lesson}
-        sectionIndex={lessonMode === 'add' ? lessonSectionIndex : selectedLesson?.sectionIndex || 0}
-        lessonIndex={selectedLesson?.lessonIndex}
-        mode={lessonMode}
-      />
-
-      {/* Edit Course Modal */}
-      <Modal
-        isOpen={showCourseModal && course !== null}
-        onClose={() => setShowCourseModal(false)}
-        title="Edit Course"
-        size="lg"
+        title={lessonMode === 'add' ? 'Add Educational Unit' : 'Edit Unit Details'}
       >
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            const tags = courseFormData.tags
-              .split(',')
-              .map((t) => t.trim())
-              .filter((t) => t);
-            handleUpdateCourse('all', {
-              title: courseFormData.title,
-              description: courseFormData.description,
-              thumbnail: courseFormData.thumbnail || undefined,
-              tags,
-              isPublished: courseFormData.isPublished,
-            });
-            setShowCourseModal(false);
+        <LessonForm
+          isOpen={showLessonModal}
+          onClose={() => {
+            setShowLessonModal(false);
+            setSelectedLesson(null);
           }}
-          className="space-y-6"
-        >
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Course Title <span className="text-red-500">*</span>
-            </label>
-            <Input
-              value={courseFormData.title}
-              onChange={(e) => setCourseFormData({ ...courseFormData, title: e.target.value })}
-              required
-            />
-          </div>
+          onSubmit={handleSaveLesson}
+          lesson={selectedLesson?.lesson}
+          sectionIndex={lessonSectionIndex}
+          mode={lessonMode}
+        />
+      </Modal>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Description <span className="text-red-500">*</span>
-            </label>
-            <Textarea
-              value={courseFormData.description}
-              onChange={(e) => setCourseFormData({ ...courseFormData, description: e.target.value })}
-              rows={4}
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Thumbnail URL
-            </label>
-            <Input
-              type="url"
-              value={courseFormData.thumbnail}
-              onChange={(e) => setCourseFormData({ ...courseFormData, thumbnail: e.target.value })}
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Tags (comma-separated)
-            </label>
-            <Input
-              value={courseFormData.tags}
-              onChange={(e) => setCourseFormData({ ...courseFormData, tags: e.target.value })}
-            />
-          </div>
-
-          <div>
-            <label className="flex items-center space-x-2 cursor-pointer">
+      <Modal isOpen={showCourseModal} onClose={() => setShowCourseModal(false)} title="Master Curriculum Details">
+        <form onSubmit={handleSaveCourseDetails} className="space-y-6">
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 block ml-1">Curriculum Title</label>
+              <Input
+                required
+                value={courseFormData.title}
+                onChange={(e) => setCourseFormData({ ...courseFormData, title: e.target.value })}
+                className="rounded-2xl border-slate-100 bg-slate-50 px-6 py-4 h-auto focus:ring-blue-500 text-lg font-bold"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 block ml-1">Description Overview</label>
+              <Textarea
+                required
+                rows={4}
+                value={courseFormData.description}
+                onChange={(e) => setCourseFormData({ ...courseFormData, description: e.target.value })}
+                className="rounded-2xl border-slate-100 bg-slate-50 px-6 py-4 h-auto focus:ring-blue-500 font-medium"
+              />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 block ml-1">Hero Image URL</label>
+                <Input
+                  type="url"
+                  value={courseFormData.thumbnail}
+                  onChange={(e) => setCourseFormData({ ...courseFormData, thumbnail: e.target.value })}
+                  className="rounded-2xl border-slate-100 bg-slate-50 px-5 py-3 h-auto"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2 block ml-1">Search Keywords</label>
+                <Input
+                  value={courseFormData.tags}
+                  onChange={(e) => setCourseFormData({ ...courseFormData, tags: e.target.value })}
+                  className="rounded-2xl border-slate-100 bg-slate-50 px-5 py-3 h-auto"
+                />
+              </div>
+            </div>
+            <div className="p-4 bg-slate-50 rounded-2xl flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Rocket className="w-5 h-5 text-blue-600" />
+                <span className="text-sm font-bold text-slate-700">Production Status</span>
+              </div>
               <input
                 type="checkbox"
                 checked={courseFormData.isPublished}
                 onChange={(e) => setCourseFormData({ ...courseFormData, isPublished: e.target.checked })}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                className="w-5 h-5 rounded-lg text-blue-600 focus:ring-blue-500 border-slate-200"
               />
-              <span className="text-sm font-medium text-gray-700">Published</span>
-            </label>
+            </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-4 border-t">
-            <Button type="button" variant="outline" onClick={() => setShowCourseModal(false)}>
-              Cancel
+          <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-50">
+            <Button type="button" variant="outline" onClick={() => setShowCourseModal(false)} className="rounded-2xl border-slate-200 font-bold px-8">
+              Discard
             </Button>
-            <Button type="submit" className="bg-blue-600 hover:bg-blue-700">Save Changes</Button>
+            <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold px-10">
+              Save Changes
+            </Button>
           </div>
         </form>
       </Modal>
-        </div>
-      </div>
     </div>
   );
 };

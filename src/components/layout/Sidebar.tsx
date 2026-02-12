@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Users, 
-  BookOpen, 
+import {
+  LayoutDashboard,
+  Users,
+  BookOpen,
   FileText,
   LogOut,
   Shield,
@@ -11,13 +11,15 @@ import {
   ChevronRight,
   ClipboardList,
   Brain,
-  Video
+  Video,
+  Bell
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 
 const navigation = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Users', href: '/users', icon: Users },
+  { name: 'Notifications', href: '/notifications', icon: Bell },
   { name: 'Course', href: '/course', icon: BookOpen },
   { name: 'Assignments & Activities', href: '/assignments-activities', icon: ClipboardList },
   { name: 'Quiz', href: '/quiz', icon: Brain },
@@ -62,11 +64,10 @@ const Sidebar: React.FC = () => {
             <NavLink
               key={item.name}
               to={item.href}
-              className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 group ${
-                isActive
+              className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 group ${isActive
                   ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25'
                   : 'text-slate-300 hover:bg-slate-700 hover:text-white'
-              }`}
+                }`}
             >
               <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-white'}`} />
               {!collapsed && (
@@ -99,9 +100,8 @@ const Sidebar: React.FC = () => {
         )}
         <button
           onClick={logout}
-          className={`flex items-center gap-3 w-full px-3 py-3 text-sm text-slate-300 hover:bg-red-600 hover:text-white rounded-xl transition-all duration-200 group ${
-            collapsed ? 'justify-center' : ''
-          }`}
+          className={`flex items-center gap-3 w-full px-3 py-3 text-sm text-slate-300 hover:bg-red-600 hover:text-white rounded-xl transition-all duration-200 group ${collapsed ? 'justify-center' : ''
+            }`}
         >
           <LogOut className="w-4 h-4" />
           {!collapsed && <span>Sign Out</span>}

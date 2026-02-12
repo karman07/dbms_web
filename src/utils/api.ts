@@ -24,7 +24,7 @@ export const authAPI = {
     const response = await api.post('/auth/login', { email, password });
     return response.data;
   },
-  
+
   register: async (userData: {
     firstName: string;
     lastName: string;
@@ -109,17 +109,19 @@ export const courseAPI = {
   },
 
   // 7. Add Lesson
-  addLesson: async (sectionIndex: number, lessonData: FormData) => {
+  addLesson: async (sectionIndex: number, lessonData: any) => {
+    const isFormData = lessonData instanceof FormData;
     const response = await api.post(`/courses/admin/section/${sectionIndex}/lesson`, lessonData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : { 'Content-Type': 'application/json' },
     });
     return response.data;
   },
 
   // 8. Update Lesson
-  updateLesson: async (sectionIndex: number, lessonIndex: number, lessonData: FormData) => {
+  updateLesson: async (sectionIndex: number, lessonIndex: number, lessonData: any) => {
+    const isFormData = lessonData instanceof FormData;
     const response = await api.put(`/courses/admin/section/${sectionIndex}/lesson/${lessonIndex}`, lessonData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
+      headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : { 'Content-Type': 'application/json' },
     });
     return response.data;
   },
@@ -127,6 +129,12 @@ export const courseAPI = {
   // 9. Delete Lesson
   deleteLesson: async (sectionIndex: number, lessonIndex: number) => {
     const response = await api.delete(`/courses/admin/section/${sectionIndex}/lesson/${lessonIndex}`);
+    return response.data;
+  },
+
+  // 10. Move Lesson
+  moveLesson: async (sectionIndex: number, lessonIndex: number, direction: 'up' | 'down') => {
+    const response = await api.patch(`/courses/admin/section/${sectionIndex}/lesson/${lessonIndex}/move`, { direction });
     return response.data;
   },
 };
@@ -526,6 +534,46 @@ export const mediaAPI = {
   // 6. Delete Media
   deleteMedia: async (id: string) => {
     const response = await api.delete(`/media/${id}`);
+    return response.data;
+  },
+};
+
+// Notification Management API
+export const notificationAPI = {
+  // 1. Send targeted notification
+  sendNotification: async (data: any) => {
+    const response = await api.post('/admin/notifications/send', data);
+    return response.data;
+  },
+
+  // 2. Send bulk notification
+  sendBulkNotification: async (data: any) => {
+    const response = await api.post('/admin/notifications/send-bulk', data);
+    return response.data;
+  },
+
+  // 3. Get notification history
+  getHistory: async (params?: { page?: number; limit?: number; status?: string; type?: string }) => {
+    const response = await api.get('/admin/notifications/history', { params });
+    return response.data;
+  },
+
+  // 4. Get notification by ID
+  getById: async (id: string) => {
+    const response = await api.get(`/admin/notifications/${id}`);
+    return response.data;
+  },
+
+  // 5. Get notification statistics
+  getStats: async (sentBy?: string) => {
+    const params = sentBy ? { sentBy } : {};
+    const response = await api.get('/admin/notifications/stats/overview', { params });
+    return response.data;
+  },
+
+  // 6. Get my sent notifications
+  getMySent: async (params?: { page?: number; limit?: number }) => {
+    const response = await api.get('/admin/notifications/my/sent', { params });
     return response.data;
   },
 };

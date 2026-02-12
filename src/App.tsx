@@ -11,14 +11,18 @@ import SettingsPage from './pages/SettingsPage';
 import AssignmentsActivitiesPage from './pages/AssignmentsActivitiesPage';
 import QuizPage from './pages/QuizPage';
 import MediaPage from './pages/MediaPage';
+import NotificationsPage from './pages/NotificationsPage';
 
 const AppContent: React.FC = () => {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
+          <p className="text-slate-500 font-medium animate-pulse">Initializing Portal...</p>
+        </div>
       </div>
     );
   }
@@ -36,6 +40,7 @@ const AppContent: React.FC = () => {
       <Route path="/" element={<Layout />}>
         <Route index element={<DashboardPage />} />
         <Route path="users" element={<UsersPage />} />
+        <Route path="notifications" element={<NotificationsPage />} />
         <Route path="course" element={<CoursePage />} />
         <Route path="assignments-activities" element={<AssignmentsActivitiesPage />} />
         <Route path="quiz" element={<QuizPage />} />
