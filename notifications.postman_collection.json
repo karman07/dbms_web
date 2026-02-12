@@ -1,0 +1,378 @@
+{
+	"info": {
+		"_postman_id": "notifications-api-collection",
+		"name": "Push Notifications API",
+		"description": "Firebase Cloud Messaging push notifications with Redis queue management",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"item": [
+		{
+			"name": "User Endpoints",
+			"item": [
+				{
+					"name": "Register FCM Token",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fcmToken\": \"eXampleFCMToken123456789...\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/notifications/register-token",
+							"host": ["{{base_url}}"],
+							"path": ["notifications", "register-token"]
+						},
+						"description": "Register FCM token for the authenticated user's device"
+					}
+				},
+				{
+					"name": "Remove FCM Token",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"fcmToken\": \"eXampleFCMToken123456789...\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/notifications/remove-token",
+							"host": ["{{base_url}}"],
+							"path": ["notifications", "remove-token"]
+						},
+						"description": "Remove FCM token (e.g., on logout)"
+					}
+				},
+				{
+					"name": "Enable Notifications",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"enabled\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/notifications/toggle",
+							"host": ["{{base_url}}"],
+							"path": ["notifications", "toggle"]
+						},
+						"description": "Enable push notifications for the user"
+					}
+				},
+				{
+					"name": "Disable Notifications",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"enabled\": false\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/notifications/toggle",
+							"host": ["{{base_url}}"],
+							"path": ["notifications", "toggle"]
+						},
+						"description": "Disable push notifications for the user"
+					}
+				},
+				{
+					"name": "Get My Notification History",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/notifications/history?page=1&limit=20",
+							"host": ["{{base_url}}"],
+							"path": ["notifications", "history"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Get notification history for the current user"
+					}
+				}
+			]
+		},
+		{
+			"name": "Admin Endpoints",
+			"item": [
+				{
+					"name": "Send Notification to Specific Users",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"New Assignment Posted\",\n  \"body\": \"A new assignment has been posted in your DBMS course\",\n  \"type\": \"assignment_due\",\n  \"priority\": \"high\",\n  \"data\": {\n    \"courseId\": \"65abc123def456\",\n    \"assignmentId\": \"65def456abc789\",\n    \"action\": \"view_assignment\"\n  },\n  \"imageUrl\": \"https://example.com/assignment-icon.png\",\n  \"userIds\": [\"user_id_1\", \"user_id_2\"]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/notifications/send",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "notifications", "send"]
+						},
+						"description": "Send notification to specific users (Admin only)"
+					}
+				},
+				{
+					"name": "Send Notification by FCM Tokens",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Test Notification\",\n  \"body\": \"This is a test notification via FCM tokens\",\n  \"type\": \"system\",\n  \"priority\": \"normal\",\n  \"fcmTokens\": [\"token1\", \"token2\"]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/notifications/send",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "notifications", "send"]
+						},
+						"description": "Send notification using FCM tokens directly"
+					}
+				},
+				{
+					"name": "Send Bulk Notification to All Users",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Platform Maintenance Alert\",\n  \"body\": \"The platform will undergo scheduled maintenance this Sunday from 2 AM to 6 AM\",\n  \"type\": \"system\",\n  \"priority\": \"high\",\n  \"data\": {\n    \"maintenanceDate\": \"2026-02-16\",\n    \"startTime\": \"02:00\",\n    \"endTime\": \"06:00\"\n  },\n  \"imageUrl\": \"https://example.com/maintenance.png\",\n  \"sendToAll\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/notifications/send-bulk",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "notifications", "send-bulk"]
+						},
+						"description": "Send bulk notification to all users (Admin only)"
+					}
+				},
+				{
+					"name": "Send Bulk to Specific Users",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Course Completion Certificate\",\n  \"body\": \"Congratulations! Your course completion certificate is ready\",\n  \"type\": \"announcement\",\n  \"priority\": \"normal\",\n  \"data\": {\n    \"courseId\": \"65abc123\",\n    \"certificateUrl\": \"https://example.com/cert/12345\"\n  },\n  \"sendToAll\": false,\n  \"userIds\": [\"user1\", \"user2\", \"user3\"]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/notifications/send-bulk",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "notifications", "send-bulk"]
+						},
+						"description": "Send bulk notification to specific user list"
+					}
+				},
+				{
+					"name": "Send Scheduled Notification",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Webinar Reminder\",\n  \"body\": \"Your webinar starts in 1 hour\",\n  \"type\": \"announcement\",\n  \"priority\": \"high\",\n  \"data\": {\n    \"webinarId\": \"webinar123\",\n    \"link\": \"https://meet.example.com/webinar\"\n  },\n  \"sendToAll\": false,\n  \"userIds\": [\"user1\", \"user2\"],\n  \"scheduledAt\": \"2026-02-15T14:00:00Z\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/notifications/send-bulk",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "notifications", "send-bulk"]
+						},
+						"description": "Schedule a notification for future delivery"
+					}
+				},
+				{
+					"name": "Get All Notifications History",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/notifications/history?page=1&limit=20",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "notifications", "history"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								},
+								{
+									"key": "status",
+									"value": "sent",
+									"disabled": true
+								},
+								{
+									"key": "type",
+									"value": "announcement",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get all notifications with optional filters (Admin only)"
+					}
+				},
+				{
+					"name": "Get Notification by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/notifications/:notificationId",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "notifications", ":notificationId"],
+							"variable": [
+								{
+									"key": "notificationId",
+									"value": "65abc123def456"
+								}
+							]
+						},
+						"description": "Get detailed information about a specific notification"
+					}
+				},
+				{
+					"name": "Get Notification Statistics",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/notifications/stats/overview",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "notifications", "stats", "overview"],
+							"query": [
+								{
+									"key": "sentBy",
+									"value": "admin_user_id",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get notification statistics overview"
+					}
+				},
+				{
+					"name": "Get My Sent Notifications",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/notifications/my/sent?page=1&limit=20",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "notifications", "my", "sent"],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								}
+							]
+						},
+						"description": "Get notifications sent by the current admin user"
+					}
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "jwt_token",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

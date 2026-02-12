@@ -126,6 +126,13 @@ export class User extends Document {
   @Prop()
   lastLoginAt?: Date;
 
+  // Push notification tokens
+  @Prop([String])
+  fcmTokens?: string[];
+
+  @Prop({ default: true })
+  notificationsEnabled: boolean;
+
   @Prop({ default: Date.now })
   createdAt: Date;
 
