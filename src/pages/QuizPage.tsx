@@ -14,7 +14,7 @@ const QuizPage = () => {
   const loadCourse = async () => {
     try {
       const courseData = await courseAPI.getCourse();
-      
+
       // Build lesson options
       const lessons: Array<{ value: string; label: string }> = [];
       courseData.sections.forEach((section: any) => {
@@ -34,8 +34,8 @@ const QuizPage = () => {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <header className="mb-6">
-        <h1 className="text-3xl font-extrabold text-gray-900">Quizzes</h1>
-        <p className="text-gray-600 mt-1">Create and manage quizzes for your course. Use the search box to find quizzes quickly.</p>
+        <h1 className="text-3xl font-bold text-slate-900">Quizzes</h1>
+        <p className="text-slate-500 mt-1">Manage and preview course assessments.</p>
       </header>
 
       <div className="mb-6 flex items-center gap-3">

@@ -26,14 +26,14 @@ export interface Section {
   _id: string;
   title: string;
   description?: string;
-  order: number;
+  priority: number;
   lessons: Lesson[];
 }
 
 export interface Lesson {
   _id: string;
   title: string;
-  order: number;
+  priority: number;
   // New: Array of media references (videos, images, documents)
   mediaIds?: string[];
   // Populated media items (returned by API)
@@ -54,7 +54,7 @@ export interface Lesson {
   linkedQuizzes?: Quiz[];
   linkedAssignments?: Assignment[];
   linkedActivities?: ClassActivity[];
-  
+
   // Legacy fields (for backward compatibility - will be removed)
   content?: string;
   videoUrl?: string;

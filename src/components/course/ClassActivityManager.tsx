@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import Modal from '@/components/ui/modal';
 import MarkdownEditor from '@/components/ui/markdown-editor';
-import { Activity,  Edit, Trash2, Plus} from 'lucide-react';
+import { Activity, Edit, Trash2, Plus, Eye } from 'lucide-react';
+import SimpleViewer from './SimpleViewer';
 
 interface ClassActivityFormData {
   title: string;
@@ -19,12 +20,14 @@ interface ClassActivityFormData {
 
 interface ClassActivityManagerProps {
   lessonOptions?: Array<{ value: string; label: string }>;
+  searchQuery?: string;
 }
 
-const ClassActivityManager = ({ lessonOptions = [] }: ClassActivityManagerProps) => {
+const ClassActivityManager = ({ lessonOptions = [], searchQuery = '' }: ClassActivityManagerProps) => {
   const [activities, setActivities] = useState<ClassActivity[]>([]);
   const [selectedActivity, setSelectedActivity] = useState<ClassActivity | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<ClassActivityFormData>({
     title: '',
@@ -102,6 +105,11 @@ const ClassActivityManager = ({ lessonOptions = [] }: ClassActivityManagerProps)
     setIsModalOpen(true);
   };
 
+  const handleView = (activity: ClassActivity) => {
+    setSelectedActivity(activity);
+    setIsViewModalOpen(true);
+  };
+
 
   const resetForm = () => {
     setFormData({
@@ -147,41 +155,55 @@ const ClassActivityManager = ({ lessonOptions = [] }: ClassActivityManagerProps)
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {activities.map((activity) => (
-            <Card key={activity._id} className="group p-6 hover:shadow-2xl transition-all duration-300 border border-blue-100 bg-white hover:border-blue-300 shadow-sm hover:-translate-y-1">
-              <div className="space-y-4">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300">
-                    <Activity className="h-6 w-6 text-white" />
+          {activities
+            .filter(a =>
+              a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              a.description.toLowerCase().includes(searchQuery.toLowerCase())
+            )
+            .map((activity) => (
+              <Card key={activity._id} className="group p-6 hover:shadow-2xl transition-all duration-300 border border-blue-100 bg-white hover:border-blue-300 shadow-sm hover:-translate-y-1">
+                <div className="space-y-4">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg group-hover:shadow-xl group-hover:scale-110 transition-all duration-300">
+                      <Activity className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-lg text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">{activity.title}</h3>
+                      <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">{activity.description}</p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-lg text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">{activity.title}</h3>
-                    <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">{activity.description}</p>
-                  </div>
-                </div>
-                
-             
-                
-                <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-200">
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={() => handleEdit(activity)}
-                    className="flex-1 min-w-[80px] border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400 font-medium"
-                  >
-                    <Edit className="h-3.5 w-3.5 mr-1.5" />
-                    Edit
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={() => handleDelete(activity._id)}
-                    className="flex-1 min-w-[80px] border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400 font-medium"
-                  >
-                    <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                    Delete
-                  </Button>
-                  {/* {lessonOptions.length > 0 && (
+
+
+
+                  <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-200">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleView(activity)}
+                      className="flex-1 min-w-[80px] border-slate-300 text-slate-700 hover:bg-slate-50 hover:border-slate-400 font-medium"
+                    >
+                      <Eye className="h-3.5 w-3.5 mr-1.5" />
+                      View
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEdit(activity)}
+                      className="flex-1 min-w-[80px] border-blue-300 text-blue-700 hover:bg-blue-50 hover:border-blue-400 font-medium"
+                    >
+                      <Edit className="h-3.5 w-3.5 mr-1.5" />
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDelete(activity._id)}
+                      className="flex-1 min-w-[80px] border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400 font-medium"
+                    >
+                      <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                      Delete
+                    </Button>
+                    {/* {lessonOptions.length > 0 && (
                     <div className="w-full flex flex-col gap-2">
                       <select
                         className="w-full text-sm px-3 py-2 border border-gray-300 rounded-lg hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white transition-all duration-200 font-medium"
@@ -216,10 +238,10 @@ const ClassActivityManager = ({ lessonOptions = [] }: ClassActivityManagerProps)
                       )}
                     </div>
                   )} */}
+                  </div>
                 </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            ))}
         </div>
       )}
 
@@ -261,7 +283,7 @@ const ClassActivityManager = ({ lessonOptions = [] }: ClassActivityManagerProps)
               placeholder="Write your activity content here..."
             />
           </div>
-        
+
           <div className="flex gap-2 pt-4">
             <Button type="submit" disabled={isLoading} className="flex-1">
               {isLoading ? 'Saving...' : (selectedActivity ? 'Update Activity' : 'Create Activity')}
@@ -272,6 +294,22 @@ const ClassActivityManager = ({ lessonOptions = [] }: ClassActivityManagerProps)
           </div>
         </form>
       </Modal>
+
+      {/* View Modal */}
+      {selectedActivity && (
+        <SimpleViewer
+          isOpen={isViewModalOpen}
+          onClose={() => {
+            setIsViewModalOpen(false);
+            setSelectedActivity(null);
+          }}
+          title={selectedActivity.title}
+          description={selectedActivity.description}
+          content={selectedActivity.content || ''}
+          type="Activity"
+          duration={selectedActivity.duration}
+        />
+      )}
     </div>
   );
 };

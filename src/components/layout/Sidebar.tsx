@@ -65,8 +65,8 @@ const Sidebar: React.FC = () => {
               key={item.name}
               to={item.href}
               className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 group ${isActive
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25'
-                  : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25'
+                : 'text-slate-300 hover:bg-slate-700 hover:text-white'
                 }`}
             >
               <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-white'}`} />

@@ -4,9 +4,10 @@ import { Quiz } from '@/types';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Brain, Edit, Trash2, Plus, Eye } from 'lucide-react';
+import QuizViewer from './QuizViewer';
 import Modal from '@/components/ui/modal';
 import QuizBuilder from './QuizBuilder';
-import { Brain, Edit, Trash2, Plus } from 'lucide-react';
 
 interface QuizManagerProps {
   lessonOptions?: Array<{ value: string; label: string }>;
@@ -16,6 +17,7 @@ const QuizManager = ({ lessonOptions = [] }: QuizManagerProps) => {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
@@ -79,6 +81,11 @@ const QuizManager = ({ lessonOptions = [] }: QuizManagerProps) => {
     setFormData({ title: quiz.title || '', linkedLessonId: quiz.linkedLessonId || '' });
     setQuestions(quiz.questions || []);
     setIsModalOpen(true);
+  };
+
+  const handleView = (quiz: Quiz) => {
+    setSelectedQuiz(quiz);
+    setIsViewModalOpen(true);
   };
 
   // const handleLinkLesson = async (quizId: string, lessonId: string) => {
@@ -151,26 +158,36 @@ const QuizManager = ({ lessonOptions = [] }: QuizManagerProps) => {
                     <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">{quiz.description}</p>
                   </div>
                 </div>
-                
-                <div className="flex flex-wrap gap-2">
-                  <span className="text-sm px-3 py-1 bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 rounded-full font-semibold">
+
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-50 text-slate-600 rounded-lg border border-slate-100 text-xs font-bold">
+                    <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />
                     {quiz.questions?.length || 0} Questions
-                  </span>
+                  </div>
                 </div>
-                
+
                 <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-100">
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleView(quiz)}
+                    className="flex-1 min-w-[80px] border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300"
+                  >
+                    <Eye className="h-3 w-3 mr-1" />
+                    View
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
                     onClick={() => handleEdit(quiz)}
                     className="flex-1 min-w-[80px] border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300"
                   >
                     <Edit className="h-3 w-3 mr-1" />
                     Edit
                   </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
+                  <Button
+                    size="sm"
+                    variant="outline"
                     onClick={() => handleDelete(quiz._id)}
                     className="flex-1 min-w-[80px] border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
                   >
@@ -220,9 +237,9 @@ const QuizManager = ({ lessonOptions = [] }: QuizManagerProps) => {
       )}
 
       {/* Create/Edit Modal */}
-      <Modal 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
         title={selectedQuiz ? 'Edit Quiz' : 'Create Quiz'}
         size="xl"
       >
@@ -255,6 +272,16 @@ const QuizManager = ({ lessonOptions = [] }: QuizManagerProps) => {
           </div>
         </form>
       </Modal>
+
+      {/* Quiz View Modal */}
+      <QuizViewer
+        isOpen={isViewModalOpen}
+        onClose={() => {
+          setIsViewModalOpen(false);
+          setSelectedQuiz(null);
+        }}
+        quiz={selectedQuiz}
+      />
     </div>
   );
 };

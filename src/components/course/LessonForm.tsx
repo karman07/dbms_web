@@ -42,7 +42,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: '',
-    order: 0,
+    priority: 0,
     estimatedMinutes: 0,
     isPublished: false,
   });
@@ -83,7 +83,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
     if (lesson && mode === 'edit') {
       setFormData({
         title: lesson.title,
-        order: lesson.order,
+        priority: lesson.priority || 0,
         estimatedMinutes: lesson.estimatedMinutes || 0,
         isPublished: lesson.isPublished,
       });
@@ -140,7 +140,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
   const resetForm = () => {
     setFormData({
       title: '',
-      order: 0,
+      priority: 0,
       estimatedMinutes: 0,
       isPublished: false,
     });
@@ -296,7 +296,7 @@ const LessonForm: React.FC<LessonFormProps> = ({
       const formDataToSend = new FormData();
 
       formDataToSend.append('title', formData.title);
-      formDataToSend.append('order', formData.order.toString());
+      formDataToSend.append('priority', formData.priority.toString());
       formDataToSend.append('estimatedMinutes', formData.estimatedMinutes.toString());
       formDataToSend.append('isPublished', formData.isPublished.toString());
 
@@ -369,24 +369,10 @@ const LessonForm: React.FC<LessonFormProps> = ({
             />
           </div>
 
-          {/* Order and Duration */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-2">
-                Order
-              </label>
-              <Input
-                type="number"
-                value={formData.order}
-                onChange={(e) =>
-                  setFormData({ ...formData, order: parseInt(e.target.value) || 0 })
-                }
-                min="0"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Duration (minutes)
+                Units Duration (minutes)
               </label>
               <Input
                 type="number"
@@ -395,6 +381,22 @@ const LessonForm: React.FC<LessonFormProps> = ({
                   setFormData({
                     ...formData,
                     estimatedMinutes: parseInt(e.target.value) || 0,
+                  })
+                }
+                min="0"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Display Priority
+              </label>
+              <Input
+                type="number"
+                value={formData.priority}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    priority: parseInt(e.target.value) || 0,
                   })
                 }
                 min="0"

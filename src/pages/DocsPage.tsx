@@ -106,7 +106,7 @@ const DocsPage = () => {
   const handleDownloadSubtopic = async (topicId: string, subtopicName: string, filename: string) => {
     try {
       const response = await docsAPI.downloadSubtopic(topicId, subtopicName);
-      
+
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -135,8 +135,8 @@ const DocsPage = () => {
           // API returns subtopics array or object with subtopics field
           const subtopicsData = response.subtopics || response.data?.subtopics || response || [];
           // Update the topic with subtopics
-          setTopics(topics.map(t => 
-            t._id === topicId 
+          setTopics(topics.map(t =>
+            t._id === topicId
               ? { ...t, subtopics: Array.isArray(subtopicsData) ? subtopicsData : [] }
               : t
           ));
@@ -179,7 +179,7 @@ const DocsPage = () => {
         const blob = new Blob([content], { type: 'text/markdown' });
         formData.append('file', blob, `${newName || subtopicName}.md`);
       }
-      
+
       await docsAPI.updateSubtopic(topicId, subtopicName, formData);
       await loadTopics();
     } catch (error) {
@@ -229,8 +229,8 @@ const DocsPage = () => {
                   <p className="text-sm text-gray-600">{topics.length} topic{topics.length !== 1 ? 's' : ''} available</p>
                 </div>
               </div>
-              <Button 
-                onClick={() => setIsTopicModalOpen(true)} 
+              <Button
+                onClick={() => setIsTopicModalOpen(true)}
                 className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"
               >
                 <Plus className="h-4 w-4 mr-2" />
@@ -250,8 +250,8 @@ const DocsPage = () => {
             <p className="text-gray-600 mb-8 max-w-md mx-auto">
               Get started by creating your first documentation topic. You can add subtopics and organize your content effectively.
             </p>
-            <Button 
-              onClick={() => setIsTopicModalOpen(true)} 
+            <Button
+              onClick={() => setIsTopicModalOpen(true)}
               className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-lg"
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -262,7 +262,7 @@ const DocsPage = () => {
           <div className="space-y-6">
             {topics.map((topic) => {
               const isExpanded = expandedTopics.has(topic._id);
-              
+
               return (
                 <div
                   key={topic._id}
@@ -287,12 +287,15 @@ const DocsPage = () => {
                             <h3 className="text-xl font-bold text-gray-900">
                               {topic.topic || topic.name || 'Untitled Topic'}
                             </h3>
-                            <Badge className="bg-gradient-to-r from-blue-100 to-slate-100 text-blue-800 border-blue-200">
-                              {topic.course || 'dbms'}
-                            </Badge>
-                            <Badge variant="outline" className="border-blue-200 text-blue-700">
-                              {topic.subtopics?.length || 0} subtopic{(topic.subtopics?.length || 0) !== 1 ? 's' : ''}
-                            </Badge>
+                            <div className="flex items-center gap-2">
+                              <Badge className="font-black uppercase tracking-widest text-[10px] px-3 py-1">
+                                {topic.course || 'dbms'}
+                              </Badge>
+                              <Badge variant="outline" className="border-blue-100 text-blue-600 font-bold text-[11px] px-3 py-1 flex items-center gap-1.5">
+                                <div className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
+                                {topic.subtopics?.length || 0} Units
+                              </Badge>
+                            </div>
                           </div>
                           <p className="text-sm text-gray-600">
                             Created {topic.createdAt ? new Date(topic.createdAt).toLocaleDateString() : 'Unknown date'}
@@ -388,7 +391,7 @@ const DocsPage = () => {
                               </Button>
                             </div>
                           </div>
-                        ))} 
+                        ))}
                       </div>
                     </div>
                   )}
@@ -409,57 +412,57 @@ const DocsPage = () => {
           </div>
         )}
 
-      {/* Create Topic Modal */}
-      <TopicModal
-        isOpen={isTopicModalOpen}
-        onClose={() => setIsTopicModalOpen(false)}
-        onSubmit={handleCreateTopic}
-      />
-
-      {/* Add Subtopic Modal */}
-      {selectedTopic && (
-        <SubtopicModal
-          isOpen={isSubtopicModalOpen}
-          onClose={() => {
-            setIsSubtopicModalOpen(false);
-            setSelectedTopic(null);
-          }}
-          onSubmit={handleAddSubtopic}
-          topicId={selectedTopic._id}
-          topicName={selectedTopic.topic || selectedTopic.name || 'Documentation'}
+        {/* Create Topic Modal */}
+        <TopicModal
+          isOpen={isTopicModalOpen}
+          onClose={() => setIsTopicModalOpen(false)}
+          onSubmit={handleCreateTopic}
         />
-      )}
 
-      {/* Content Viewer */}
-      {selectedTopic && selectedTopic.subtopics && selectedTopic.subtopics.length > 0 && (
-        <SubtopicContentViewer
-          isOpen={isContentViewerOpen}
-          onClose={() => {
-            setIsContentViewerOpen(false);
-            setSelectedTopic(null);
-            setSelectedSubtopicIndex(0);
-          }}
-          topicId={selectedTopic._id}
-          topicName={selectedTopic.topic || selectedTopic.name || 'Documentation'}
-          subtopics={selectedTopic.subtopics}
-          initialSubtopicIndex={selectedSubtopicIndex}
-        />
-      )}
+        {/* Add Subtopic Modal */}
+        {selectedTopic && (
+          <SubtopicModal
+            isOpen={isSubtopicModalOpen}
+            onClose={() => {
+              setIsSubtopicModalOpen(false);
+              setSelectedTopic(null);
+            }}
+            onSubmit={handleAddSubtopic}
+            topicId={selectedTopic._id}
+            topicName={selectedTopic.topic || selectedTopic.name || 'Documentation'}
+          />
+        )}
 
-      {/* Edit Subtopic Modal */}
-      {editingSubtopic && (
-        <EditSubtopicModal
-          isOpen={isEditModalOpen}
-          onClose={() => {
-            setIsEditModalOpen(false);
-            setEditingSubtopic(null);
-          }}
-          onUpdate={handleUpdateSubtopic}
-          topicId={editingSubtopic.topicId}
-          subtopicName={editingSubtopic.name}
-          initialContent={editingSubtopic.content}
-        />
-      )}
+        {/* Content Viewer */}
+        {selectedTopic && selectedTopic.subtopics && selectedTopic.subtopics.length > 0 && (
+          <SubtopicContentViewer
+            isOpen={isContentViewerOpen}
+            onClose={() => {
+              setIsContentViewerOpen(false);
+              setSelectedTopic(null);
+              setSelectedSubtopicIndex(0);
+            }}
+            topicId={selectedTopic._id}
+            topicName={selectedTopic.topic || selectedTopic.name || 'Documentation'}
+            subtopics={selectedTopic.subtopics}
+            initialSubtopicIndex={selectedSubtopicIndex}
+          />
+        )}
+
+        {/* Edit Subtopic Modal */}
+        {editingSubtopic && (
+          <EditSubtopicModal
+            isOpen={isEditModalOpen}
+            onClose={() => {
+              setIsEditModalOpen(false);
+              setEditingSubtopic(null);
+            }}
+            onUpdate={handleUpdateSubtopic}
+            topicId={editingSubtopic.topicId}
+            subtopicName={editingSubtopic.name}
+            initialContent={editingSubtopic.content}
+          />
+        )}
 
         {/* Delete Confirmation Modal */}
         {deleteConfirm && (
@@ -479,8 +482,8 @@ const DocsPage = () => {
                 </div>
               </div>
               <div className="flex items-center justify-end gap-3">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => setDeleteConfirm(null)}
                   className="border-gray-200 text-gray-600 hover:bg-gray-50"
                 >

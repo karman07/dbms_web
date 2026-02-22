@@ -137,6 +137,12 @@ export const courseAPI = {
     const response = await api.patch(`/courses/admin/section/${sectionIndex}/lesson/${lessonIndex}/move`, { direction });
     return response.data;
   },
+
+  // 11. Update Lesson Priority
+  updateLessonPriority: async (sectionIndex: number, lessonIndex: number, priority: number) => {
+    const response = await api.put(`/courses/admin/section/${sectionIndex}/lesson/${lessonIndex}/priority`, { priority });
+    return response.data;
+  },
 };
 
 // Course User API (5 endpoints)

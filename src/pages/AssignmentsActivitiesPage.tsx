@@ -8,7 +8,6 @@ const AssignmentsActivitiesPage = () => {
   const [activeTab, setActiveTab] = useState<'assignments' | 'activities'>('assignments');
   const [lessonOptions, setLessonOptions] = useState<Array<{ value: string; label: string }>>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedLessonFilter, setSelectedLessonFilter] = useState('');
 
   useEffect(() => {
     loadCourse();
@@ -17,7 +16,7 @@ const AssignmentsActivitiesPage = () => {
   const loadCourse = async () => {
     try {
       const courseData = await courseAPI.getCourse();
-      
+
       // Build lesson options
       const lessons: Array<{ value: string; label: string }> = [];
       courseData.sections.forEach((section: any) => {
@@ -35,75 +34,55 @@ const AssignmentsActivitiesPage = () => {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <header className="mb-6">
-        <h1 className="text-3xl font-extrabold text-gray-900">Assignments & Class Activities</h1>
-        <p className="text-gray-600 mt-1">Create, link and manage assignments and interactive class activities.</p>
+    <div className="p-10 max-w-7xl mx-auto">
+      <header className="mb-10">
+        <h1 className="text-4xl font-black text-slate-900 tracking-tighter">Assignments & Activities</h1>
+        <p className="text-slate-500 mt-1 font-medium italic">Create and manage curriculum-linked assessments and interactive tasks.</p>
       </header>
 
-      <div className="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="flex items-center gap-3 w-full md:max-w-xl">
-          <div className="relative w-full">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-            <input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search assignments, activities..."
-              className="pl-10 pr-3 py-2 w-full border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-          <select
-            value={selectedLessonFilter}
-            onChange={(e) => setSelectedLessonFilter(e.target.value)}
-            className="px-3 py-2 border rounded-lg bg-white"
-          >
-            <option value="">All Lessons</option>
-            {lessonOptions.map((l) => (
-              <option key={l.value} value={l.value}>{l.label}</option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <div className="text-sm text-gray-500">Showing: <span className="font-medium text-gray-700">{activeTab === 'assignments' ? 'Assignments' : 'Activities'}</span></div>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-5">
-        {/* Tab Navigation */}
-        <div className="border-b border-gray-100 mb-6">
+      <div className="bg-white rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+        {/* Search & Tabs Header */}
+        <div className="bg-slate-50/50 border-b border-slate-100 px-8 pt-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <nav className="flex gap-2" aria-label="Tabs">
             <button
-              className={`flex items-center gap-2 px-5 py-3 font-medium border-b-2 transition-all ${
-                activeTab === 'assignments'
-                  ? 'border-blue-600 text-blue-600 bg-blue-50'
-                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
+              className={`flex items-center gap-2 px-6 py-4 font-black transition-all rounded-t-2xl text-sm uppercase tracking-widest ${activeTab === 'assignments'
+                ? 'bg-white text-blue-600 shadow-[0_-4px_10px_-4px_rgba(0,0,0,0.05)]'
+                : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100/50'
+                }`}
               onClick={() => setActiveTab('assignments')}
             >
-              <FileText className="h-5 w-5" />
+              <FileText className="h-4 w-4" />
               <span>Assignments</span>
             </button>
             <button
-              className={`flex items-center gap-2 px-5 py-3 font-medium border-b-2 transition-all ${
-                activeTab === 'activities'
-                  ? 'border-blue-600 text-blue-600 bg-blue-50'
-                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
+              className={`flex items-center gap-2 px-6 py-4 font-black transition-all rounded-t-2xl text-sm uppercase tracking-widest ${activeTab === 'activities'
+                ? 'bg-white text-blue-600 shadow-[0_-4px_10px_-4px_rgba(0,0,0,0.05)]'
+                : 'text-slate-400 hover:text-slate-600 hover:bg-slate-100/50'
+                }`}
               onClick={() => setActiveTab('activities')}
             >
-              <Activity className="h-5 w-5" />
+              <Activity className="h-4 w-4" />
               <span>Class Activities</span>
             </button>
           </nav>
+
+          <div className="relative w-full md:max-w-xs mb-[-1px] pb-6 md:pb-0">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={`Search ${activeTab}...`}
+              className="pl-10 pr-3 py-2.5 w-full bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm outline-none transition-all"
+            />
+          </div>
         </div>
 
-        <div>
+        <div className="p-8">
           {activeTab === 'assignments' && (
-            <AssignmentManager lessonOptions={lessonOptions} />
+            <AssignmentManager lessonOptions={lessonOptions} searchQuery={searchQuery} />
           )}
           {activeTab === 'activities' && (
-            <ClassActivityManager lessonOptions={lessonOptions} />
+            <ClassActivityManager lessonOptions={lessonOptions} searchQuery={searchQuery} />
           )}
         </div>
       </div>

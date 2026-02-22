@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Download, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Download, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
 import Modal from '../ui/modal';
 import { docsAPI } from '../../utils/api';
 
@@ -39,9 +40,7 @@ const SubtopicContentViewer: React.FC<SubtopicContentViewerProps> = ({
     setLoading(true);
     try {
       const response = await docsAPI.getSubtopicContent(topicId, currentSubtopic.name);
-      // API returns the subtopic object directly with content field
       const subtopicContent = response.content || response.data?.content || '';
-      console.log('Subtopic response:', response);
       setContent(subtopicContent);
     } catch (error) {
       console.error('Error loading content:', error);
@@ -56,7 +55,6 @@ const SubtopicContentViewer: React.FC<SubtopicContentViewerProps> = ({
 
     try {
       const response = await docsAPI.downloadSubtopic(topicId, currentSubtopic.name);
-      
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement('a');
       link.href = url;
@@ -83,40 +81,16 @@ const SubtopicContentViewer: React.FC<SubtopicContentViewerProps> = ({
     }
   };
 
-  // Simple markdown to HTML converter
   const renderMarkdown = (markdown: string) => {
     let html = markdown;
 
-    // Headers
-    html = html.replace(/^### (.*$)/gim, '<h3 class="text-lg font-semibold text-gray-800 mt-4 mb-2">$1</h3>');
-    html = html.replace(/^## (.*$)/gim, '<h2 class="text-xl font-semibold text-gray-800 mt-5 mb-3">$1</h2>');
-    html = html.replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold text-gray-900 mt-6 mb-4">$1</h1>');
-
-    // Bold and Italic
-    html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
-    html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-    html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
-    html = html.replace(/___(.+?)___/g, '<strong><em>$1</em></strong>');
-    html = html.replace(/__(.+?)__/g, '<strong>$1</strong>');
-    html = html.replace(/_(.+?)_/g, '<em>$1</em>');
-
-    // Code blocks
-    html = html.replace(/```([^`]+)```/g, '<pre class="bg-gray-100 p-4 rounded-lg overflow-x-auto my-4"><code class="text-sm">$1</code></pre>');
-    html = html.replace(/`([^`]+)`/g, '<code class="bg-gray-100 px-2 py-1 rounded text-sm">$1</code>');
-
-    // Links
-    html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-600 hover:underline" target="_blank">$1</a>');
-
-    // Lists
-    html = html.replace(/^\* (.+)$/gim, '<li class="ml-6">$1</li>');
-    html = html.replace(/^- (.+)$/gim, '<li class="ml-6">$1</li>');
-    html = html.replace(/^(\d+)\. (.+)$/gim, '<li class="ml-6">$2</li>');
-
-    // Blockquotes
-    html = html.replace(/^> (.+)$/gim, '<blockquote class="border-l-4 border-gray-300 pl-4 italic text-gray-700 my-2">$1</blockquote>');
-
-    // Line breaks
-    html = html.replace(/\n\n/g, '<br /><br />');
+    // Simple markdown conversion
+    html = html.replace(/^### (.*$)/gim, '<h3 class="text-lg font-bold text-slate-800 mt-6 mb-3">$1</h3>');
+    html = html.replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold text-slate-900 mt-8 mb-4 border-b pb-2">$1</h2>');
+    html = html.replace(/^# (.*$)/gim, '<h1 class="text-2xl font-black text-slate-900 mt-10 mb-6">$1</h1>');
+    html = html.replace(/\*\*(.+?)\*\*/g, '<strong class="font-bold">$1</strong>');
+    html = html.replace(/\*(.+?)\*/g, '<em class="italic">$1</em>');
+    html = html.replace(/`([^`]+)`/g, '<code class="bg-gray-100 px-1.5 py-0.5 rounded font-mono text-sm leading-relaxed">$1</code>');
     html = html.replace(/\n/g, '<br />');
 
     return html;
@@ -124,55 +98,78 @@ const SubtopicContentViewer: React.FC<SubtopicContentViewerProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={topicName} size="xl">
-      <div className="flex flex-col h-[600px]">
-        {/* Header with navigation */}
-        <div className="flex items-center justify-between pb-4 border-b">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={goToPrevious}
-              disabled={currentIndex === 0}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <div className="text-sm">
-              <p className="font-medium text-gray-900">{currentSubtopic?.name}</p>
-              <p className="text-gray-500">
-                {currentIndex + 1} of {subtopics.length}
-              </p>
+      <div className="flex flex-col h-[70vh]">
+        {/* Simple Header */}
+        <div className="flex items-center justify-between pb-6 border-b mb-6">
+          <div className="flex items-center gap-4">
+            <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
+              <FileText className="w-6 h-6" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 leading-tight">
+                {currentSubtopic?.name}
+              </h2>
+              <div className="flex items-center gap-2 mt-0.5">
+                <Badge variant="outline" className="text-[10px] font-bold">
+                  Unit {currentIndex + 1} of {subtopics.length}
+                </Badge>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="flex items-center border rounded-lg p-1 bg-white">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={goToPrevious}
+                disabled={currentIndex === 0}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="px-3 text-xs font-bold text-slate-600">
+                {currentIndex + 1} / {subtopics.length}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={goToNext}
+                disabled={currentIndex === subtopics.length - 1}
+                className="h-8 w-8 p-0"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
             </div>
             <Button
               variant="outline"
               size="sm"
-              onClick={goToNext}
-              disabled={currentIndex === subtopics.length - 1}
+              onClick={handleDownload}
+              className="gap-2"
             >
-              <ChevronRight className="h-4 w-4" />
+              <Download className="h-4 w-4" />
+              Download
             </Button>
           </div>
-          <Button variant="outline" size="sm" onClick={handleDownload}>
-            <Download className="h-4 w-4 mr-2" />
-            Download
-          </Button>
         </div>
 
         {/* Content area */}
-        <div className="flex-1 overflow-y-auto py-6">
+        <div className="flex-1 overflow-y-auto px-2">
           {loading ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-gray-500">Loading content...</div>
+            <div className="flex flex-col items-center justify-center h-full">
+              <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-3"></div>
+              <p className="text-slate-400 text-sm font-medium">Loading...</p>
             </div>
           ) : (
             <div
-              className="prose prose-gray max-w-none"
+              className="prose prose-slate max-w-none"
               dangerouslySetInnerHTML={{ __html: renderMarkdown(content) }}
             />
           )}
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t">
+        <div className="flex justify-end pt-6 border-t mt-6">
           <Button variant="outline" onClick={onClose}>
             Close
           </Button>

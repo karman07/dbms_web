@@ -8,7 +8,6 @@ import {
   Clock,
   FileText,
   Video,
-  XCircle,
   ChevronDown,
   Layout,
   Layers,
@@ -16,6 +15,7 @@ import {
   Rocket,
   BadgeCheck,
   Presentation,
+  Eye,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -56,6 +56,10 @@ const CoursePage: React.FC = () => {
     lessonIndex: number;
   } | null>(null);
   const [lessonSectionIndex, setLessonSectionIndex] = useState<number>(0);
+
+  // Preview modal
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [viewLesson, setViewLesson] = useState<Lesson | null>(null);
 
   useEffect(() => {
     loadCourse();
@@ -98,15 +102,6 @@ const CoursePage: React.FC = () => {
     }
   };
 
-  const handleUpdateCourse = async (field: string, value: any) => {
-    try {
-      const updatedCourse = await courseAPI.updateCourse({ [field]: value });
-      setCourse(updatedCourse);
-    } catch (error) {
-      console.error('Error updating course:', error);
-    }
-  };
-
   const handleEditCourse = () => {
     if (!course) return;
     setCourseFormData({
@@ -145,7 +140,7 @@ const CoursePage: React.FC = () => {
     setExpandedSections(newExpanded);
   };
 
-  const handleAddSection = async (data: { title: string, description?: string, order: number }) => {
+  const handleAddSection = async (data: { title: string, description?: string, priority: number }) => {
     try {
       const updatedCourse = await courseAPI.addSection(data);
       setCourse(updatedCourse);
@@ -160,7 +155,7 @@ const CoursePage: React.FC = () => {
     }
   };
 
-  const handleUpdateSection = async (data: { title: string, description?: string, order: number }) => {
+  const handleUpdateSection = async (data: { title: string, description?: string, priority: number }) => {
     if (selectedSection === null) return;
     try {
       const updatedCourse = await courseAPI.updateSection(selectedSection.index, data);
@@ -214,12 +209,26 @@ const CoursePage: React.FC = () => {
     }
   };
 
-  const handleMoveLesson = async (sectionIndex: number, lessonIndex: number, direction: 'up' | 'down') => {
+  const handleUpdateLessonPriority = async (sectionIndex: number, lessonIndex: number, priority: number) => {
     try {
-      const updatedCourse = await courseAPI.moveLesson(sectionIndex, lessonIndex, direction);
+      const updatedCourse = await courseAPI.updateLessonPriority(sectionIndex, lessonIndex, priority);
       setCourse(updatedCourse);
     } catch (error) {
-      console.error('Error moving lesson:', error);
+      console.error('Error updating lesson priority:', error);
+    }
+  };
+
+  const handleMoveLesson = async (sectionIndex: number, lessonIndex: number, direction: 'up' | 'down') => {
+    try {
+      const section = course?.sections[sectionIndex];
+      if (!section) return;
+      const lesson = section.lessons[lessonIndex];
+      const currentPriority = lesson.priority || 0;
+      const newPriority = direction === 'up' ? currentPriority + 1 : Math.max(0, currentPriority - 1);
+
+      handleUpdateLessonPriority(sectionIndex, lessonIndex, newPriority);
+    } catch (error) {
+      console.error('Error updating priority via arrows:', error);
     }
   };
 
@@ -346,38 +355,39 @@ const CoursePage: React.FC = () => {
         <div className="relative h-full max-w-7xl mx-auto px-8 flex flex-col justify-end pb-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-4 max-w-3xl">
-              <div className="flex items-center gap-2">
-                <Badge className={`${course.isPublished ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30' : 'bg-slate-700 text-slate-400 border-slate-600'} px - 3 py - 1 rounded - full backdrop - blur - md`}>
-                  {course.isPublished ? (
-                    <div className="flex items-center gap-1.5"><Rocket className="w-3 h-3" /> Live Production</div>
-                  ) : (
-                    <div className="flex items-center gap-1.5"><Clock className="w-3 h-3" /> Draft Workspace</div>
-                  )}
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge className={`px-4 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-widest ${course.isPublished
+                  ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                  : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                  }`}>
+                  <div className="flex items-center gap-1.5">
+                    <div className={`w-1.5 h-1.5 rounded-full animate-pulse ${course.isPublished ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+                    {course.isPublished ? 'Live Production' : 'Draft Workspace'}
+                  </div>
                 </Badge>
                 {course.tags.map((tag, i) => (
-                  <Badge key={i} className="bg-white/10 text-white/80 border-white/20 px-3 py-1 rounded-full backdrop-blur-md">#{tag}</Badge>
+                  <Badge key={i} className="bg-white/5 text-white/60 border-white/10 px-3 py-1 rounded-full text-[10px] font-bold">#{tag}</Badge>
                 ))}
               </div>
               <h1 className="text-5xl font-black text-white tracking-tighter leading-tight drop-shadow-2xl">
                 {course.title}
               </h1>
-              <p className="text-slate-300 text-lg font-medium line-clamp-2 max-w-2xl">
+              <p className="text-slate-400 text-lg font-medium line-clamp-2 max-w-2xl italic">
                 {course.description}
               </p>
             </div>
-            <div className="flex items-center gap-3 mb-2">
+            <div className="flex flex-wrap items-center gap-3 mb-2">
               <Button
-                onClick={handleEditCourse}
-                className="bg-white hover:bg-blue-50 text-slate-900 rounded-2xl px-6 py-3 font-bold shadow-xl transition-all active:scale-95 flex items-center gap-2"
+                onClick={() => setIsPreviewOpen(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white rounded-2xl px-6 py-3 font-bold shadow-xl shadow-blue-500/20 transition-all active:scale-95 flex items-center gap-2"
               >
-                <Edit className="w-4 h-4" /> Edit Details
+                <Rocket className="w-4 h-4" /> Preview Course
               </Button>
               <Button
-                onClick={() => handleUpdateCourse('isPublished', !course.isPublished)}
-                className={`${course.isPublished ? 'bg-amber-500 hover:bg-amber-600' : 'bg-emerald-600 hover:bg-emerald-700'} text - white rounded - 2xl px - 6 py - 3 font - bold shadow - xl transition - all active: scale - 95 flex items - center gap - 2`}
+                onClick={handleEditCourse}
+                className="bg-white/10 hover:bg-white/20 text-white border border-white/10 rounded-2xl px-6 py-3 font-bold backdrop-blur-md transition-all active:scale-95 flex items-center gap-2"
               >
-                {course.isPublished ? <XCircle className="w-4 h-4" /> : <Rocket className="w-4 h-4" />}
-                {course.isPublished ? 'Unpublish' : 'Publish Live'}
+                <Edit className="w-4 h-4" /> Edit Details
               </Button>
             </div>
           </div>
@@ -476,177 +486,205 @@ const CoursePage: React.FC = () => {
               </div>
             ) : (
               <AnimatePresence>
-                {course.sections.map((section: Section, sectionIndex: number) => (
-                  <motion.div
-                    layout
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    key={section._id}
-                    className="glass dark:glass-dark rounded-[2.5rem] border border-white/20 shadow-xl shadow-slate-200/20 relative group overflow-hidden"
-                  >
-                    {/* Section Header */}
-                    <div className="p-8 pb-6 flex items-start justify-between">
-                      <div className="flex items-start gap-4">
-                        <button
-                          onClick={() => toggleSection(section._id)}
-                          className={`mt - 2 p - 3 ${expandedSections.has(section._id) ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 rotate-180' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'} rounded - 2xl transition - all duration - 500`}
-                        >
-                          <ChevronDown className="w-5 h-5" />
-                        </button>
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-3">
-                            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 px-2.5 py-1 rounded-lg">Module {sectionIndex + 1}</span>
-                            <h3 className="text-2xl font-black text-slate-900 tracking-tight">{section.title}</h3>
-                          </div>
-                          {section.description && <p className="text-slate-500 font-medium leading-relaxed max-w-2xl">{section.description}</p>}
-                          <div className="flex items-center gap-4 pt-2">
-                            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
-                              <FileText className="w-3.5 h-3.5" />
-                              {section.lessons.length} Educational Units
+                {course.sections
+                  .map((section, idx) => ({ ...section, originalIndex: idx }))
+                  .sort((a, b) => b.priority - a.priority)
+                  .map(({ originalIndex: sectionIndex, ...section }, displayIndex) => (
+                    <motion.div
+                      layout
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{
+                        layout: { duration: 0.3, ease: "easeInOut" },
+                        opacity: { duration: 0.2 }
+                      }}
+                      key={section._id}
+                      className="glass dark:glass-dark rounded-[2.5rem] border border-white/20 shadow-xl shadow-slate-200/20 relative group overflow-hidden"
+                    >
+                      {/* Section Header */}
+                      <div className="p-8 pb-6 flex items-start justify-between">
+                        <div className="flex items-start gap-4">
+                          <button
+                            onClick={() => toggleSection(section._id)}
+                            className={`mt-2 p-3 ${expandedSections.has(section._id) ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 rotate-180' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'} rounded-2xl transition-all duration-500`}
+                          >
+                            <ChevronDown className="w-5 h-5" />
+                          </button>
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-3">
+                              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-100 px-2.5 py-1 rounded-lg">Module {displayIndex + 1}</span>
+                              <h3 className="text-xl font-bold text-slate-900 tracking-tight">{section.title}</h3>
                             </div>
-                            <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
-                              <Clock className="w-3.5 h-3.5" />
-                              {section.lessons.reduce((acc, l) => acc + (l.estimatedMinutes || 0), 0)} min total
+                            {section.description && <p className="text-slate-500 font-medium leading-relaxed max-w-2xl">{section.description}</p>}
+                            <div className="flex items-center gap-4 pt-2">
+                              <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                <FileText className="w-3 h-3" />
+                                {section.lessons.length} Units
+                              </div>
+                              <div className="flex items-center gap-1.5 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                <Clock className="w-3 h-3" />
+                                {section.lessons.reduce((acc, l) => acc + (l.estimatedMinutes || 0), 0)} min
+                              </div>
                             </div>
                           </div>
                         </div>
+
+                        <div className="flex items-center gap-2">
+                          <Button
+                            variant="ghost"
+                            className="w-11 h-11 p-0 rounded-2xl text-slate-400 hover:bg-slate-50 hover:text-blue-600"
+                            onClick={() => {
+                              setLessonMode('add');
+                              setLessonSectionIndex(sectionIndex);
+                              setSelectedLesson(null);
+                              setShowLessonModal(true);
+                            }}
+                          >
+                            <Plus className="w-5 h-5" />
+                          </Button>
+                          <div className="w-px h-6 bg-slate-100 mx-1" />
+                          <Button
+                            variant="ghost"
+                            className="w-11 h-11 p-0 rounded-2xl text-slate-400 hover:bg-slate-50 hover:text-slate-900"
+                            onClick={() => {
+                              setSectionMode('edit');
+                              setSelectedSection({ section, index: sectionIndex });
+                              setShowSectionModal(true);
+                            }}
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            className="w-11 h-11 p-0 rounded-2xl text-slate-400 hover:bg-red-50 hover:text-red-500"
+                            onClick={() => handleDeleteSection(sectionIndex)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          className="w-11 h-11 p-0 rounded-2xl text-slate-400 hover:bg-slate-50 hover:text-blue-600"
-                          onClick={() => {
-                            setLessonMode('add');
-                            setLessonSectionIndex(sectionIndex);
-                            setSelectedLesson(null);
-                            setShowLessonModal(true);
-                          }}
-                        >
-                          <Plus className="w-5 h-5" />
-                        </Button>
-                        <div className="w-px h-6 bg-slate-100 mx-1" />
-                        <Button
-                          variant="ghost"
-                          className="w-11 h-11 p-0 rounded-2xl text-slate-400 hover:bg-slate-50 hover:text-slate-900"
-                          onClick={() => {
-                            setSectionMode('edit');
-                            setSelectedSection({ section, index: sectionIndex });
-                            setShowSectionModal(true);
-                          }}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          className="w-11 h-11 p-0 rounded-2xl text-slate-400 hover:bg-red-50 hover:text-red-500"
-                          onClick={() => handleDeleteSection(sectionIndex)}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Section Content (Lessons) */}
-                    <AnimatePresence>
-                      {expandedSections.has(section._id) && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          className="overflow-hidden bg-slate-50/50 border-t border-slate-50"
-                        >
-                          <div className="p-8 pt-6 space-y-4">
-                            {section.lessons.length === 0 ? (
-                              <div className="text-center py-12 bg-white/50 rounded-3xl border border-dashed border-slate-200">
-                                <p className="text-slate-400 font-bold uppercase italic text-xs tracking-widest">No units in this module</p>
-                                <Button
-                                  variant="ghost"
-                                  className="mt-4 text-blue-600 font-black flex items-center gap-2 hover:bg-blue-50 rounded-2xl px-6"
-                                  onClick={() => {
-                                    setLessonMode('add');
-                                    setLessonSectionIndex(sectionIndex);
-                                    setShowLessonModal(true);
-                                  }}
-                                >
-                                  <Plus className="w-4 h-4" /> Initialize Unit
-                                </Button>
-                              </div>
-                            ) : (
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {section.lessons.map((lesson: Lesson, lessonIndex: number) => (
-                                  <motion.div
-                                    initial={{ opacity: 0, x: -10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: lessonIndex * 0.05 }}
-                                    key={lesson._id}
-                                    className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm hover:shadow-md hover:border-blue-100 transition-all group/lesson"
+                      {/* Section Content (Lessons) */}
+                      <AnimatePresence>
+                        {expandedSections.has(section._id) && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden bg-slate-50/50 border-t border-slate-50"
+                          >
+                            <div className="p-8 pt-6 space-y-4">
+                              {section.lessons.length === 0 ? (
+                                <div className="text-center py-12 bg-white/50 rounded-3xl border border-dashed border-slate-200">
+                                  <p className="text-slate-400 font-bold uppercase italic text-xs tracking-widest">No units in this module</p>
+                                  <Button
+                                    variant="ghost"
+                                    className="mt-4 text-blue-600 font-black flex items-center gap-2 hover:bg-blue-50 rounded-2xl px-6"
+                                    onClick={() => {
+                                      setLessonMode('add');
+                                      setLessonSectionIndex(sectionIndex);
+                                      setShowLessonModal(true);
+                                    }}
                                   >
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-4 flex-1 min-w-0">
-                                        <div className="w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover/lesson:bg-blue-50 group-hover/lesson:text-blue-600 transition-colors flex-shrink-0">
-                                          {lesson.videoUrl ? <Video className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                          <h4 className="font-bold text-slate-900 truncate">{lesson.title}</h4>
-                                          <div className="flex items-center gap-3 mt-0.5">
-                                            <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{lesson.estimatedMinutes} Mins</span>
-                                            {lesson.quiz && lesson.quiz.length > 0 && (
-                                              <span className="flex items-center gap-1 text-[10px] font-black text-emerald-500 uppercase tracking-widest">
-                                                <BadgeCheck className="w-3 h-3" /> Quiz Included
-                                              </span>
-                                            )}
+                                    <Plus className="w-4 h-4" /> Initialize Unit
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  {section.lessons
+                                    .map((lesson, idx) => ({ ...lesson, originalLessonIndex: idx }))
+                                    .sort((a, b) => b.priority - a.priority)
+                                    .map(({ originalLessonIndex: lessonIndex, ...lesson }) => (
+                                      <motion.div
+                                        layout
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{
+                                          layout: { duration: 0.3, ease: "easeInOut" },
+                                          opacity: { duration: 0.2 }
+                                        }}
+                                        key={lesson._id}
+                                        className="bg-white rounded-3xl p-5 border border-slate-100 shadow-sm hover:shadow-md hover:border-blue-100 transition-all group/lesson"
+                                      >
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex items-center gap-4 flex-1 min-w-0">
+                                            <div className="w-10 h-10 rounded-2xl bg-slate-50 flex items-center justify-center text-slate-400 group-hover/lesson:bg-blue-50 group-hover/lesson:text-blue-600 transition-colors flex-shrink-0">
+                                              {lesson.videoUrl ? <Video className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                              <h4 className="font-bold text-slate-900 truncate">{lesson.title}</h4>
+                                              <div className="flex items-center gap-3 mt-1">
+                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{lesson.estimatedMinutes} Mins</span>
+                                                <div className="flex items-center gap-1">
+                                                  <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Prio:</span>
+                                                  <input
+                                                    type="number"
+                                                    value={lesson.priority || 0}
+                                                    onChange={(e) => handleUpdateLessonPriority(sectionIndex, lessonIndex, parseInt(e.target.value) || 0)}
+                                                    className="w-10 text-[10px] font-black bg-slate-50 border-none focus:ring-1 focus:ring-blue-500 rounded px-1 transition-all"
+                                                  />
+                                                </div>
+                                                {lesson.quiz && lesson.quiz.length > 0 && (
+                                                  <Badge className="bg-emerald-500/10 text-emerald-600 border-none text-[9px] font-black uppercase px-2 py-0.5">
+                                                    Quiz Available
+                                                  </Badge>
+                                                )}
+                                              </div>
+                                            </div>
+                                          </div>
+                                          <div className="flex items-center gap-1 opacity-0 group-hover/lesson:opacity-100 transition-opacity">
+                                            <Button
+                                              variant="ghost"
+                                              className="w-8 h-8 p-0"
+                                              onClick={() => handleMoveLesson(sectionIndex, lessonIndex, 'up')}
+                                            >
+                                              <ChevronDown className="w-4 h-4 rotate-180" />
+                                            </Button>
+                                            <Button
+                                              variant="ghost"
+                                              className="w-8 h-8 p-0"
+                                              onClick={() => handleMoveLesson(sectionIndex, lessonIndex, 'down')}
+                                            >
+                                              <ChevronDown className="w-4 h-4" />
+                                            </Button>
+                                            <Button
+                                              variant="ghost"
+                                              className="w-8 h-8 p-0 text-slate-400 hover:text-blue-600"
+                                              onClick={() => setViewLesson(lesson)}
+                                            >
+                                              <Eye className="w-3.5 h-3.5" />
+                                            </Button>
+                                            <Button
+                                              variant="ghost"
+                                              className="w-8 h-8 p-0 text-slate-400 hover:text-slate-900"
+                                              onClick={() => {
+                                                setLessonMode('edit');
+                                                setSelectedLesson({ lesson, sectionIndex, lessonIndex });
+                                                setLessonSectionIndex(sectionIndex);
+                                                setShowLessonModal(true);
+                                              }}
+                                            >
+                                              <Edit className="w-3.5 h-3.5" />
+                                            </Button>
+                                            <Button
+                                              variant="ghost"
+                                              className="w-8 h-8 p-0 text-slate-400 hover:text-red-500"
+                                              onClick={() => handleDeleteLesson(sectionIndex, lessonIndex)}
+                                            >
+                                              <Trash2 className="w-3.5 h-3.5" />
+                                            </Button>
                                           </div>
                                         </div>
-                                      </div>
-                                      <div className="flex items-center gap-1 opacity-0 group-hover/lesson:opacity-100 transition-opacity">
-                                        <Button
-                                          variant="ghost"
-                                          className="w-8 h-8 p-0"
-                                          onClick={() => handleMoveLesson(sectionIndex, lessonIndex, 'up')}
-                                          disabled={lessonIndex === 0}
-                                        >
-                                          <ChevronDown className="w-4 h-4 rotate-180" />
-                                        </Button>
-                                        <Button
-                                          variant="ghost"
-                                          className="w-8 h-8 p-0"
-                                          onClick={() => handleMoveLesson(sectionIndex, lessonIndex, 'down')}
-                                          disabled={lessonIndex === section.lessons.length - 1}
-                                        >
-                                          <ChevronDown className="w-4 h-4" />
-                                        </Button>
-                                        <Button
-                                          variant="ghost"
-                                          className="w-8 h-8 p-0 text-slate-400 hover:text-slate-900"
-                                          onClick={() => {
-                                            setLessonMode('edit');
-                                            setSelectedLesson({ lesson, sectionIndex, lessonIndex });
-                                            setLessonSectionIndex(sectionIndex);
-                                            setShowLessonModal(true);
-                                          }}
-                                        >
-                                          <Edit className="w-3.5 h-3.5" />
-                                        </Button>
-                                        <Button
-                                          variant="ghost"
-                                          className="w-8 h-8 p-0 text-slate-400 hover:text-red-500"
-                                          onClick={() => handleDeleteLesson(sectionIndex, lessonIndex)}
-                                        >
-                                          <Trash2 className="w-3.5 h-3.5" />
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  </motion.div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                ))}
+                                      </motion.div>
+                                    ))}
+                                </div>
+                              )}
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </motion.div>
+                  ))}
               </AnimatePresence>
             )}
           </div>
@@ -750,6 +788,143 @@ const CoursePage: React.FC = () => {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Course Preview Viewer */}
+      <Modal
+        isOpen={isPreviewOpen}
+        onClose={() => setIsPreviewOpen(false)}
+        title="Course Preview"
+        size="xl"
+        className="p-0 overflow-hidden"
+        hideHeader={true}
+      >
+        <div className="flex flex-col h-[85vh]">
+          {/* Preview Header */}
+          <div className="p-8 bg-slate-900 shrink-0">
+            <Badge variant="outline" className="text-white/40 border-white/10 text-[10px] mb-4">STUDENT PREVIEW MODE</Badge>
+            <h2 className="text-3xl font-black text-white tracking-tighter">{course.title}</h2>
+            <p className="text-slate-400 mt-2 text-sm">{course.description}</p>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-8 space-y-8 bg-slate-50">
+            <AnimatePresence>
+              {course.sections
+                .slice()
+                .sort((a, b) => b.priority - a.priority)
+                .map((section, displayIdx) => (
+                  <motion.div
+                    layout
+                    key={section._id}
+                    className="space-y-4"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center font-black text-slate-900 text-xs shadow-sm">
+                        {displayIdx + 1}
+                      </span>
+                      <h3 className="text-lg font-bold text-slate-900">{section.title}</h3>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 ml-11">
+                      {section.lessons
+                        .slice()
+                        .sort((a, b) => b.priority - a.priority)
+                        .map((lesson) => (
+                          <motion.div
+                            layout
+                            key={lesson._id}
+                            className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 bg-slate-50 rounded-lg">
+                                {lesson.videoUrl ? <Video className="w-4 h-4 text-slate-400" /> : <FileText className="w-4 h-4 text-slate-400" />}
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold text-slate-800">{lesson.title}</p>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{lesson.estimatedMinutes} Mins</p>
+                              </div>
+                            </div>
+                            {lesson.quiz && lesson.quiz.length > 0 && <BadgeCheck className="w-4 h-4 text-emerald-500" />}
+                          </motion.div>
+                        ))}
+                    </div>
+                  </motion.div>
+                ))}
+            </AnimatePresence>
+          </div>
+
+          <div className="p-6 bg-white border-t flex justify-end">
+            <Button onClick={() => setIsPreviewOpen(false)} className="bg-slate-900 text-white font-black px-8">Close Preview</Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Lesson View Modal */}
+      <Modal
+        isOpen={!!viewLesson}
+        onClose={() => setViewLesson(null)}
+        title="Educational Unit Overview"
+        size="lg"
+      >
+        {viewLesson && (
+          <div className="space-y-6">
+            <div className="flex items-center gap-4 p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
+              <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-blue-600 shadow-sm">
+                {viewLesson.videoUrl ? <Video className="w-8 h-8" /> : <FileText className="w-8 h-8" />}
+              </div>
+              <div className="flex-1">
+                <h3 className="text-2xl font-black text-slate-900 tracking-tight">{viewLesson.title}</h3>
+                <div className="flex items-center gap-3 mt-1">
+                  <Badge variant="secondary" className="bg-slate-200 text-slate-700 text-[10px] uppercase font-black tracking-widest px-2 py-0.5">
+                    {viewLesson.estimatedMinutes} Minutes
+                  </Badge>
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-[10px] uppercase font-black tracking-widest px-2 py-0.5">
+                    Priority: {viewLesson.priority || 0}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-5 bg-white border border-slate-100 rounded-3xl space-y-3 shadow-sm">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Resources & Media</p>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500">Media Files</span>
+                    <span className="font-bold text-slate-900">{viewLesson.mediaIds?.length || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500">Doc References</span>
+                    <span className="font-bold text-slate-900">{viewLesson.docSubtopicIds?.length || 0}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-5 bg-white border border-slate-100 rounded-3xl space-y-3 shadow-sm">
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Linked Assessments</p>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500">Quizzes</span>
+                    <span className="font-bold text-slate-900">{viewLesson.linkedQuizIds?.length || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500">Assignments</span>
+                    <span className="font-bold text-slate-900">{viewLesson.linkedAssignmentIds?.length || 0}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-slate-500">Activities</span>
+                    <span className="font-bold text-slate-900">{viewLesson.linkedActivityIds?.length || 0}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex justify-end pt-4 border-t">
+              <Button onClick={() => setViewLesson(null)} className="bg-slate-900 text-white font-black px-10 rounded-2xl">
+                Close View
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

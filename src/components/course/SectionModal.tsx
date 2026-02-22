@@ -8,7 +8,7 @@ import { Section } from '../../types';
 interface SectionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: { title: string; description?: string; order: number }) => Promise<void>;
+  onSubmit: (data: { title: string; description?: string; priority: number }) => Promise<void>;
   section?: Section;
   sectionIndex?: number;
   mode: 'add' | 'edit';
@@ -25,7 +25,7 @@ const SectionModal: React.FC<SectionModalProps> = ({
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    order: 0,
+    priority: 0,
   });
 
   useEffect(() => {
@@ -33,13 +33,13 @@ const SectionModal: React.FC<SectionModalProps> = ({
       setFormData({
         title: section.title,
         description: section.description || '',
-        order: section.order,
+        priority: section.priority,
       });
     } else {
       setFormData({
         title: '',
         description: '',
-        order: 0,
+        priority: 0,
       });
     }
   }, [section, mode, isOpen]);
@@ -93,17 +93,17 @@ const SectionModal: React.FC<SectionModalProps> = ({
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Order
+            Display Priority
           </label>
           <Input
             type="number"
             min="0"
-            value={formData.order}
-            onChange={(e) => setFormData({ ...formData, order: parseInt(e.target.value) || 0 })}
+            value={formData.priority}
+            onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) || 0 })}
             placeholder="0"
           />
           <p className="mt-1 text-sm text-gray-500">
-            Leave as 0 to auto-calculate based on existing sections
+            Higher values appear first in the course content.
           </p>
         </div>
 

@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import Modal from '@/components/ui/modal';
 import MarkdownEditor from '@/components/ui/markdown-editor';
-import { FileText, Edit, Trash2, Plus} from 'lucide-react';
+import { FileText, Edit, Trash2, Plus, Eye } from 'lucide-react';
+import SimpleViewer from './SimpleViewer';
 
 interface AssignmentFormData {
   title: string;
@@ -18,12 +19,14 @@ interface AssignmentFormData {
 
 interface AssignmentManagerProps {
   lessonOptions?: Array<{ value: string; label: string }>;
+  searchQuery?: string;
 }
 
-const AssignmentManager = ({ lessonOptions = [] }: AssignmentManagerProps) => {
+const AssignmentManager = ({ lessonOptions = [], searchQuery = '' }: AssignmentManagerProps) => {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [selectedAssignment, setSelectedAssignment] = useState<Assignment | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState<AssignmentFormData>({
     title: '',
@@ -97,6 +100,11 @@ const AssignmentManager = ({ lessonOptions = [] }: AssignmentManagerProps) => {
     setIsModalOpen(true);
   };
 
+  const handleView = (assignment: Assignment) => {
+    setSelectedAssignment(assignment);
+    setIsViewModalOpen(true);
+  };
+
   // const handleLinkLesson = async (assignmentId: string, lessonId: string) => {
   //   try {
   //     await assignmentAPI.linkAssignmentToLesson(assignmentId, lessonId);
@@ -159,39 +167,53 @@ const AssignmentManager = ({ lessonOptions = [] }: AssignmentManagerProps) => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {assignments.map((assignment) => (
-            <Card key={assignment._id} className="p-6 hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-white to-blue-50/30 shadow-lg">
-              <div className="space-y-4">
-                <div className="flex items-start gap-3">
-                  <div className="p-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-md">
-                    <FileText className="h-5 w-5 text-white" />
+          {assignments
+            .filter(a =>
+              a.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              a.description.toLowerCase().includes(searchQuery.toLowerCase())
+            )
+            .map((assignment) => (
+              <Card key={assignment._id} className="p-6 hover:shadow-xl transition-all duration-300 border-0 bg-gradient-to-br from-white to-blue-50/30 shadow-lg">
+                <div className="space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-3 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl shadow-md">
+                      <FileText className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-lg text-gray-900 mb-2">{assignment.title}</h3>
+                      <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">{assignment.description}</p>
+                    </div>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-lg text-gray-900 mb-2">{assignment.title}</h3>
-                    <p className="text-sm text-gray-600 line-clamp-2 leading-relaxed">{assignment.description}</p>
-                  </div>
-                </div>
-                
-                <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-100">
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={() => handleEdit(assignment)}
-                    className="flex-1 min-w-[80px] border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300"
-                  >
-                    <Edit className="h-3 w-3 mr-1" />
-                    Edit
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant="outline" 
-                    onClick={() => handleDelete(assignment._id)}
-                    className="flex-1 min-w-[80px] border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
-                  >
-                    <Trash2 className="h-3 w-3 mr-1" />
-                    Delete
-                  </Button>
-                  {/* {lessonOptions.length > 0 && (
+
+                  <div className="flex flex-wrap gap-2 pt-4 border-t border-gray-100">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleView(assignment)}
+                      className="flex-1 min-w-[80px] border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300"
+                    >
+                      <Eye className="h-3 w-3 mr-1" />
+                      View
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleEdit(assignment)}
+                      className="flex-1 min-w-[80px] border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-300"
+                    >
+                      <Edit className="h-3 w-3 mr-1" />
+                      Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleDelete(assignment._id)}
+                      className="flex-1 min-w-[80px] border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+                    >
+                      <Trash2 className="h-3 w-3 mr-1" />
+                      Delete
+                    </Button>
+                    {/* {lessonOptions.length > 0 && (
                     <div className="w-full flex flex-col gap-2">
                       <select
                         className="w-full text-sm px-3 py-2 border border-gray-200 rounded-lg hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 bg-white transition-all duration-200"
@@ -226,10 +248,10 @@ const AssignmentManager = ({ lessonOptions = [] }: AssignmentManagerProps) => {
                       )}
                     </div>
                   )} */}
+                  </div>
                 </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            ))}
         </div>
       )}
 
@@ -256,7 +278,7 @@ const AssignmentManager = ({ lessonOptions = [] }: AssignmentManagerProps) => {
             />
           </div>
 
-      
+
 
           <div>
             <label className="block text-sm font-medium mb-1">Content</label>
@@ -277,6 +299,21 @@ const AssignmentManager = ({ lessonOptions = [] }: AssignmentManagerProps) => {
           </div>
         </form>
       </Modal>
+
+      {/* View Modal */}
+      {selectedAssignment && (
+        <SimpleViewer
+          isOpen={isViewModalOpen}
+          onClose={() => {
+            setIsViewModalOpen(false);
+            setSelectedAssignment(null);
+          }}
+          title={selectedAssignment.title}
+          description={selectedAssignment.description}
+          content={selectedAssignment.content || ''}
+          type="Assignment"
+        />
+      )}
     </div>
   );
 };
