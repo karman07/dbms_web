@@ -32,7 +32,7 @@ import { readFileSync } from 'fs';
 
 @Controller('courses')
 export class CoursesController {
-  constructor(private readonly coursesService: CoursesService) {}
+  constructor(private readonly coursesService: CoursesService) { }
 
   // ========== ADMIN ENDPOINTS ==========
 
@@ -103,7 +103,7 @@ export class CoursesController {
   ) {
     // Parse and transform multipart/form-data fields
     const createLessonDto: any = { ...body };
-    
+
     // Helper to parse JSON string or array
     const parseArrayField = (field: any): any[] => {
       if (!field) return [];
@@ -131,7 +131,7 @@ export class CoursesController {
       }
       return [];
     };
-    
+
     if (createLessonDto.quiz && typeof createLessonDto.quiz === 'string') {
       try {
         createLessonDto.quiz = JSON.parse(createLessonDto.quiz);
@@ -139,8 +139,8 @@ export class CoursesController {
         delete createLessonDto.quiz;
       }
     }
-    if (createLessonDto.order !== undefined) {
-      createLessonDto.order = parseInt(createLessonDto.order);
+    if (createLessonDto.priority !== undefined) {
+      createLessonDto.priority = parseInt(createLessonDto.priority);
     }
     if (createLessonDto.estimatedMinutes !== undefined) {
       createLessonDto.estimatedMinutes = parseInt(createLessonDto.estimatedMinutes);
@@ -148,7 +148,7 @@ export class CoursesController {
     if (createLessonDto.isPublished !== undefined) {
       createLessonDto.isPublished = createLessonDto.isPublished === 'true' || createLessonDto.isPublished === true;
     }
-    
+
     // Parse array fields
     if (createLessonDto.mediaIds) {
       createLessonDto.mediaIds = parseArrayField(createLessonDto.mediaIds);
@@ -168,7 +168,7 @@ export class CoursesController {
     if (createLessonDto.linkedActivityIds) {
       createLessonDto.linkedActivityIds = parseArrayField(createLessonDto.linkedActivityIds);
     }
-    
+
     // If markdown file is uploaded, read its content
     if (files?.content && files.content[0]) {
       createLessonDto.content = readFileSync(files.content[0].path, 'utf-8');
@@ -207,7 +207,7 @@ export class CoursesController {
   ) {
     // Parse and transform multipart/form-data fields
     const updateLessonDto: any = { ...body };
-    
+
     // Helper to parse JSON string or array
     const parseArrayField = (field: any): any[] => {
       if (!field) return [];
@@ -235,7 +235,7 @@ export class CoursesController {
       }
       return [];
     };
-    
+
     if (updateLessonDto.quiz && typeof updateLessonDto.quiz === 'string') {
       try {
         updateLessonDto.quiz = JSON.parse(updateLessonDto.quiz);
@@ -243,8 +243,8 @@ export class CoursesController {
         delete updateLessonDto.quiz;
       }
     }
-    if (updateLessonDto.order !== undefined) {
-      updateLessonDto.order = parseInt(updateLessonDto.order);
+    if (updateLessonDto.priority !== undefined) {
+      updateLessonDto.priority = parseInt(updateLessonDto.priority);
     }
     if (updateLessonDto.estimatedMinutes !== undefined) {
       updateLessonDto.estimatedMinutes = parseInt(updateLessonDto.estimatedMinutes);
@@ -252,7 +252,7 @@ export class CoursesController {
     if (updateLessonDto.isPublished !== undefined) {
       updateLessonDto.isPublished = updateLessonDto.isPublished === 'true' || updateLessonDto.isPublished === true;
     }
-    
+
     // Parse array fields
     if (updateLessonDto.mediaIds) {
       updateLessonDto.mediaIds = parseArrayField(updateLessonDto.mediaIds);
@@ -272,7 +272,7 @@ export class CoursesController {
     if (updateLessonDto.linkedActivityIds) {
       updateLessonDto.linkedActivityIds = parseArrayField(updateLessonDto.linkedActivityIds);
     }
-    
+
     // If markdown file is uploaded, read its content
     if (files?.content && files.content[0]) {
       updateLessonDto.content = readFileSync(files.content[0].path, 'utf-8');
@@ -291,6 +291,21 @@ export class CoursesController {
       parseInt(sectionIndex),
       parseInt(lessonIndex),
       updateLessonDto,
+    );
+  }
+
+  @Put('admin/section/:sectionIndex/lesson/:lessonIndex/priority')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles([UserRole.ADMIN])
+  async updateLessonPriority(
+    @Param('sectionIndex') sectionIndex: string,
+    @Param('lessonIndex') lessonIndex: string,
+    @Body('priority') priority: number,
+  ) {
+    return this.coursesService.updateLessonPriority(
+      parseInt(sectionIndex),
+      parseInt(lessonIndex),
+      priority,
     );
   }
 

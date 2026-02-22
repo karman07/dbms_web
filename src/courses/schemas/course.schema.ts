@@ -34,7 +34,7 @@ export class Lesson {
   title: string;
 
   @Prop({ default: 0 })
-  order: number;
+  priority: number;
 
   @Prop({ type: [Types.ObjectId], ref: 'Media', default: [] })
   mediaIds?: Types.ObjectId[];
@@ -76,7 +76,7 @@ export class Section {
   description?: string;
 
   @Prop({ default: 0 })
-  order: number;
+  priority: number;
 
   @Prop({ type: [LessonSchema], default: [] })
   lessons: Lesson[];

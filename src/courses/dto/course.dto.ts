@@ -30,10 +30,11 @@ export class CreateLessonDto {
   @IsString()
   content: string;
 
+
   @IsOptional()
   @IsNumber()
   @Min(0)
-  order?: number;
+  priority?: number;
 
   @IsOptional()
   @IsString()
@@ -77,10 +78,11 @@ export class UpdateLessonDto {
   @IsString()
   content?: string;
 
+
   @IsOptional()
   @IsNumber()
   @Min(0)
-  order?: number;
+  priority?: number;
 
   @IsOptional()
   @IsString()
@@ -126,7 +128,7 @@ export class CreateSectionDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
-  order?: number;
+  priority?: number;
 
   @IsOptional()
   @IsArray()
@@ -147,7 +149,7 @@ export class UpdateSectionDto {
   @IsOptional()
   @IsNumber()
   @Min(0)
-  order?: number;
+  priority?: number;
 }
 
 export class CreateCourseDto {

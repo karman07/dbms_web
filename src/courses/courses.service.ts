@@ -21,7 +21,7 @@ export class CoursesService {
     @InjectModel(ClassActivity.name) private classActivityModel: Model<ClassActivity>,
     @InjectModel(DocTopic.name) private docTopicModel: Model<DocTopic>,
     @InjectModel(Media.name) private mediaModel: Model<Media>,
-  ) {}
+  ) { }
 
   // Helper: Get the single course
   private async getCourseSingle(): Promise<Course> {
@@ -109,6 +109,20 @@ export class CoursesService {
     return course.save();
   }
 
+  // Admin: Update lesson priority
+  async updateLessonPriority(sectionIndex: number, lessonIndex: number, priority: number): Promise<Course> {
+    const course = await this.getCourseSingle();
+    if (sectionIndex < 0 || sectionIndex >= course.sections.length) {
+      throw new BadRequestException('Invalid section index');
+    }
+    const section = course.sections[sectionIndex];
+    if (lessonIndex < 0 || lessonIndex >= section.lessons.length) {
+      throw new BadRequestException('Invalid lesson index');
+    }
+    section.lessons[lessonIndex].priority = priority;
+    return course.save();
+  }
+
   // Admin: Delete lesson
   async deleteLesson(sectionIndex: number, lessonIndex: number): Promise<Course> {
     const course = await this.getCourseSingle();
@@ -145,13 +159,19 @@ export class CoursesService {
     return plain as any;
   }
 
-  // Attach linked quizzes, assignments, activities to each lesson before returning
   private async populateLinkedResources(course: any) {
     // course may be a plain object (from .lean()) or a mongoose doc converted to object
     if (!course || !Array.isArray(course.sections)) return;
 
+    // Sort sections by priority (Descending: highest first)
+    course.sections.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+
     for (const section of course.sections) {
       if (!section || !Array.isArray(section.lessons)) continue;
+
+      // Sort lessons by priority (Descending: highest first)
+      section.lessons.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+
       for (const lesson of section.lessons) {
         try {
           const lessonId = lesson._id;
@@ -210,7 +230,7 @@ export class CoursesService {
               const topics: any[] = await this.docTopicModel.find().lean().exec();
               for (const topic of topics) {
                 if (topic.subtopics && Array.isArray(topic.subtopics)) {
-                  const matchingSubtopics = topic.subtopics.filter((s: any) => 
+                  const matchingSubtopics = topic.subtopics.filter((s: any) =>
                     docSubtopicIds.some((id: any) => s._id && s._id.toString() === id.toString())
                   );
                   matchingSubtopics.forEach((s: any) => {
@@ -264,17 +284,21 @@ export class CoursesService {
       return existingProgress;
     }
 
-    // Initialize progress structure
-    const sections = course.sections.map((section: any) => ({
-      sectionId: section._id,
-      lessons: section.lessons.map((lesson: any) => ({
-        lessonId: lesson._id,
-        completed: false,
-        timeSpentMinutes: 0,
-      })),
-      completedLessons: 0,
-      totalLessons: section.lessons.length,
-    }));
+    // Initialize progress structure with sorted sections and lessons
+    const sections = [...course.sections]
+      .sort((a, b) => (b.priority || 0) - (a.priority || 0))
+      .map((section: any) => ({
+        sectionId: section._id,
+        lessons: [...section.lessons]
+          .sort((a, b) => (b.priority || 0) - (a.priority || 0))
+          .map((lesson: any) => ({
+            lessonId: lesson._id,
+            completed: false,
+            timeSpentMinutes: 0,
+          })),
+        completedLessons: 0,
+        totalLessons: section.lessons.length,
+      }));
 
     const progress = new this.userProgressModel({
       userId: new Types.ObjectId(userId),
@@ -351,7 +375,7 @@ export class CoursesService {
   async getMyProgress(userId: string): Promise<UserProgress> {
     console.log('getMyProgress service - userId:', userId);
     console.log('getMyProgress service - userId type:', typeof userId);
-    
+
     const course = await this.courseModel.findOne();
     if (!course) {
       throw new NotFoundException('Course not found');
@@ -360,10 +384,10 @@ export class CoursesService {
     const progress = await this.userProgressModel.findOne({
       userId: new Types.ObjectId(userId),
     });
-    
+
     console.log('getMyProgress service - progress found:', !!progress);
     console.log('getMyProgress service - query:', { userId: new Types.ObjectId(userId) });
-    
+
     if (!progress) {
       throw new NotFoundException('You are not enrolled in this course');
     }
@@ -372,7 +396,7 @@ export class CoursesService {
 
   async getLessonById(lessonId: string): Promise<any> {
     const course = await this.getCourseSingle();
-    
+
     for (const section of course.sections) {
       const lesson = section.lessons.find(l => l._id.toString() === lessonId);
       if (lesson) {
@@ -380,13 +404,13 @@ export class CoursesService {
           _id: lesson._id,
           title: lesson.title,
           sectionTitle: section.title,
-          order: lesson.order,
+          priority: lesson.priority,
           estimatedMinutes: lesson.estimatedMinutes,
           isPublished: lesson.isPublished
         };
       }
     }
-    
+
     throw new NotFoundException('Lesson not found');
   }
   async submitQuiz(userId: string, submitQuizDto: SubmitQuizDto): Promise<any> {
