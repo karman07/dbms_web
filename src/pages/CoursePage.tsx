@@ -632,7 +632,7 @@ const CoursePage: React.FC = () => {
                                               </div>
                                             </div>
                                           </div>
-                                          <div className="flex items-center gap-1 opacity-0 group-hover/lesson:opacity-100 transition-opacity">
+                                          <div className="flex items-center gap-2">
                                             <Button
                                               variant="ghost"
                                               className="w-8 h-8 p-0"
@@ -648,11 +648,20 @@ const CoursePage: React.FC = () => {
                                               <ChevronDown className="w-4 h-4" />
                                             </Button>
                                             <Button
-                                              variant="ghost"
-                                              className="w-8 h-8 p-0 text-slate-400 hover:text-blue-600"
+                                              variant="outline"
+                                              size="sm"
+                                              className="h-8 border-blue-200 text-blue-700 hover:bg-blue-50 font-bold px-3 hidden md:flex items-center gap-1.5"
                                               onClick={() => setViewLesson(lesson)}
                                             >
                                               <Eye className="w-3.5 h-3.5" />
+                                              View
+                                            </Button>
+                                            <Button
+                                              variant="ghost"
+                                              className="w-8 h-8 p-0 text-blue-600 md:hidden"
+                                              onClick={() => setViewLesson(lesson)}
+                                            >
+                                              <Eye className="w-4 h-4" />
                                             </Button>
                                             <Button
                                               variant="ghost"
@@ -843,7 +852,17 @@ const CoursePage: React.FC = () => {
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{lesson.estimatedMinutes} Mins</p>
                               </div>
                             </div>
-                            {lesson.quiz && lesson.quiz.length > 0 && <BadgeCheck className="w-4 h-4 text-emerald-500" />}
+                            <div className="flex items-center gap-3">
+                              {lesson.quiz && lesson.quiz.length > 0 && <BadgeCheck className="w-4 h-4 text-emerald-500" />}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl"
+                                onClick={() => setViewLesson(lesson)}
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </motion.div>
                         ))}
                     </div>
