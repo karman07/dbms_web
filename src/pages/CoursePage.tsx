@@ -15,7 +15,6 @@ import {
   Rocket,
   BadgeCheck,
   Presentation,
-  Eye,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -59,7 +58,6 @@ const CoursePage: React.FC = () => {
 
   // Preview modal
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
-  const [viewLesson, setViewLesson] = useState<Lesson | null>(null);
 
   useEffect(() => {
     loadCourse();
@@ -632,7 +630,7 @@ const CoursePage: React.FC = () => {
                                               </div>
                                             </div>
                                           </div>
-                                          <div className="flex items-center gap-2">
+                                          <div className="flex items-center gap-1 opacity-0 group-hover/lesson:opacity-100 transition-opacity">
                                             <Button
                                               variant="ghost"
                                               className="w-8 h-8 p-0"
@@ -646,22 +644,6 @@ const CoursePage: React.FC = () => {
                                               onClick={() => handleMoveLesson(sectionIndex, lessonIndex, 'down')}
                                             >
                                               <ChevronDown className="w-4 h-4" />
-                                            </Button>
-                                            <Button
-                                              variant="outline"
-                                              size="sm"
-                                              className="h-8 border-blue-200 text-blue-700 hover:bg-blue-50 font-bold px-3 hidden md:flex items-center gap-1.5"
-                                              onClick={() => setViewLesson(lesson)}
-                                            >
-                                              <Eye className="w-3.5 h-3.5" />
-                                              View
-                                            </Button>
-                                            <Button
-                                              variant="ghost"
-                                              className="w-8 h-8 p-0 text-blue-600 md:hidden"
-                                              onClick={() => setViewLesson(lesson)}
-                                            >
-                                              <Eye className="w-4 h-4" />
                                             </Button>
                                             <Button
                                               variant="ghost"
@@ -852,17 +834,7 @@ const CoursePage: React.FC = () => {
                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{lesson.estimatedMinutes} Mins</p>
                               </div>
                             </div>
-                            <div className="flex items-center gap-3">
-                              {lesson.quiz && lesson.quiz.length > 0 && <BadgeCheck className="w-4 h-4 text-emerald-500" />}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl"
-                                onClick={() => setViewLesson(lesson)}
-                              >
-                                <Eye className="w-4 h-4" />
-                              </Button>
-                            </div>
+                            {lesson.quiz && lesson.quiz.length > 0 && <BadgeCheck className="w-4 h-4 text-emerald-500" />}
                           </motion.div>
                         ))}
                     </div>
@@ -877,74 +849,6 @@ const CoursePage: React.FC = () => {
         </div>
       </Modal>
 
-      {/* Lesson View Modal */}
-      <Modal
-        isOpen={!!viewLesson}
-        onClose={() => setViewLesson(null)}
-        title="Educational Unit Overview"
-        size="lg"
-      >
-        {viewLesson && (
-          <div className="space-y-6">
-            <div className="flex items-center gap-4 p-6 bg-slate-50 rounded-[2rem] border border-slate-100">
-              <div className="w-16 h-16 rounded-2xl bg-white border border-slate-200 flex items-center justify-center text-blue-600 shadow-sm">
-                {viewLesson.videoUrl ? <Video className="w-8 h-8" /> : <FileText className="w-8 h-8" />}
-              </div>
-              <div className="flex-1">
-                <h3 className="text-2xl font-black text-slate-900 tracking-tight">{viewLesson.title}</h3>
-                <div className="flex items-center gap-3 mt-1">
-                  <Badge variant="secondary" className="bg-slate-200 text-slate-700 text-[10px] uppercase font-black tracking-widest px-2 py-0.5">
-                    {viewLesson.estimatedMinutes} Minutes
-                  </Badge>
-                  <Badge variant="secondary" className="bg-blue-100 text-blue-700 text-[10px] uppercase font-black tracking-widest px-2 py-0.5">
-                    Priority: {viewLesson.priority || 0}
-                  </Badge>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-5 bg-white border border-slate-100 rounded-3xl space-y-3 shadow-sm">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Resources & Media</p>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500">Media Files</span>
-                    <span className="font-bold text-slate-900">{viewLesson.mediaIds?.length || 0}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500">Doc References</span>
-                    <span className="font-bold text-slate-900">{viewLesson.docSubtopicIds?.length || 0}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-5 bg-white border border-slate-100 rounded-3xl space-y-3 shadow-sm">
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Linked Assessments</p>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500">Quizzes</span>
-                    <span className="font-bold text-slate-900">{viewLesson.linkedQuizIds?.length || 0}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500">Assignments</span>
-                    <span className="font-bold text-slate-900">{viewLesson.linkedAssignmentIds?.length || 0}</span>
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-slate-500">Activities</span>
-                    <span className="font-bold text-slate-900">{viewLesson.linkedActivityIds?.length || 0}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end pt-4 border-t">
-              <Button onClick={() => setViewLesson(null)} className="bg-slate-900 text-white font-black px-10 rounded-2xl">
-                Close View
-              </Button>
-            </div>
-          </div>
-        )}
-      </Modal>
     </div>
   );
 };
