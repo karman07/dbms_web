@@ -23,7 +23,7 @@ async function createDBMSCourse() {
     await coursesService.addSection({
       title: 'Introduction to Database Management Systems',
       description: 'Understand the fundamentals of databases and DBMS',
-      order: 0,
+      priority: 0,
     });
 
     // Lesson 1.1: Introduction to DBMS
@@ -96,7 +96,7 @@ DBMS is essential for modern data management, providing:
 In the next lesson, we'll explore the differences between traditional file-based systems and centralized database approaches.`,
       videoUrl: 'https://youtu.be/DTN78zxMs-I?si=CMHYZVq7IL60GMLD',
       videoDescription: 'DBMS Tutorial for Beginners | Learn Database Management Step by Step',
-      order: 0,
+      priority: 0,
       estimatedMinutes: 45,
       isPublished: true,
       quiz: [
@@ -230,7 +230,7 @@ A file-based system is a traditional method of storing data where each applicati
 The centralized database approach overcomes the limitations of file-based systems by providing unified data storage, better management, enhanced security, and efficient concurrent access.`,
       videoUrl: 'https://youtu.be/NSCHqbR3NUE?si=5TzxeTSf4qA7aI9Z',
       videoDescription: 'File Based System Vs Centralized Database Approach',
-      order: 1,
+      priority: 1,
       estimatedMinutes: 30,
       isPublished: true,
       quiz: [
@@ -398,7 +398,7 @@ The centralized database approach overcomes the limitations of file-based system
 
 The benefits usually outweigh disadvantages for modern business applications.`,
       videoDescription: 'Comprehensive overview of DBMS advantages and disadvantages',
-      order: 2,
+      priority: 2,
       estimatedMinutes: 35,
       isPublished: true,
       quiz: [
