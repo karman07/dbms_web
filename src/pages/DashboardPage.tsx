@@ -8,27 +8,27 @@ const StatCard: React.FC<{
   change: string;
   changeType: 'positive' | 'negative' | 'neutral';
   icon: React.ReactNode;
-  gradient: string;
+  accentColor: string;
+  iconBg: string;
   loading?: boolean;
-}> = ({ title, value, change, changeType, icon, gradient, loading }) => {
-  const changeColor = changeType === 'positive' ? 'text-emerald-600' : 
-                     changeType === 'negative' ? 'text-red-600' : 'text-gray-600';
-  
+}> = ({ title, value, change, changeType, icon, accentColor, iconBg, loading }) => {
+  const changeColor = changeType === 'positive' ? 'text-emerald-600' :
+                     changeType === 'negative' ? 'text-red-600' : 'text-gray-500';
+
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300 overflow-hidden">
-      <div className={`h-1 bg-gradient-to-r ${gradient}`} />
+    <div className={`bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden border-t-2 ${accentColor}`}>
       <div className="p-6">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">{title}</p>
             {loading ? (
-              <div className="h-8 bg-gray-200 rounded animate-pulse mb-2" />
+              <div className="h-7 bg-gray-100 rounded animate-pulse mb-2 w-16" />
             ) : (
-              <p className="text-2xl font-bold text-gray-900 mb-2">{value}</p>
+              <p className="text-3xl font-bold text-gray-900 mb-1">{value}</p>
             )}
-            <p className={`text-sm font-medium ${changeColor}`}>{change}</p>
+            <p className={`text-xs font-medium ${changeColor}`}>{change}</p>
           </div>
-          <div className={`p-3 rounded-xl bg-gradient-to-r ${gradient} shadow-sm`}>
+          <div className={`p-3 rounded-xl ${iconBg}`}>
             {icon}
           </div>
         </div>
@@ -84,26 +84,24 @@ const DashboardPage: React.FC = () => {
   const enrolledCount = course?.enrolledCount || 0;
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 min-h-full">
+    <div className="p-6 space-y-6 min-h-full">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Dashboard
-          </h1>
-          <p className="text-gray-600 mt-1 text-lg">Welcome back! Here's what's happening with your platform.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-sm text-gray-500 mt-0.5">Here's what's happening with your platform.</p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <button
             onClick={() => fetchData(true)}
             disabled={refreshing}
-            className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="flex items-center gap-2 px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 text-gray-600"
           >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
             Refresh
           </button>
-          <div className="text-sm text-gray-500 bg-white px-4 py-2 rounded-lg border border-gray-200">
-            Last updated: {new Date().toLocaleString()}
+          <div className="text-xs text-gray-400 bg-white px-3 py-2 rounded-lg border border-gray-200">
+            {new Date().toLocaleString()}
           </div>
         </div>
       </div>
@@ -115,8 +113,9 @@ const DashboardPage: React.FC = () => {
           value={totalUsers}
           change="Real-time data"
           changeType="positive"
-          icon={<Users className="w-6 h-6 text-white" />}
-          gradient="from-blue-500 to-blue-600"
+          icon={<Users className="w-5 h-5 text-blue-600" />}
+          accentColor="border-t-blue-500"
+          iconBg="bg-blue-50"
           loading={loading}
         />
         <StatCard
@@ -124,8 +123,9 @@ const DashboardPage: React.FC = () => {
           value={verifiedUsers}
           change={`${totalUsers > 0 ? Math.round((verifiedUsers / totalUsers) * 100) : 0}% verified`}
           changeType="positive"
-          icon={<UserCheck className="w-6 h-6 text-white" />}
-          gradient="from-emerald-500 to-emerald-600"
+          icon={<UserCheck className="w-5 h-5 text-emerald-600" />}
+          accentColor="border-t-emerald-500"
+          iconBg="bg-emerald-50"
           loading={loading}
         />
         <StatCard
@@ -133,8 +133,9 @@ const DashboardPage: React.FC = () => {
           value={adminUsers}
           change="System administrators"
           changeType="neutral"
-          icon={<Award className="w-6 h-6 text-white" />}
-          gradient="from-purple-500 to-purple-600"
+          icon={<Award className="w-5 h-5 text-violet-600" />}
+          accentColor="border-t-violet-500"
+          iconBg="bg-violet-50"
           loading={loading}
         />
         <StatCard
@@ -142,8 +143,9 @@ const DashboardPage: React.FC = () => {
           value={enrolledCount}
           change="Total enrollments"
           changeType="positive"
-          icon={<BookOpen className="w-6 h-6 text-white" />}
-          gradient="from-orange-500 to-orange-600"
+          icon={<BookOpen className="w-5 h-5 text-orange-600" />}
+          accentColor="border-t-orange-500"
+          iconBg="bg-orange-50"
           loading={loading}
         />
       </div>
@@ -151,9 +153,9 @@ const DashboardPage: React.FC = () => {
       {/* Course Information */}
       {course && (
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-          <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-bold text-gray-900">Course Information</h3>
-            <p className="text-gray-600 mt-1">Current course details and statistics</p>
+          <div className="px-6 py-4 border-b border-gray-100">
+            <h3 className="text-base font-semibold text-gray-900">Course Information</h3>
+            <p className="text-sm text-gray-500 mt-0.5">Current course details and statistics</p>
           </div>
           <div className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -201,9 +203,9 @@ const DashboardPage: React.FC = () => {
 
       {/* Recent Users */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="bg-gray-50 px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-bold text-gray-900">Recent Users</h3>
-          <p className="text-gray-600 mt-1">Latest registered users in the system</p>
+        <div className="px-6 py-4 border-b border-gray-100">
+          <h3 className="text-base font-semibold text-gray-900">Recent Users</h3>
+          <p className="text-sm text-gray-500 mt-0.5">Latest registered users in the system</p>
         </div>
         <div className="p-6">
           <div className="space-y-4">
@@ -220,8 +222,8 @@ const DashboardPage: React.FC = () => {
             ) : users.length > 0 ? (
               users.slice(0, 5).map((user, index) => (
                 <div key={user._id || index} className="flex items-center gap-4 p-3 hover:bg-gray-50 rounded-lg transition-colors">
-                  <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                    <span className="text-sm font-bold text-white">
+                  <div className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-semibold text-slate-600">
                       {user.firstName?.[0] || 'U'}{user.lastName?.[0] || 'U'}
                     </span>
                   </div>

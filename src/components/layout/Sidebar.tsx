@@ -34,47 +34,47 @@ const Sidebar: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
 
   return (
-    <div className={`flex flex-col h-full bg-gradient-to-b from-slate-900 to-slate-800 border-r border-slate-700 transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'}`}>
+    <div className={`flex flex-col h-full bg-slate-950 border-r border-slate-800 transition-all duration-300 ${collapsed ? 'w-16' : 'w-64'}`}>
       {/* Logo */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-slate-700">
+      <div className="flex items-center justify-between px-4 py-5 border-b border-slate-800">
         {!collapsed && (
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-xl shadow-lg">
-              <Shield className="w-6 h-6 text-white" />
+            <div className="flex items-center justify-center w-9 h-9 bg-blue-600 rounded-lg">
+              <Shield className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-white">Admin Portal</h1>
-              <p className="text-xs text-slate-400">Management System</p>
+              <h1 className="text-sm font-semibold text-white tracking-wide">Admin Portal</h1>
+              <p className="text-xs text-slate-500">Management System</p>
             </div>
           </div>
         )}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="p-2 text-slate-400 hover:text-white hover:bg-slate-700 rounded-lg transition-colors"
+          className="p-1.5 text-slate-500 hover:text-slate-300 hover:bg-slate-800 rounded-md transition-colors"
         >
           {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </button>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-6 space-y-2">
+      <nav className="flex-1 px-2 py-5 space-y-0.5">
         {navigation.map((item) => {
           const isActive = location.pathname === item.href;
           return (
             <NavLink
               key={item.name}
               to={item.href}
-              className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200 group ${isActive
-                ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/25'
-                : 'text-slate-300 hover:bg-slate-700 hover:text-white'
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors group ${isActive
+                ? 'bg-slate-800 text-white'
+                : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'
                 }`}
             >
-              <item.icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-white'}`} />
+              <item.icon className={`w-4 h-4 flex-shrink-0 ${isActive ? 'text-blue-400' : 'text-slate-500 group-hover:text-slate-300'}`} />
               {!collapsed && (
                 <span className="truncate">{item.name}</span>
               )}
               {isActive && !collapsed && (
-                <div className="ml-auto w-2 h-2 bg-white rounded-full" />
+                <div className="ml-auto w-1.5 h-1.5 bg-blue-400 rounded-full" />
               )}
             </NavLink>
           );
@@ -82,26 +82,25 @@ const Sidebar: React.FC = () => {
       </nav>
 
       {/* User Profile */}
-      <div className="border-t border-slate-700 p-4">
+      <div className="border-t border-slate-800 p-3">
         {!collapsed && (
-          <div className="flex items-center gap-3 mb-3 p-3 bg-slate-800 rounded-xl">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-              <span className="text-sm font-bold text-white">
+          <div className="flex items-center gap-3 mb-2 px-2 py-2.5">
+            <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center flex-shrink-0">
+              <span className="text-xs font-semibold text-slate-300">
                 {user?.firstName?.[0]}{user?.lastName?.[0]}
               </span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-white truncate">
+              <p className="text-sm font-medium text-slate-200 truncate">
                 {user?.firstName} {user?.lastName}
               </p>
-              <p className="text-xs text-slate-400 truncate">{user?.email}</p>
+              <p className="text-xs text-slate-500 truncate">{user?.email}</p>
             </div>
           </div>
         )}
         <button
           onClick={logout}
-          className={`flex items-center gap-3 w-full px-3 py-3 text-sm text-slate-300 hover:bg-red-600 hover:text-white rounded-xl transition-all duration-200 group ${collapsed ? 'justify-center' : ''
-            }`}
+          className={`flex items-center gap-3 w-full px-3 py-2 text-sm text-slate-500 hover:bg-slate-800 hover:text-red-400 rounded-lg transition-colors ${collapsed ? 'justify-center' : ''}`}
         >
           <LogOut className="w-4 h-4" />
           {!collapsed && <span>Sign Out</span>}
