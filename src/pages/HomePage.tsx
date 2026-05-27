@@ -19,7 +19,8 @@ import {
   Zap,
   Star,
   ShieldCheck,
-  ChevronDown
+  ChevronDown,
+  ChevronRight
 } from "lucide-react";
 import { staggerContainer, fadeInUp, scaleIn, BUTTON_STYLES } from "@/constants";
 import { ContactSection } from "@/components/ContactSection";
@@ -82,12 +83,19 @@ export function HomePage({ onAuthOpen }: HomePageProps) {
   };
 
   // Grouped Curriculum Config - Transformed from Live Data
-  const modules = courseData?.sections.map((section) => ({
+  const modules = courseData?.sections.map((section, sIdx) => ({
     title: section.title,
     description: section.description,
     duration: `${section.lessons.length} Lessons • ${Math.round(section.lessons.reduce((acc, l) => acc + (l.estimatedMinutes || 0), 0) / 60 * 10) / 10} Hours`,
+    sectionId: section._id,
+    sectionIdx: sIdx,
     lessons: section.lessons
   })) || [];
+
+  const handleLessonClick = (sectionId: string, lessonId: string) => {
+    if (!isAuthenticated) { onAuthOpen('login'); return; }
+    navigate('/course', { state: { sectionId, lessonId } });
+  };
 
   return (
     <div className="bg-white dark:bg-gray-950 min-h-screen text-slate-900 dark:text-slate-100 font-sans selection:bg-blue-100 selection:text-blue-900">
@@ -646,13 +654,19 @@ export function HomePage({ onAuthOpen }: HomePageProps) {
                             {module.lessons.map((lesson, lIdx) => (
                               <div key={lIdx} className="group/lesson relative pl-10 pb-2 last:pb-0">
                                 <div className="absolute left-[9px] top-6 bottom-0 w-0.5 bg-slate-100 dark:bg-slate-800 last:hidden" />
-                                <div className="absolute left-0 top-1.5 w-[20px] h-[20px] rounded-full border-4 border-blue-500 bg-white dark:bg-slate-900 z-10" />
+                                <div className={`absolute left-0 top-1.5 w-[20px] h-[20px] rounded-full border-4 z-10 transition-colors ${isAuthenticated ? 'border-blue-500 bg-white dark:bg-slate-900 group-hover/lesson:bg-blue-500' : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900'}`} />
 
-                                <div className="p-5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-transparent hover:border-blue-100 dark:hover:border-blue-900 hover:bg-white dark:hover:bg-slate-900 transition-all shadow-sm hover:shadow-md">
-                                  <h4 className="font-bold text-lg text-slate-900 dark:text-white group-hover/lesson:text-blue-600 dark:group-hover/lesson:text-blue-400 transition-colors">
-                                    {lesson.title}
-                                  </h4>
-                                  <div className="flex flex-wrap items-center gap-x-6 gap-y-3 mt-4">
+                                <button
+                                  onClick={() => handleLessonClick(module.sectionId, lesson._id)}
+                                  className="w-full text-left p-5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-transparent hover:border-blue-200 dark:hover:border-blue-800 hover:bg-white dark:hover:bg-slate-900 transition-all shadow-sm hover:shadow-md cursor-pointer group/card"
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <h4 className="font-bold text-lg text-slate-900 dark:text-white group-hover/card:text-blue-600 dark:group-hover/card:text-blue-400 transition-colors">
+                                      {lesson.title}
+                                    </h4>
+                                    <ChevronRight className="w-5 h-5 text-slate-300 group-hover/card:text-blue-500 flex-shrink-0 mt-1 transition-colors" />
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-x-4 gap-y-3 mt-4">
                                     {lesson.media && lesson.media.length > 0 && (
                                       <span className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400 font-black uppercase tracking-wider bg-blue-50 dark:bg-blue-900/30 px-3 py-1.5 rounded-lg">
                                         <Play className="w-3.5 h-3.5" /> Videos
@@ -668,8 +682,18 @@ export function HomePage({ onAuthOpen }: HomePageProps) {
                                         <FileText className="w-3.5 h-3.5" /> Labs
                                       </span>
                                     )}
+                                    {lesson.linkedQuizzes && lesson.linkedQuizzes.length > 0 && (
+                                      <span className="flex items-center gap-2 text-xs text-indigo-600 dark:text-indigo-400 font-black uppercase tracking-wider bg-indigo-50 dark:bg-indigo-900/30 px-3 py-1.5 rounded-lg">
+                                        <HelpCircle className="w-3.5 h-3.5" /> Quiz
+                                      </span>
+                                    )}
+                                    {lesson.estimatedMinutes ? (
+                                      <span className="flex items-center gap-1.5 text-xs text-slate-400 font-medium ml-auto">
+                                        <Clock className="w-3.5 h-3.5" /> {lesson.estimatedMinutes}m
+                                      </span>
+                                    ) : null}
                                   </div>
-                                </div>
+                                </button>
                               </div>
                             ))}
                           </div>

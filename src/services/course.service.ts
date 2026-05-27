@@ -91,6 +91,7 @@ export interface Lesson {
   media?: Media[];
   docSubtopics?: DocSubtopic[];
   docSubtopicId?: string;
+  contentOrder?: Array<{ type: string; id: string }>;
 }
 
 export interface Section {
