@@ -168,6 +168,11 @@ export class CoursesController {
     if (createLessonDto.linkedActivityIds) {
       createLessonDto.linkedActivityIds = parseArrayField(createLessonDto.linkedActivityIds);
     }
+    if (createLessonDto.contentOrder) {
+      if (typeof createLessonDto.contentOrder === 'string') {
+        try { createLessonDto.contentOrder = JSON.parse(createLessonDto.contentOrder); } catch { delete createLessonDto.contentOrder; }
+      }
+    }
 
     // If markdown file is uploaded, read its content
     if (files?.content && files.content[0]) {
@@ -271,6 +276,11 @@ export class CoursesController {
     }
     if (updateLessonDto.linkedActivityIds) {
       updateLessonDto.linkedActivityIds = parseArrayField(updateLessonDto.linkedActivityIds);
+    }
+    if (updateLessonDto.contentOrder) {
+      if (typeof updateLessonDto.contentOrder === 'string') {
+        try { updateLessonDto.contentOrder = JSON.parse(updateLessonDto.contentOrder); } catch { delete updateLessonDto.contentOrder; }
+      }
     }
 
     // If markdown file is uploaded, read its content

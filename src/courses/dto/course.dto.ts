@@ -67,6 +67,11 @@ export class CreateLessonDto {
   @IsOptional()
   @IsString()
   docSubtopicId?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  contentOrder?: string[];
 }
 
 export class UpdateLessonDto {
@@ -115,6 +120,11 @@ export class UpdateLessonDto {
   @IsOptional()
   @IsString()
   docSubtopicId?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  contentOrder?: string[];
 }
 
 export class CreateSectionDto {

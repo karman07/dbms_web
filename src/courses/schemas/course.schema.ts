@@ -61,6 +61,9 @@ export class Lesson {
 
   @Prop({ default: false })
   isPublished: boolean;
+
+  @Prop({ type: [Object], default: [] })
+  contentOrder: Array<{ type: string; id: string }>;
 }
 
 export const LessonSchema = SchemaFactory.createForClass(Lesson);
