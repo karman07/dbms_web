@@ -55,6 +55,8 @@ export interface Lesson {
   linkedAssignments?: Assignment[];
   linkedActivities?: ClassActivity[];
 
+  contentOrder?: Array<{ type: string; id: string }>;
+
   // Legacy fields (for backward compatibility - will be removed)
   content?: string;
   videoUrl?: string;
