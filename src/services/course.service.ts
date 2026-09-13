@@ -71,6 +71,11 @@ export interface DocSubtopic {
   topic: string;
 }
 
+export interface LessonResource {
+  name: string;
+  url: string;
+}
+
 export interface Lesson {
   _id: string;
   title: string;
@@ -81,7 +86,7 @@ export interface Lesson {
   order: number;
   estimatedMinutes: number;
   isPublished: boolean;
-  resources?: string[];
+  resources?: LessonResource[];
   linkedQuizIds?: string[];
   linkedAssignmentIds?: string[];
   linkedActivityIds?: string[];

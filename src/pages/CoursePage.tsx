@@ -80,7 +80,9 @@ const CoursePage = () => {
   const location = useLocation();
   const notification = useNotification();
   const videoRef = useRef<HTMLIFrameElement>(null);
-  const [startTime] = useState(Date.now());
+  // Tracks when the current lesson was opened, so time-spent is measured per lesson
+  // rather than accumulating since the page first loaded.
+  const lessonStartTimeRef = useRef(Date.now());
 
   const [course, setCourse] = useState<Course | null>(null);
   const [progress, setProgress] = useState<CourseProgress | null>(null);
@@ -165,6 +167,7 @@ const CoursePage = () => {
     setCurrentStepIndex(0);
     setViewMode('lesson');
     setExpandedSections(prev => new Set([...prev, section._id]));
+    lessonStartTimeRef.current = Date.now();
     window.scrollTo({ top: 0, behavior: 'smooth' });
     // Clear state so back-navigation doesn't re-trigger
     window.history.replaceState({}, '', '/course');
@@ -215,7 +218,7 @@ const CoursePage = () => {
     }
     if (lesson.resources) {
       for (const r of lesson.resources) {
-        steps.push({ type: 'resource', id: r, label: r });
+        steps.push({ type: 'resource', id: r.url, label: r.name || r.url });
       }
     }
     if (lesson.linkedQuizzes) {
@@ -247,8 +250,10 @@ const CoursePage = () => {
         return d ? d.name : null;
       }
       case 'resource': {
-        const r = lesson.resources?.find(i => i === id);
-        return r ? (r.length > 40 ? r.slice(0, 40) + '…' : r) : null;
+        const r = lesson.resources?.find(i => i.url === id);
+        if (!r) return null;
+        const label = r.name || r.url;
+        return label.length > 40 ? label.slice(0, 40) + '…' : label;
       }
       case 'quiz': {
         const q = lesson.linkedQuizzes?.find(i => i._id === id || i._id?.toString() === id);
@@ -277,6 +282,7 @@ const CoursePage = () => {
     setViewMode('lesson');
     // Auto-expand the section in the sidebar
     setExpandedSections(prev => new Set([...prev, section._id]));
+    lessonStartTimeRef.current = Date.now();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -287,8 +293,8 @@ const CoursePage = () => {
     openLesson(section, lesson, secIdx, lesIdx, 0);
   };
 
-  const handleNext = () => {
-    if (!course || !currentLessonIndex || !selectedLesson) return;
+  const handleNext = async () => {
+    if (!course || !currentLessonIndex || !selectedLesson || !selectedSection) return;
     const steps = resolveSteps(selectedLesson);
 
     if (currentStepIndex < steps.length - 1) {
@@ -296,6 +302,10 @@ const CoursePage = () => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
+
+    // Leaving the last step of this lesson — make sure it's recorded as complete even
+    // if it had no video/quiz step to trigger completion on its own.
+    await markLessonComplete(selectedSection._id, selectedLesson._id);
 
     // Last step → go to next lesson
     const { sectionIdx, lessonIdx } = currentLessonIndex;
@@ -370,7 +380,7 @@ const CoursePage = () => {
 
       if (attempted >= totalQuizzes) {
         try {
-          const timeSpent = Math.floor((Date.now() - startTime) / 60000);
+          const timeSpent = Math.floor((Date.now() - lessonStartTimeRef.current) / 60000);
           await courseService.updateProgress(selectedSection._id, selectedLesson._id, true, timeSpent);
           await loadCourseData();
           notification.success(results.passed ? 'Quiz Passed!' : 'Quiz Completed', 'Lesson marked as complete');
@@ -387,13 +397,17 @@ const CoursePage = () => {
   // ── Video completion tracking ─────────────────────────────────────────────
 
   useEffect(() => {
-    if (!videoRef.current || !selectedSection || !selectedLesson || !enrolled) return;
+    if (!selectedSection || !selectedLesson || !enrolled) return;
+    // Note: deliberately not gated on videoRef.current — the video step (and its iframe)
+    // may not be the one currently mounted (e.g. the lesson opens on a doc/quiz step
+    // first), so this listener must stay attached for the whole lesson regardless of
+    // which step is showing when it mounts.
     const handleMessage = async (event: MessageEvent) => {
       if (typeof event.data !== 'string') return;
       try {
         const data = JSON.parse(event.data);
         if (data.event === 'onStateChange' && data.info === 0) {
-          const timeSpent = Math.floor((Date.now() - startTime) / 60000);
+          const timeSpent = Math.floor((Date.now() - lessonStartTimeRef.current) / 60000);
           await courseService.updateProgress(selectedSection._id, selectedLesson._id, true, timeSpent);
           await loadCourseData();
           notification.success('Progress saved', 'Lesson completed automatically');
@@ -402,7 +416,7 @@ const CoursePage = () => {
     };
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, [selectedSection, selectedLesson, enrolled, startTime]);
+  }, [selectedSection, selectedLesson, enrolled]);
 
   // ── Helpers ───────────────────────────────────────────────────────────────
 
@@ -417,6 +431,19 @@ const CoursePage = () => {
   const getLessonProgress = (sectionId: string, lessonId: string) => {
     const sp = progress?.sections.find(s => s.sectionId === sectionId);
     return sp?.lessons.find(l => l.lessonId === lessonId) ?? null;
+  };
+
+  // Marks a lesson complete if it isn't already. Used as a fallback when a lesson has
+  // no video or quiz step (docs/resources/assignments/activities never fire their own
+  // completion signal), so simply reaching the end of the lesson still records progress.
+  const markLessonComplete = async (sectionId: string, lessonId: string) => {
+    if (!enrolled) return;
+    if (getLessonProgress(sectionId, lessonId)?.completed) return;
+    try {
+      const timeSpent = Math.floor((Date.now() - lessonStartTimeRef.current) / 60000);
+      await courseService.updateProgress(sectionId, lessonId, true, timeSpent);
+      await loadCourseData();
+    } catch { /* non-fatal — user can still navigate */ }
   };
 
   const getSectionProgress = (sectionId: string) => {
@@ -508,7 +535,8 @@ const CoursePage = () => {
           );
         }
         // Regular resource link
-        const lessonWithSingleResource = { ...lesson, resources: [step.id] };
+        const resourceObj = lesson.resources?.find(r => r.url === step.id) || { name: step.label, url: step.id };
+        const lessonWithSingleResource = { ...lesson, resources: [resourceObj] };
         return <LessonResources lesson={lessonWithSingleResource as Lesson} />;
       }
 

@@ -41,9 +41,9 @@ export const LessonResources = ({ lesson }: LessonResourcesProps) => {
       </div>
       <div className="divide-y divide-gray-100 dark:divide-gray-700">
         {lesson.resources.map((resource, idx) => {
-          const href = getHref(resource);
-          const label = getDisplayLabel(resource);
-          const isExternal = isFullUrl(resource);
+          const href = getHref(resource.url);
+          const label = resource.name || getDisplayLabel(resource.url);
+          const isExternal = isFullUrl(resource.url);
 
           return (
             <a
@@ -63,7 +63,7 @@ export const LessonResources = ({ lesson }: LessonResourcesProps) => {
                 <p className="text-sm font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
                   {label}
                 </p>
-                <p className="text-xs text-gray-400 dark:text-gray-500 truncate mt-0.5">{resource}</p>
+                <p className="text-xs text-gray-400 dark:text-gray-500 truncate mt-0.5">{resource.url}</p>
               </div>
               <ExternalLink className="h-4 w-4 text-gray-300 group-hover:text-blue-500 transition-colors flex-shrink-0" />
             </a>

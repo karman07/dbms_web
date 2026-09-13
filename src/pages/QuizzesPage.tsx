@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import quizService, { Quiz } from "@/services/quiz.service";
 import courseService from "@/services/course.service";
 import { useNotification } from "@/contexts/NotificationContext";
+import { QuestionReview } from "@/components/quiz/QuestionReview";
 
 
 const QuizzesPage = () => {
@@ -19,7 +20,7 @@ const QuizzesPage = () => {
   const [lessonMap, setLessonMap] = useState<Record<string, string>>({});
   const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
   const [showResults, setShowResults] = useState(false);
-  const [quizResults, setQuizResults] = useState<{ score: number, total: number, correct: number } | null>(null);
+  const [quizResults, setQuizResults] = useState<{ score: number, total: number, correct: number, perQuestion: boolean[] } | null>(null);
 
   useEffect(() => {
     loadData();
@@ -74,17 +75,17 @@ const QuizzesPage = () => {
     if (!selectedQuiz) return;
 
     let correct = 0;
-    selectedQuiz.questions.forEach((question, index) => {
+    const perQuestion: boolean[] = selectedQuiz.questions.map((question, index) => {
       const selectedOption = quizAnswers[index];
-      if (selectedOption !== undefined && question.options[selectedOption]?.isCorrect) {
-        correct++;
-      }
+      const isCorrect = selectedOption !== undefined && !!question.options[selectedOption]?.isCorrect;
+      if (isCorrect) correct++;
+      return isCorrect;
     });
 
     const total = selectedQuiz.questions.length;
     const score = Math.round((correct / total) * 100);
 
-    setQuizResults({ score, total, correct });
+    setQuizResults({ score, total, correct, perQuestion });
     setShowResults(true);
   };
 
@@ -232,8 +233,13 @@ const QuizzesPage = () => {
                   <p className="text-gray-600 dark:text-gray-400 mb-6">
                     You got {quizResults?.correct} out of {quizResults?.total} questions correct
                   </p>
-                  <Button onClick={resetQuiz} className="bg-teal-600 hover:bg-teal-700 text-white">
-                    Try Again
+
+                  {quizResults && (
+                    <QuestionReview questions={selectedQuiz.questions} perQuestion={quizResults.perQuestion} />
+                  )}
+
+                  <Button onClick={resetQuiz} className="bg-teal-600 hover:bg-teal-700 text-white mt-6">
+                    Retake Quiz
                   </Button>
                 </div>
               )}

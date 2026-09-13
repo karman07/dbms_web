@@ -4,6 +4,7 @@ import { Lesson } from '@/services/course.service';
 import { Button } from '@/components/ui/button';
 import courseService from '@/services/course.service';
 import { useNotification } from '@/contexts/NotificationContext';
+import { QuestionReview } from '@/components/quiz/QuestionReview';
 
 interface LessonQuizzesProps {
   lesson: Lesson;
@@ -30,7 +31,7 @@ const LinkedQuizItem = ({ quiz, sectionId, lessonId, onProgressUpdate, title, to
 }) => {
   const [linkedQuizAnswers, setLinkedQuizAnswers] = useState<Record<number, number>>({});
   const [linkedSubmitting, setLinkedSubmitting] = useState(false);
-  const [linkedResults, setLinkedResults] = useState<{ score: number; total: number; passed: boolean } | null>(null);
+  const [linkedResults, setLinkedResults] = useState<{ score: number; total: number; passed: boolean; perQuestion: boolean[] } | null>(null);
   const notification = useNotification();
 
   // Reset state when quiz changes
@@ -50,15 +51,15 @@ const LinkedQuizItem = ({ quiz, sectionId, lessonId, onProgressUpdate, title, to
       setLinkedSubmitting(true);
       // Calculate results for linked quiz
       let correct = 0;
-      quiz.questions.forEach((q: any, idx: number) => {
+      const perQuestion: boolean[] = quiz.questions.map((q: any, idx: number) => {
         const correctOptionIdx = q.options.findIndex((opt: any) => opt.isCorrect);
-        if (linkedQuizAnswers[idx] === correctOptionIdx) {
-          correct++;
-        }
+        const isCorrect = linkedQuizAnswers[idx] === correctOptionIdx;
+        if (isCorrect) correct++;
+        return isCorrect;
       });
       const total = quiz.questions.length;
       const score = (correct / total) * 100;
-      setLinkedResults({ score, total, passed: score >= 70 });
+      setLinkedResults({ score, total, passed: score >= 70, perQuestion });
 
       // Get quiz records from localStorage to check completion
       const stored = localStorage.getItem('quizRecords');
@@ -218,7 +219,10 @@ const LinkedQuizItem = ({ quiz, sectionId, lessonId, onProgressUpdate, title, to
           <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
             You scored {Math.round(linkedResults.score)}% ({Math.round((linkedResults.score / 100) * linkedResults.total)} / {linkedResults.total} correct)
           </p>
-          <Button onClick={resetLinkedQuiz} variant="outline">
+
+          <QuestionReview questions={quiz.questions} perQuestion={linkedResults.perQuestion} />
+
+          <Button onClick={resetLinkedQuiz} variant="outline" className="mt-6">
             Retake Quiz
           </Button>
         </div>
@@ -230,7 +234,7 @@ const LinkedQuizItem = ({ quiz, sectionId, lessonId, onProgressUpdate, title, to
 export const LessonQuizzes = ({ lesson, enrolled, onSubmitQuiz, sectionId, onProgressUpdate, selectedQuizIndex = 0 }: LessonQuizzesProps) => {
   const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
   const [submitting, setSubmitting] = useState(false);
-  const [results, setResults] = useState<{ score: number; total: number; passed: boolean } | null>(null);
+  const [results, setResults] = useState<{ score: number; total: number; passed: boolean; perQuestion: boolean[] } | null>(null);
 
   // Reset state when quiz changes
   useEffect(() => {
@@ -333,12 +337,14 @@ export const LessonQuizzes = ({ lesson, enrolled, onSubmitQuiz, sectionId, onPro
                       setSubmitting(true);
                       await onSubmitQuiz(quizAnswers);
                       let correct = 0;
-                      lesson.quiz.forEach((q, idx) => {
-                        if (quizAnswers[idx] === q.correctAnswer) correct++;
+                      const perQuestion: boolean[] = lesson.quiz.map((q, idx) => {
+                        const isCorrect = quizAnswers[idx] === q.correctAnswer;
+                        if (isCorrect) correct++;
+                        return isCorrect;
                       });
                       const total = lesson.quiz.length;
                       const score = (correct / total) * 100;
-                      setResults({ score, total, passed: score >= 70 });
+                      setResults({ score, total, passed: score >= 70, perQuestion });
                     } catch (error) {
                       console.error('Failed to submit quiz:', error);
                     } finally {
@@ -380,7 +386,10 @@ export const LessonQuizzes = ({ lesson, enrolled, onSubmitQuiz, sectionId, onPro
               <p className="text-lg text-gray-600 dark:text-gray-400 mb-6">
                 You scored {Math.round(results.score)}% ({Math.round((results.score / 100) * results.total)} / {results.total} correct)
               </p>
-              <Button onClick={() => { setQuizAnswers({}); setResults(null); }} variant="outline">
+
+              <QuestionReview questions={lesson.quiz} perQuestion={results.perQuestion} />
+
+              <Button onClick={() => { setQuizAnswers({}); setResults(null); }} variant="outline" className="mt-6">
                 Retake Quiz
               </Button>
             </div>
