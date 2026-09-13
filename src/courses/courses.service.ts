@@ -252,6 +252,14 @@ export class CoursesService {
           lesson.media = mediaList;
           lesson.docSubtopics = docSubtopics;
 
+          // Normalize resources to { name, url } — older lessons may still have
+          // plain URL strings saved before resources carried a display name.
+          if (Array.isArray(lesson.resources)) {
+            lesson.resources = lesson.resources.map((r: any) =>
+              typeof r === 'string' ? { name: r, url: r } : { name: r?.name || r?.url || '', url: r?.url || '' },
+            );
+          }
+
           // Remove the ID-only fields to avoid confusion
           delete lesson.linkedQuizIds;
           delete lesson.linkedAssignmentIds;

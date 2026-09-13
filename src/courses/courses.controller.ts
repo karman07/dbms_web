@@ -184,9 +184,10 @@ export class CoursesController {
     }
     // If resource files are uploaded, use them; otherwise keep the URLs from body
     if (files?.resources && files.resources.length > 0) {
-      createLessonDto.resources = files.resources.map(
-        (file) => `/uploads/courses/resources/${file.filename}`,
-      );
+      createLessonDto.resources = files.resources.map((file) => ({
+        name: file.originalname || file.filename,
+        url: `/uploads/courses/resources/${file.filename}`,
+      }));
     }
     return this.coursesService.addLesson(parseInt(sectionIndex), createLessonDto);
   }
@@ -293,9 +294,10 @@ export class CoursesController {
     }
     // If resource files are uploaded, use them; otherwise keep the URLs from body
     if (files?.resources && files.resources.length > 0) {
-      updateLessonDto.resources = files.resources.map(
-        (file) => `/uploads/courses/resources/${file.filename}`,
-      );
+      updateLessonDto.resources = files.resources.map((file) => ({
+        name: file.originalname || file.filename,
+        url: `/uploads/courses/resources/${file.filename}`,
+      }));
     }
     return this.coursesService.updateLesson(
       parseInt(sectionIndex),

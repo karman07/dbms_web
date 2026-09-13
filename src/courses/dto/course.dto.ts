@@ -23,6 +23,14 @@ export class QuizQuestionDto {
   explanation?: string;
 }
 
+export class ResourceDto {
+  @IsString()
+  name: string;
+
+  @IsString()
+  url: string;
+}
+
 export class CreateLessonDto {
   @IsString()
   title: string;
@@ -46,8 +54,9 @@ export class CreateLessonDto {
 
   @IsOptional()
   @IsArray()
-  @IsString({ each: true })
-  resources?: string[];
+  @ValidateNested({ each: true })
+  @Type(() => ResourceDto)
+  resources?: ResourceDto[];
 
   @IsOptional()
   @IsArray()
@@ -99,8 +108,9 @@ export class UpdateLessonDto {
 
   @IsOptional()
   @IsArray()
-  @IsString({ each: true })
-  resources?: string[];
+  @ValidateNested({ each: true })
+  @Type(() => ResourceDto)
+  resources?: ResourceDto[];
 
   @IsOptional()
   @IsArray()

@@ -39,8 +39,10 @@ export class Lesson {
   @Prop({ type: [Types.ObjectId], ref: 'Media', default: [] })
   mediaIds?: Types.ObjectId[];
 
-  @Prop({ type: [String], default: [] })
-  resources: string[]; // URLs or file paths
+  // Stored as { name, url } going forward; legacy documents may still hold plain
+  // strings (URLs) — normalized to { name, url } wherever lessons are read back out.
+  @Prop({ type: [Object], default: [] })
+  resources: Array<{ name: string; url: string } | string>;
 
   // Removed embedded quiz; quizzes are now linked by ID only
 
