@@ -30,6 +30,11 @@ export interface Section {
   lessons: Lesson[];
 }
 
+export interface LessonResource {
+  name: string;
+  url: string;
+}
+
 export interface Lesson {
   _id: string;
   title: string;
@@ -38,7 +43,7 @@ export interface Lesson {
   mediaIds?: string[];
   // Populated media items (returned by API)
   media?: Media[];
-  resources?: string[];
+  resources?: LessonResource[];
   quiz?: QuizQuestion[];
   // New: Array of doc subtopic references
   docSubtopicIds?: string[];
@@ -154,6 +159,7 @@ export interface QuizQuestionResult {
 }
 
 export interface DocSubtopic {
+  _id?: string;
   name: string;
   filename: string;
   content?: string;

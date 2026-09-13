@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, FileText, ChevronRight } from 'lucide-react';
+import { Search, FileText, ChevronRight, Check } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
@@ -7,6 +7,7 @@ import Modal from '../ui/modal';
 import { docsAPI } from '../../utils/api';
 
 interface DocSubtopic {
+  _id: string;
   name: string;
   content: string;
 }
@@ -44,13 +45,20 @@ const DocSubtopicPicker: React.FC<DocSubtopicPickerProps> = ({
       loadTopics();
       setTempSelected(selectedIds);
     }
-  }, [isOpen, selectedIds]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
 
   const loadTopics = async () => {
     setLoading(true);
     try {
       const response = await docsAPI.getAllTopics();
-      setTopics(Array.isArray(response) ? response : []);
+      const list = Array.isArray(response) ? response : [];
+      setTopics(list);
+      // Auto-expand topics that already contain a selected subtopic
+      const toExpand = list
+        .filter((t: DocTopic) => (t.subtopics || []).some((s) => selectedIds.includes(s._id)))
+        .map((t: DocTopic) => t._id);
+      if (toExpand.length > 0) setExpandedTopics((prev) => Array.from(new Set([...prev, ...toExpand])));
     } catch (error) {
       console.error('Failed to load topics:', error);
       setTopics([]);
@@ -67,7 +75,8 @@ const DocSubtopicPicker: React.FC<DocSubtopicPickerProps> = ({
     );
   };
 
-  const toggleSelection = (subtopicId: string) => {
+  const toggleSelection = (subtopicId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
     if (multiple) {
       setTempSelected((prev) =>
         prev.includes(subtopicId)
@@ -84,20 +93,22 @@ const DocSubtopicPicker: React.FC<DocSubtopicPickerProps> = ({
     onClose();
   };
 
-  // Create subtopic ID as "topicId:subtopicName"
-  const createSubtopicId = (topicId: string, subtopicName: string) => {
-    return `${topicId}:${subtopicName}`;
-  };
-
   const filteredTopics = topics.filter((topic) => {
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
     return (
       topic.title.toLowerCase().includes(query) ||
       topic.description?.toLowerCase().includes(query) ||
-      topic.subtopics.some((sub) => sub.name.toLowerCase().includes(query))
+      (topic.subtopics || []).some((sub) => sub.name.toLowerCase().includes(query))
     );
   });
+
+  // While searching, auto-expand every topic that matches so results are visible immediately
+  useEffect(() => {
+    if (!searchQuery.trim()) return;
+    setExpandedTopics((prev) => Array.from(new Set([...prev, ...filteredTopics.map((t) => t._id)])));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery]);
 
   return (
     <Modal
@@ -133,26 +144,33 @@ const DocSubtopicPicker: React.FC<DocSubtopicPickerProps> = ({
           <div className="space-y-2 max-h-96 overflow-y-auto">
             {filteredTopics.map((topic) => {
               const isExpanded = expandedTopics.includes(topic._id);
+              const subtopics = topic.subtopics || [];
+              const selectedInTopic = subtopics.filter((s) => tempSelected.includes(s._id)).length;
               return (
-                <div key={topic._id} className="border border-slate-300 rounded-lg">
+                <div key={topic._id} className="border border-slate-300 rounded-lg overflow-hidden">
                   {/* Topic Header */}
                   <div
                     onClick={() => toggleTopic(topic._id)}
                     className="flex items-center justify-between p-3 cursor-pointer hover:bg-slate-50"
                   >
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <h4 className="font-medium text-slate-900">{topic.title}</h4>
                       {topic.description && (
-                        <p className="text-sm text-slate-600 mt-1">{topic.description}</p>
+                        <p className="text-sm text-slate-600 mt-1 line-clamp-1">{topic.description}</p>
                       )}
-                      <div className="mt-2">
+                      <div className="mt-2 flex items-center gap-2">
                         <Badge variant="secondary" className="text-xs">
-                          {topic.subtopics.length} subtopic{topic.subtopics.length !== 1 ? 's' : ''}
+                          {subtopics.length} subtopic{subtopics.length !== 1 ? 's' : ''}
                         </Badge>
+                        {selectedInTopic > 0 && (
+                          <Badge className="text-xs bg-blue-600 text-white">
+                            {selectedInTopic} selected
+                          </Badge>
+                        )}
                       </div>
                     </div>
                     <ChevronRight
-                      className={`w-5 h-5 text-slate-400 transition-transform ${
+                      className={`w-5 h-5 text-slate-400 transition-transform flex-shrink-0 ${
                         isExpanded ? 'rotate-90' : ''
                       }`}
                     />
@@ -161,45 +179,34 @@ const DocSubtopicPicker: React.FC<DocSubtopicPickerProps> = ({
                   {/* Subtopics */}
                   {isExpanded && (
                     <div className="border-t border-slate-200 bg-slate-50 p-2 space-y-1">
-                      {topic.subtopics.length === 0 ? (
+                      {subtopics.length === 0 ? (
                         <div className="text-sm text-slate-500 p-2">No subtopics available</div>
                       ) : (
-                        topic.subtopics.map((subtopic) => {
-                          const subtopicId = createSubtopicId(topic._id, subtopic.name);
-                          const isSelected = tempSelected.includes(subtopicId);
+                        subtopics.map((subtopic) => {
+                          const isSelected = tempSelected.includes(subtopic._id);
                           return (
                             <div
-                              key={subtopicId}
-                              onClick={() => toggleSelection(subtopicId)}
+                              key={subtopic._id}
+                              onClick={(e) => toggleSelection(subtopic._id, e)}
                               className={`relative flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-all ${
                                 isSelected
                                   ? 'bg-blue-100 border border-blue-600'
                                   : 'bg-white border border-slate-200 hover:border-blue-400'
                               }`}
                             >
-                              <FileText className="w-4 h-4 text-slate-500" />
-                              <div className="flex-1">
-                                <p className="text-sm font-medium text-slate-900">
+                              <FileText className="w-4 h-4 text-slate-500 flex-shrink-0" />
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-slate-900 truncate">
                                   {subtopic.name}
                                 </p>
                               </div>
-                              {isSelected && (
-                                <div className="w-5 h-5 bg-blue-600 rounded-full flex items-center justify-center">
-                                  <svg
-                                    className="w-3 h-3 text-white"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                  >
-                                    <path
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                      strokeWidth={2}
-                                      d="M5 13l4 4L19 7"
-                                    />
-                                  </svg>
-                                </div>
-                              )}
+                              <div
+                                className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 border ${
+                                  isSelected ? 'bg-blue-600 border-blue-600' : 'border-slate-300'
+                                }`}
+                              >
+                                {isSelected && <Check className="w-3 h-3 text-white" />}
+                              </div>
                             </div>
                           );
                         })

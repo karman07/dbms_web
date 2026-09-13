@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Video, FileText, Plus, Link as LinkIcon, Brain, ClipboardList, Activity, X,
+  Video, FileText, Plus, Link as LinkIcon, Brain, ClipboardList, Activity,
   GripVertical, PlayCircle, Trophy, Zap, FileDown,
 } from 'lucide-react';
 import {
@@ -20,12 +20,14 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { X } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Badge } from '../ui/badge';
 import Modal from '../ui/modal';
 import MediaPicker from './MediaPicker';
 import DocSubtopicPicker from './DocSubtopicPicker';
+import SimpleItemPicker from './SimpleItemPicker';
+import Chip from './Chip';
 import { Lesson, Quiz, Assignment, ClassActivity } from '../../types';
 import { mediaAPI, docsAPI, quizAPI, assignmentAPI, classActivityAPI } from '../../utils/api';
 
@@ -47,8 +49,7 @@ interface MediaItem {
 }
 
 interface SubtopicItem {
-  id: string;        // 'topicId:subtopicName' — used internally in the form
-  actualId: string;  // real MongoDB _id — used in contentOrder
+  _id: string;         // real MongoDB subtopic _id — used everywhere (selection, contentOrder, API)
   topicTitle: string;
   subtopicName: string;
 }
@@ -123,6 +124,26 @@ const SortableStep: React.FC<SortableStepProps> = ({ item, index, onRemove }) =>
   );
 };
 
+// Section header shared across the "content source" blocks below
+interface SectionHeaderProps {
+  icon: React.ElementType;
+  label: string;
+  count?: number;
+  onAdd: () => void;
+  addLabel?: string;
+}
+
+const SectionHeader: React.FC<SectionHeaderProps> = ({ icon: Icon, label, count, onAdd, addLabel = 'Add' }) => (
+  <div className="flex items-center justify-between mb-3">
+    <label className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
+      <Icon className="w-4 h-4" /> {label}{typeof count === 'number' ? ` (${count})` : ''}
+    </label>
+    <Button type="button" variant="secondary" size="sm" onClick={onAdd}>
+      <Plus className="w-4 h-4 mr-1" /> {addLabel}
+    </Button>
+  </div>
+);
+
 const LessonForm: React.FC<LessonFormProps> = ({ isOpen, onClose, onSubmit, lesson, mode }) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -134,8 +155,8 @@ const LessonForm: React.FC<LessonFormProps> = ({ isOpen, onClose, onSubmit, less
 
   // Raw selection state (used for pickers)
   const [selectedMediaIds, setSelectedMediaIds] = useState<string[]>([]);
-  const [selectedSubtopicIds, setSelectedSubtopicIds] = useState<string[]>([]);
-  const [resources, setResources] = useState<string[]>([]);
+  const [selectedSubtopicIds, setSelectedSubtopicIds] = useState<string[]>([]); // real subtopic _ids
+  const [resources, setResources] = useState<{ name: string; url: string }[]>([]);
   const [linkedQuizIds, setLinkedQuizIds] = useState<string[]>([]);
   const [linkedAssignmentIds, setLinkedAssignmentIds] = useState<string[]>([]);
   const [linkedActivityIds, setLinkedActivityIds] = useState<string[]>([]);
@@ -151,8 +172,9 @@ const LessonForm: React.FC<LessonFormProps> = ({ isOpen, onClose, onSubmit, less
   // THE master ordered list of content steps
   const [contentItems, setContentItems] = useState<ContentItem[]>([]);
 
-  // URL input
-  const [newResource, setNewResource] = useState('');
+  // Resource name + URL inputs
+  const [newResourceName, setNewResourceName] = useState('');
+  const [newResourceUrl, setNewResourceUrl] = useState('');
 
   // Picker modals
   const [showMediaPicker, setShowMediaPicker] = useState(false);
@@ -186,6 +208,19 @@ const LessonForm: React.FC<LessonFormProps> = ({ isOpen, onClose, onSubmit, less
     setContentItems(prev => prev.filter(i => !uids.has(i.uid)));
   };
 
+  // Find a subtopic's topic/name by its real _id across all loaded topics
+  const findSubtopic = (topics: any[], subtopicId: string): SubtopicItem | null => {
+    for (const topic of topics) {
+      for (const sub of (topic.subtopics || [])) {
+        const subId = sub._id?.toString?.() ?? sub._id;
+        if (subId === subtopicId) {
+          return { _id: subtopicId, topicTitle: topic.title, subtopicName: sub.name };
+        }
+      }
+    }
+    return null;
+  };
+
   // ── Init / Reset ─────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -199,7 +234,7 @@ const LessonForm: React.FC<LessonFormProps> = ({ isOpen, onClose, onSubmit, less
         isPublished: lesson.isPublished,
       });
 
-      const parseArr = (field: any, extractId = false): string[] => {
+      const parseArr = <T = string>(field: any, extractId = false): T[] => {
         if (!field) return [];
         if (Array.isArray(field)) {
           return field.map((item: any) => {
@@ -217,25 +252,27 @@ const LessonForm: React.FC<LessonFormProps> = ({ isOpen, onClose, onSubmit, less
         return field;
       };
 
-      const mediaIds = parseArr((lesson as any).mediaIds || (lesson as any).media, true);
-      const docIds = parseArr((lesson as any).docSubtopicIds || (lesson as any).docSubtopics, true);
-      const resUrls = parseArr(lesson.resources);
-      const quizIds = parseArr((lesson as any).linkedQuizIds || (lesson as any).linkedQuizzes, true);
-      const assignIds = parseArr((lesson as any).linkedAssignmentIds || (lesson as any).linkedAssignments, true);
-      const actIds = parseArr((lesson as any).linkedActivityIds || (lesson as any).linkedActivities, true);
+      const mediaIds = parseArr<string>((lesson as any).mediaIds || (lesson as any).media, true);
+      const docIds = parseArr<string>((lesson as any).docSubtopicIds || (lesson as any).docSubtopics, true);
+      const resItems = parseArr<{ name: string; url: string }>(lesson.resources).map((r: any) =>
+        typeof r === 'string' ? { name: r, url: r } : { name: r?.name || r?.url || '', url: r?.url || '' },
+      );
+      const quizIds = parseArr<string>((lesson as any).linkedQuizIds || (lesson as any).linkedQuizzes, true);
+      const assignIds = parseArr<string>((lesson as any).linkedAssignmentIds || (lesson as any).linkedAssignments, true);
+      const actIds = parseArr<string>((lesson as any).linkedActivityIds || (lesson as any).linkedActivities, true);
 
       setSelectedMediaIds(mediaIds);
       setSelectedSubtopicIds(docIds);
-      setResources(resUrls);
+      setResources(resItems);
       setLinkedQuizIds(quizIds);
       setLinkedAssignmentIds(assignIds);
       setLinkedActivityIds(actIds);
 
       if (mediaIds.length > 0) loadMediaDetails(mediaIds);
-      if (docIds.length > 0) loadSubtopicDetails(docIds, lesson.contentOrder, quizIds, assignIds, actIds, mediaIds, resUrls);
+      if (docIds.length > 0) loadSubtopicDetails(docIds, lesson.contentOrder, quizIds, assignIds, actIds, mediaIds, resItems);
       else {
         // Rebuild contentItems from saved contentOrder + available IDs (for non-doc types)
-        buildContentItemsFromOrder(lesson.contentOrder, mediaIds, [], resUrls, quizIds, assignIds, actIds);
+        buildContentItemsFromOrder(lesson.contentOrder, mediaIds, [], resItems, quizIds, assignIds, actIds);
       }
     } else {
       resetForm();
@@ -246,21 +283,21 @@ const LessonForm: React.FC<LessonFormProps> = ({ isOpen, onClose, onSubmit, less
     setFormData({ title: '', priority: 0, estimatedMinutes: 0, isPublished: false });
     setSelectedMediaIds([]); setSelectedSubtopicIds([]); setMediaItems([]); setSubtopicItems([]);
     setResources([]); setLinkedQuizIds([]); setLinkedAssignmentIds([]); setLinkedActivityIds([]);
-    setContentItems([]); setNewResource('');
+    setContentItems([]); setNewResourceName(''); setNewResourceUrl('');
   };
 
   // Build contentItems from a saved contentOrder array
   const buildContentItemsFromOrder = (
     savedOrder: Array<{ type: string; id: string }> | undefined,
-    mediaIds: string[], subtopicItems: SubtopicItem[], resUrls: string[],
+    mediaIds: string[], subtopics: SubtopicItem[], resItems: { name: string; url: string }[],
     quizIds: string[], assignIds: string[], actIds: string[],
   ) => {
     if (!savedOrder || savedOrder.length === 0) {
       // No saved order: append all available items in default order
       const items: ContentItem[] = [
         ...mediaIds.map(id => ({ uid: makeUid('media', id), type: 'media', id, label: id })),
-        ...subtopicItems.map(s => ({ uid: makeUid('doc', s.actualId), type: 'doc', id: s.actualId, label: s.subtopicName })),
-        ...resUrls.map(url => ({ uid: makeUid('resource', url), type: 'resource', id: url, label: url })),
+        ...subtopics.map(s => ({ uid: makeUid('doc', s._id), type: 'doc', id: s._id, label: s.subtopicName })),
+        ...resItems.map(r => ({ uid: makeUid('resource', r.url), type: 'resource', id: r.url, label: r.name })),
         ...quizIds.map(id => ({ uid: makeUid('quiz', id), type: 'quiz', id, label: id })),
         ...assignIds.map(id => ({ uid: makeUid('assignment', id), type: 'assignment', id, label: id })),
         ...actIds.map(id => ({ uid: makeUid('activity', id), type: 'activity', id, label: id })),
@@ -311,13 +348,16 @@ const LessonForm: React.FC<LessonFormProps> = ({ isOpen, onClose, onSubmit, less
     }
   };
 
-  const loadMediaDetails = async (mediaIds: string[]) => {
+  // Returns the resolved media list so callers don't rely on stale state from closures
+  const loadMediaDetails = async (mediaIds: string[]): Promise<MediaItem[]> => {
     try {
       const data: MediaItem[] = await Promise.all(mediaIds.map(id => mediaAPI.getMediaById(id)));
       setMediaItems(data);
       updateLabels(data.map(m => ({ uid: makeUid('media', m._id), label: m.title })));
+      return data;
     } catch (err) {
       console.error('Failed to load media:', err);
+      return [];
     }
   };
 
@@ -325,56 +365,24 @@ const LessonForm: React.FC<LessonFormProps> = ({ isOpen, onClose, onSubmit, less
     subtopicIds: string[],
     savedOrder?: Array<{ type: string; id: string }>,
     quizIds?: string[], assignIds?: string[], actIds?: string[],
-    mediaIds?: string[], resUrls?: string[],
+    mediaIds?: string[], resItems?: { name: string; url: string }[],
   ) => {
     try {
       const topics = await docsAPI.getAllTopics();
-      setAllTopics(Array.isArray(topics) ? topics : []);
+      const topicList = Array.isArray(topics) ? topics : [];
+      setAllTopics(topicList);
 
-      const resolved: SubtopicItem[] = [];
-
-      for (const id of subtopicIds) {
-        let topicId = '', subtopicName = '';
-
-        if (id.includes(':')) {
-          [topicId, subtopicName] = id.split(':');
-        } else {
-          // It's an actual MongoDB _id — find it across all topics
-          if (Array.isArray(topics)) {
-            outer: for (const topic of topics) {
-              for (const sub of (topic.subtopics || [])) {
-                if (sub._id === id || sub._id?.toString() === id) {
-                  topicId = topic._id;
-                  subtopicName = sub.name;
-                  break outer;
-                }
-              }
-            }
-          }
-        }
-
-        if (!topicId || !subtopicName) continue;
-
-        const topic = Array.isArray(topics) ? topics.find((t: any) => t._id === topicId) : null;
-        if (!topic) continue;
-        const sub = topic.subtopics?.find((s: any) => s.name === subtopicName);
-        if (!sub) continue;
-
-        const actualId = sub._id?.toString() || `${topicId}:${subtopicName}`;
-        const compositeId = `${topicId}:${subtopicName}`;
-
-        resolved.push({ id: compositeId, actualId, topicTitle: topic.title, subtopicName });
-      }
+      const resolved = subtopicIds
+        .map(id => findSubtopic(topicList, id))
+        .filter((s): s is SubtopicItem => s !== null);
 
       setSubtopicItems(resolved);
-
-      // Update any existing doc labels in contentItems
-      updateLabels(resolved.map(s => ({ uid: makeUid('doc', s.actualId), label: s.subtopicName })));
+      updateLabels(resolved.map(s => ({ uid: makeUid('doc', s._id), label: s.subtopicName })));
 
       // Now rebuild the full contentItems from saved order
       buildContentItemsFromOrder(
         savedOrder,
-        mediaIds || [], resolved, resUrls || [],
+        mediaIds || [], resolved, resItems || [],
         quizIds || [], assignIds || [], actIds || [],
       );
     } catch (err) {
@@ -390,10 +398,11 @@ const LessonForm: React.FC<LessonFormProps> = ({ isOpen, onClose, onSubmit, less
     const removedIds = selectedMediaIds.filter(id => !ids.includes(id));
 
     setSelectedMediaIds(ids);
-    loadMediaDetails(ids).then(() => {
-      // Add new items to the ordered list
+    loadMediaDetails(ids).then(data => {
+      // Use the freshly-resolved data (not the stale `mediaItems` state) so new chips
+      // show the real title instead of falling back to the raw ID.
       const newItems: ContentItem[] = newIds.map(id => {
-        const media = mediaItems.find(m => m._id === id);
+        const media = data.find(m => m._id === id);
         return { uid: makeUid('media', id), type: 'media', id, label: media?.title || id };
       });
       addToList(newItems);
@@ -403,93 +412,118 @@ const LessonForm: React.FC<LessonFormProps> = ({ isOpen, onClose, onSubmit, less
     if (removedIds.length > 0) removeAllOfType('media', removedIds);
   };
 
-  const handleSubtopicSelect = async (subtopicIds: string[]) => {
-    const newIds = subtopicIds.filter(id => !selectedSubtopicIds.includes(id));
-    const removedIds = selectedSubtopicIds.filter(id => !subtopicIds.includes(id));
-
-    setSelectedSubtopicIds(subtopicIds);
-
-    // Resolve actual IDs and add to list
-    try {
-      const topics = allTopics.length > 0 ? allTopics : await docsAPI.getAllTopics().then(t => { setAllTopics(t || []); return t || []; });
-
-      for (const id of newIds) {
-        let topicId = '', subtopicName = '';
-        if (id.includes(':')) { [topicId, subtopicName] = id.split(':'); }
-
-        const topic = topics.find((t: any) => t._id === topicId);
-        const sub = topic?.subtopics?.find((s: any) => s.name === subtopicName);
-        if (!sub) continue;
-
-        const actualId = sub._id?.toString() || id;
-        const newItem: ContentItem = { uid: makeUid('doc', actualId), type: 'doc', id: actualId, label: subtopicName };
-
-        addToList([newItem]);
-        setSubtopicItems(prev => {
-          if (prev.find(s => s.id === id)) return prev;
-          return [...prev, { id, actualId, topicTitle: topic.title, subtopicName }];
-        });
-      }
-
-      // Remove deselected
-      for (const id of removedIds) {
-        const existing = subtopicItems.find(s => s.id === id);
-        if (existing) removeFromList(makeUid('doc', existing.actualId));
-        setSubtopicItems(prev => prev.filter(s => s.id !== id));
-      }
-    } catch (err) {
-      console.error('Failed to resolve subtopics:', err);
-    }
-  };
-
-  const addResource = () => {
-    if (!newResource.trim()) return;
-    const url = newResource.trim();
-    setResources(prev => [...prev, url]);
-    addToList([{ uid: makeUid('resource', url), type: 'resource', id: url, label: url }]);
-    setNewResource('');
-  };
-
   const removeMedia = (mediaId: string) => {
     setSelectedMediaIds(prev => prev.filter(id => id !== mediaId));
     setMediaItems(prev => prev.filter(m => m._id !== mediaId));
     removeFromList(makeUid('media', mediaId));
   };
 
-  const removeSubtopic = (compositeId: string) => {
-    const item = subtopicItems.find(s => s.id === compositeId);
-    if (item) removeFromList(makeUid('doc', item.actualId));
-    setSelectedSubtopicIds(prev => prev.filter(id => id !== compositeId));
-    setSubtopicItems(prev => prev.filter(s => s.id !== compositeId));
+  const handleSubtopicSelect = async (subtopicIds: string[]) => {
+    const newIds = subtopicIds.filter(id => !selectedSubtopicIds.includes(id));
+    const removedIds = selectedSubtopicIds.filter(id => !subtopicIds.includes(id));
+
+    setSelectedSubtopicIds(subtopicIds);
+
+    try {
+      let topicList = allTopics;
+      if (topicList.length === 0) {
+        const topics = await docsAPI.getAllTopics();
+        topicList = Array.isArray(topics) ? topics : [];
+        setAllTopics(topicList);
+      }
+
+      if (newIds.length > 0) {
+        const newSubtopics = newIds
+          .map(id => findSubtopic(topicList, id))
+          .filter((s): s is SubtopicItem => s !== null);
+
+        setSubtopicItems(prev => [...prev, ...newSubtopics]);
+        addToList(newSubtopics.map(s => ({ uid: makeUid('doc', s._id), type: 'doc', id: s._id, label: s.subtopicName })));
+      }
+
+      if (removedIds.length > 0) {
+        setSubtopicItems(prev => prev.filter(s => !removedIds.includes(s._id)));
+        removeAllOfType('doc', removedIds);
+      }
+    } catch (err) {
+      console.error('Failed to resolve subtopics:', err);
+    }
+  };
+
+  const removeSubtopic = (subtopicId: string) => {
+    removeFromList(makeUid('doc', subtopicId));
+    setSelectedSubtopicIds(prev => prev.filter(id => id !== subtopicId));
+    setSubtopicItems(prev => prev.filter(s => s._id !== subtopicId));
+  };
+
+  const addResource = () => {
+    const url = newResourceUrl.trim();
+    if (!url) return;
+    const name = newResourceName.trim() || url;
+    if (resources.some(r => r.url === url)) return; // already added
+    setResources(prev => [...prev, { name, url }]);
+    addToList([{ uid: makeUid('resource', url), type: 'resource', id: url, label: name }]);
+    setNewResourceName('');
+    setNewResourceUrl('');
   };
 
   const removeResource = (url: string) => {
-    setResources(prev => prev.filter(r => r !== url));
+    setResources(prev => prev.filter(r => r.url !== url));
     removeFromList(makeUid('resource', url));
   };
 
-  const toggleQuiz = (quizId: string) => {
-    const adding = !linkedQuizIds.includes(quizId);
-    setLinkedQuizIds(prev => adding ? [...prev, quizId] : prev.filter(id => id !== quizId));
-    const quiz = availableQuizzes.find(q => q._id === quizId);
-    if (adding) addToList([{ uid: makeUid('quiz', quizId), type: 'quiz', id: quizId, label: quiz?.title || quizId }]);
-    else removeFromList(makeUid('quiz', quizId));
+  const handleQuizSelect = (ids: string[]) => {
+    const newIds = ids.filter(id => !linkedQuizIds.includes(id));
+    const removedIds = linkedQuizIds.filter(id => !ids.includes(id));
+    setLinkedQuizIds(ids);
+    if (newIds.length > 0) {
+      addToList(newIds.map(id => {
+        const quiz = availableQuizzes.find(q => q._id === id);
+        return { uid: makeUid('quiz', id), type: 'quiz', id, label: quiz?.title || id };
+      }));
+    }
+    if (removedIds.length > 0) removeAllOfType('quiz', removedIds);
   };
 
-  const toggleAssignment = (assignId: string) => {
-    const adding = !linkedAssignmentIds.includes(assignId);
-    setLinkedAssignmentIds(prev => adding ? [...prev, assignId] : prev.filter(id => id !== assignId));
-    const assignment = availableAssignments.find(a => a._id === assignId);
-    if (adding) addToList([{ uid: makeUid('assignment', assignId), type: 'assignment', id: assignId, label: assignment?.title || assignId }]);
-    else removeFromList(makeUid('assignment', assignId));
+  const removeQuiz = (id: string) => {
+    setLinkedQuizIds(prev => prev.filter(x => x !== id));
+    removeFromList(makeUid('quiz', id));
   };
 
-  const toggleActivity = (actId: string) => {
-    const adding = !linkedActivityIds.includes(actId);
-    setLinkedActivityIds(prev => adding ? [...prev, actId] : prev.filter(id => id !== actId));
-    const activity = availableActivities.find(a => a._id === actId);
-    if (adding) addToList([{ uid: makeUid('activity', actId), type: 'activity', id: actId, label: activity?.title || actId }]);
-    else removeFromList(makeUid('activity', actId));
+  const handleAssignmentSelect = (ids: string[]) => {
+    const newIds = ids.filter(id => !linkedAssignmentIds.includes(id));
+    const removedIds = linkedAssignmentIds.filter(id => !ids.includes(id));
+    setLinkedAssignmentIds(ids);
+    if (newIds.length > 0) {
+      addToList(newIds.map(id => {
+        const assignment = availableAssignments.find(a => a._id === id);
+        return { uid: makeUid('assignment', id), type: 'assignment', id, label: assignment?.title || id };
+      }));
+    }
+    if (removedIds.length > 0) removeAllOfType('assignment', removedIds);
+  };
+
+  const removeAssignment = (id: string) => {
+    setLinkedAssignmentIds(prev => prev.filter(x => x !== id));
+    removeFromList(makeUid('assignment', id));
+  };
+
+  const handleActivitySelect = (ids: string[]) => {
+    const newIds = ids.filter(id => !linkedActivityIds.includes(id));
+    const removedIds = linkedActivityIds.filter(id => !ids.includes(id));
+    setLinkedActivityIds(ids);
+    if (newIds.length > 0) {
+      addToList(newIds.map(id => {
+        const activity = availableActivities.find(a => a._id === id);
+        return { uid: makeUid('activity', id), type: 'activity', id, label: activity?.title || id };
+      }));
+    }
+    if (removedIds.length > 0) removeAllOfType('activity', removedIds);
+  };
+
+  const removeActivity = (id: string) => {
+    setLinkedActivityIds(prev => prev.filter(x => x !== id));
+    removeFromList(makeUid('activity', id));
   };
 
   // ── Drag-and-drop ─────────────────────────────────────────────────────────
@@ -516,13 +550,10 @@ const LessonForm: React.FC<LessonFormProps> = ({ isOpen, onClose, onSubmit, less
       setSelectedMediaIds(prev => prev.filter(i => i !== id));
       setMediaItems(prev => prev.filter(m => m._id !== id));
     } else if (type === 'doc') {
-      const item = subtopicItems.find(s => s.actualId === id);
-      if (item) {
-        setSelectedSubtopicIds(prev => prev.filter(i => i !== item.id));
-        setSubtopicItems(prev => prev.filter(s => s.actualId !== id));
-      }
+      setSelectedSubtopicIds(prev => prev.filter(i => i !== id));
+      setSubtopicItems(prev => prev.filter(s => s._id !== id));
     } else if (type === 'resource') {
-      setResources(prev => prev.filter(r => r !== id));
+      setResources(prev => prev.filter(r => r.url !== id));
     } else if (type === 'quiz') {
       setLinkedQuizIds(prev => prev.filter(i => i !== id));
     } else if (type === 'assignment') {
@@ -546,17 +577,7 @@ const LessonForm: React.FC<LessonFormProps> = ({ isOpen, onClose, onSubmit, less
       fd.append('isPublished', formData.isPublished.toString());
 
       if (selectedMediaIds.length > 0) fd.append('mediaIds', JSON.stringify(selectedMediaIds));
-
-      if (selectedSubtopicIds.length > 0) {
-        // Convert topicId:subtopicName → actual MongoDB _id
-        const actualIds: string[] = [];
-        for (const selId of selectedSubtopicIds) {
-          const found = subtopicItems.find(s => s.id === selId);
-          if (found) actualIds.push(found.actualId);
-        }
-        fd.append('docSubtopicIds', JSON.stringify(actualIds));
-      }
-
+      if (selectedSubtopicIds.length > 0) fd.append('docSubtopicIds', JSON.stringify(selectedSubtopicIds));
       if (resources.length > 0) fd.append('resources', JSON.stringify(resources));
       if (linkedQuizIds.length > 0) fd.append('linkedQuizIds', JSON.stringify(linkedQuizIds));
       if (linkedAssignmentIds.length > 0) fd.append('linkedAssignmentIds', JSON.stringify(linkedAssignmentIds));
@@ -609,23 +630,13 @@ const LessonForm: React.FC<LessonFormProps> = ({ isOpen, onClose, onSubmit, less
 
           {/* Media */}
           <div className="border-t pt-4">
-            <div className="flex items-center justify-between mb-3">
-              <label className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
-                <Video className="w-4 h-4" /> Media (Videos / Images)
-              </label>
-              <Button type="button" variant="secondary" size="sm" onClick={() => setShowMediaPicker(true)}>
-                <Plus className="w-4 h-4 mr-1" /> Add
-              </Button>
-            </div>
+            <SectionHeader icon={Video} label="Media (Videos / Images)" onAdd={() => setShowMediaPicker(true)} />
             {mediaItems.length === 0
               ? <p className="text-xs text-slate-400 italic">No media selected</p>
               : (
                 <div className="flex flex-wrap gap-2">
                   {mediaItems.map(m => (
-                    <span key={m._id} className="flex items-center gap-1.5 px-2.5 py-1 bg-purple-50 text-purple-700 border border-purple-200 rounded-full text-xs font-medium">
-                      <Video className="w-3 h-3" /> {m.title}
-                      <button type="button" onClick={() => removeMedia(m._id)} className="hover:text-red-500"><X className="w-3 h-3" /></button>
-                    </span>
+                    <Chip key={m._id} icon={Video} label={m.title} colorClass={TYPE_META.media.color} onRemove={() => removeMedia(m._id)} />
                   ))}
                 </div>
               )
@@ -634,23 +645,13 @@ const LessonForm: React.FC<LessonFormProps> = ({ isOpen, onClose, onSubmit, less
 
           {/* Docs */}
           <div className="border-t pt-4">
-            <div className="flex items-center justify-between mb-3">
-              <label className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
-                <FileText className="w-4 h-4" /> Documentation
-              </label>
-              <Button type="button" variant="secondary" size="sm" onClick={() => setShowDocPicker(true)}>
-                <Plus className="w-4 h-4 mr-1" /> Add
-              </Button>
-            </div>
+            <SectionHeader icon={FileText} label="Documentation" onAdd={() => setShowDocPicker(true)} />
             {subtopicItems.length === 0
               ? <p className="text-xs text-slate-400 italic">No docs selected</p>
               : (
                 <div className="flex flex-wrap gap-2">
                   {subtopicItems.map(s => (
-                    <span key={s.id} className="flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-xs font-medium">
-                      <FileText className="w-3 h-3" /> {s.subtopicName}
-                      <button type="button" onClick={() => removeSubtopic(s.id)} className="hover:text-red-500"><X className="w-3 h-3" /></button>
-                    </span>
+                    <Chip key={s._id} icon={FileText} label={s.subtopicName} colorClass={TYPE_META.doc.color} onRemove={() => removeSubtopic(s._id)} />
                   ))}
                 </div>
               )
@@ -660,22 +661,25 @@ const LessonForm: React.FC<LessonFormProps> = ({ isOpen, onClose, onSubmit, less
           {/* Resources */}
           <div className="border-t pt-4">
             <label className="text-sm font-medium text-slate-700 flex items-center gap-1.5 mb-3">
-              <LinkIcon className="w-4 h-4" /> Resources (URLs)
+              <LinkIcon className="w-4 h-4" /> Resources
             </label>
-            <div className="flex gap-2 mb-2">
-              <Input type="url" value={newResource} placeholder="https://example.com"
-                onChange={e => setNewResource(e.target.value)}
-                onKeyPress={e => e.key === 'Enter' && (e.preventDefault(), addResource())} />
-              <Button type="button" size="sm" onClick={addResource}><Plus className="w-4 h-4" /></Button>
+            <div className="flex flex-col sm:flex-row gap-2 mb-2">
+              <Input type="text" value={newResourceName} placeholder="Resource name (e.g. NPTEL Notes PDF)"
+                onChange={e => setNewResourceName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addResource())}
+                className="sm:flex-1" />
+              <Input type="url" value={newResourceUrl} placeholder="https://example.com"
+                onChange={e => setNewResourceUrl(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addResource())}
+                className="sm:flex-1" />
+              <Button type="button" size="sm" onClick={addResource} disabled={!newResourceUrl.trim()}>
+                <Plus className="w-4 h-4" />
+              </Button>
             </div>
             {resources.length > 0 && (
               <div className="flex flex-wrap gap-2">
-                {resources.map(url => (
-                  <span key={url} className="flex items-center gap-1.5 px-2.5 py-1 bg-green-50 text-green-700 border border-green-200 rounded-full text-xs font-medium max-w-[220px]">
-                    <LinkIcon className="w-3 h-3 flex-shrink-0" />
-                    <span className="truncate">{url}</span>
-                    <button type="button" onClick={() => removeResource(url)} className="hover:text-red-500 flex-shrink-0"><X className="w-3 h-3" /></button>
-                  </span>
+                {resources.map(r => (
+                  <Chip key={r.url} icon={LinkIcon} label={r.name} colorClass={TYPE_META.resource.color} onRemove={() => removeResource(r.url)} />
                 ))}
               </div>
             )}
@@ -683,22 +687,13 @@ const LessonForm: React.FC<LessonFormProps> = ({ isOpen, onClose, onSubmit, less
 
           {/* Quizzes */}
           <div className="border-t pt-4">
-            <div className="flex items-center justify-between mb-3">
-              <label className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
-                <Brain className="w-4 h-4" /> Quizzes ({linkedQuizIds.length})
-              </label>
-              <Button type="button" variant="secondary" size="sm" onClick={() => setShowQuizPicker(true)}>
-                <Plus className="w-4 h-4 mr-1" /> Link
-              </Button>
-            </div>
+            <SectionHeader icon={Brain} label="Quizzes" count={linkedQuizIds.length} onAdd={() => setShowQuizPicker(true)} addLabel="Link" />
             {linkedQuizIds.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {linkedQuizIds.map(id => {
                   const q = availableQuizzes.find(q => q._id === id);
                   return q ? (
-                    <Badge key={id} className="bg-indigo-100 text-indigo-700">
-                      {q.title} <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => toggleQuiz(id)} />
-                    </Badge>
+                    <Chip key={id} icon={Trophy} label={q.title} colorClass={TYPE_META.quiz.color} onRemove={() => removeQuiz(id)} />
                   ) : null;
                 })}
               </div>
@@ -707,22 +702,13 @@ const LessonForm: React.FC<LessonFormProps> = ({ isOpen, onClose, onSubmit, less
 
           {/* Assignments */}
           <div className="border-t pt-4">
-            <div className="flex items-center justify-between mb-3">
-              <label className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
-                <ClipboardList className="w-4 h-4" /> Assignments ({linkedAssignmentIds.length})
-              </label>
-              <Button type="button" variant="secondary" size="sm" onClick={() => setShowAssignmentPicker(true)}>
-                <Plus className="w-4 h-4 mr-1" /> Link
-              </Button>
-            </div>
+            <SectionHeader icon={ClipboardList} label="Assignments" count={linkedAssignmentIds.length} onAdd={() => setShowAssignmentPicker(true)} addLabel="Link" />
             {linkedAssignmentIds.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {linkedAssignmentIds.map(id => {
                   const a = availableAssignments.find(a => a._id === id);
                   return a ? (
-                    <Badge key={id} className="bg-orange-100 text-orange-700">
-                      {a.title} <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => toggleAssignment(id)} />
-                    </Badge>
+                    <Chip key={id} icon={ClipboardList} label={a.title} colorClass={TYPE_META.assignment.color} onRemove={() => removeAssignment(id)} />
                   ) : null;
                 })}
               </div>
@@ -731,22 +717,13 @@ const LessonForm: React.FC<LessonFormProps> = ({ isOpen, onClose, onSubmit, less
 
           {/* Activities */}
           <div className="border-t pt-4">
-            <div className="flex items-center justify-between mb-3">
-              <label className="text-sm font-medium text-slate-700 flex items-center gap-1.5">
-                <Activity className="w-4 h-4" /> Activities ({linkedActivityIds.length})
-              </label>
-              <Button type="button" variant="secondary" size="sm" onClick={() => setShowActivityPicker(true)}>
-                <Plus className="w-4 h-4 mr-1" /> Link
-              </Button>
-            </div>
+            <SectionHeader icon={Activity} label="Activities" count={linkedActivityIds.length} onAdd={() => setShowActivityPicker(true)} addLabel="Link" />
             {linkedActivityIds.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {linkedActivityIds.map(id => {
                   const a = availableActivities.find(a => a._id === id);
                   return a ? (
-                    <Badge key={id} className="bg-cyan-100 text-cyan-700">
-                      {a.title} <X className="w-3 h-3 ml-1 cursor-pointer" onClick={() => toggleActivity(id)} />
-                    </Badge>
+                    <Chip key={id} icon={Zap} label={a.title} colorClass={TYPE_META.activity.color} onRemove={() => removeActivity(id)} />
                   ) : null;
                 })}
               </div>
@@ -805,38 +782,47 @@ const LessonForm: React.FC<LessonFormProps> = ({ isOpen, onClose, onSubmit, less
       <DocSubtopicPicker isOpen={showDocPicker} onClose={() => setShowDocPicker(false)}
         onSelect={handleSubtopicSelect} selectedIds={selectedSubtopicIds} multiple />
 
-      <Modal isOpen={showQuizPicker} onClose={() => setShowQuizPicker(false)} title="Select Quizzes" size="lg">
-        <div className="space-y-2 max-h-96 overflow-y-auto">
-          {availableQuizzes.map(q => (
-            <div key={q._id} onClick={() => toggleQuiz(q._id)}
-              className={`p-3 border rounded-lg cursor-pointer transition-colors ${linkedQuizIds.includes(q._id) ? 'border-indigo-500 bg-indigo-50' : 'border-slate-200 hover:bg-slate-50'}`}>
-              <p className="font-medium text-sm">{q.title}</p>
-            </div>
-          ))}
-        </div>
-      </Modal>
+      <SimpleItemPicker
+        isOpen={showQuizPicker}
+        onClose={() => setShowQuizPicker(false)}
+        onSelect={handleQuizSelect}
+        selectedIds={linkedQuizIds}
+        items={availableQuizzes.map(q => ({ _id: q._id, title: q.title, subtitle: q.description }))}
+        title="Quizzes"
+        icon={Trophy}
+        emptyLabel="No quizzes available yet"
+        selectedClass="border-indigo-500 bg-indigo-50"
+        selectedIconClass="text-indigo-600"
+        selectedDotClass="bg-indigo-600 border-indigo-600"
+      />
 
-      <Modal isOpen={showAssignmentPicker} onClose={() => setShowAssignmentPicker(false)} title="Select Assignments" size="lg">
-        <div className="space-y-2 max-h-96 overflow-y-auto">
-          {availableAssignments.map(a => (
-            <div key={a._id} onClick={() => toggleAssignment(a._id)}
-              className={`p-3 border rounded-lg cursor-pointer transition-colors ${linkedAssignmentIds.includes(a._id) ? 'border-orange-500 bg-orange-50' : 'border-slate-200 hover:bg-slate-50'}`}>
-              <p className="font-medium text-sm">{a.title}</p>
-            </div>
-          ))}
-        </div>
-      </Modal>
+      <SimpleItemPicker
+        isOpen={showAssignmentPicker}
+        onClose={() => setShowAssignmentPicker(false)}
+        onSelect={handleAssignmentSelect}
+        selectedIds={linkedAssignmentIds}
+        items={availableAssignments.map(a => ({ _id: a._id, title: a.title, subtitle: a.description }))}
+        title="Assignments"
+        icon={ClipboardList}
+        emptyLabel="No assignments available yet"
+        selectedClass="border-orange-500 bg-orange-50"
+        selectedIconClass="text-orange-600"
+        selectedDotClass="bg-orange-600 border-orange-600"
+      />
 
-      <Modal isOpen={showActivityPicker} onClose={() => setShowActivityPicker(false)} title="Select Activities" size="lg">
-        <div className="space-y-2 max-h-96 overflow-y-auto">
-          {availableActivities.map(a => (
-            <div key={a._id} onClick={() => toggleActivity(a._id)}
-              className={`p-3 border rounded-lg cursor-pointer transition-colors ${linkedActivityIds.includes(a._id) ? 'border-cyan-500 bg-cyan-50' : 'border-slate-200 hover:bg-slate-50'}`}>
-              <p className="font-medium text-sm">{a.title}</p>
-            </div>
-          ))}
-        </div>
-      </Modal>
+      <SimpleItemPicker
+        isOpen={showActivityPicker}
+        onClose={() => setShowActivityPicker(false)}
+        onSelect={handleActivitySelect}
+        selectedIds={linkedActivityIds}
+        items={availableActivities.map(a => ({ _id: a._id, title: a.title, subtitle: a.description }))}
+        title="Activities"
+        icon={Zap}
+        emptyLabel="No activities available yet"
+        selectedClass="border-cyan-500 bg-cyan-50"
+        selectedIconClass="text-cyan-600"
+        selectedDotClass="bg-cyan-600 border-cyan-600"
+      />
     </>
   );
 };
