@@ -591,12 +591,17 @@ const LessonForm: React.FC<LessonFormProps> = ({ isOpen, onClose, onSubmit, less
       fd.append('estimatedMinutes', formData.estimatedMinutes.toString());
       fd.append('isPublished', formData.isPublished.toString());
 
-      if (selectedMediaIds.length > 0) fd.append('mediaIds', JSON.stringify(selectedMediaIds));
-      if (selectedSubtopicIds.length > 0) fd.append('docSubtopicIds', JSON.stringify(selectedSubtopicIds));
-      if (resources.length > 0) fd.append('resources', JSON.stringify(resources));
-      if (linkedQuizIds.length > 0) fd.append('linkedQuizIds', JSON.stringify(linkedQuizIds));
-      if (linkedAssignmentIds.length > 0) fd.append('linkedAssignmentIds', JSON.stringify(linkedAssignmentIds));
-      if (linkedActivityIds.length > 0) fd.append('linkedActivityIds', JSON.stringify(linkedActivityIds));
+      // Always send these — even empty — so clearing a list (e.g. removing every
+      // video) actually persists. The backend applies updates via Object.assign,
+      // which only touches keys present in the body: omitting a field when it's
+      // empty means "field absent," not "clear it," so a cleared list would
+      // silently keep its old value on save.
+      fd.append('mediaIds', JSON.stringify(selectedMediaIds));
+      fd.append('docSubtopicIds', JSON.stringify(selectedSubtopicIds));
+      fd.append('resources', JSON.stringify(resources));
+      fd.append('linkedQuizIds', JSON.stringify(linkedQuizIds));
+      fd.append('linkedAssignmentIds', JSON.stringify(linkedAssignmentIds));
+      fd.append('linkedActivityIds', JSON.stringify(linkedActivityIds));
 
       // contentOrder: array of {type, id} objects
       const orderPayload = contentItems.map(item => ({ type: item.type, id: item.id }));
