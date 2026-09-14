@@ -155,22 +155,32 @@ export class CoursesService {
     const courseObj = await this.getCourseSingle();
     // convert to plain object to attach runtime fields safely
     const plain = (courseObj as any).toObject ? (courseObj as any).toObject() : courseObj;
-    await this.populateLinkedResources(plain as any);
+    // Admin CRUD endpoints (add/update/delete/reorder section or lesson) address
+    // sections/lessons by their raw array index, straight off the stored document.
+    // Sorting here would desync those indices from what the client sees the moment
+    // any priority differs from insertion order, causing edits/deletes to silently
+    // hit the wrong section/lesson. The admin UI sorts for display on its own while
+    // tracking each item's real index, so this must stay in storage order.
+    await this.populateLinkedResources(plain as any, false);
     return plain as any;
   }
 
-  private async populateLinkedResources(course: any) {
+  private async populateLinkedResources(course: any, sortByPriority: boolean = true) {
     // course may be a plain object (from .lean()) or a mongoose doc converted to object
     if (!course || !Array.isArray(course.sections)) return;
 
-    // Sort sections by priority (Descending: highest first)
-    course.sections.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+    if (sortByPriority) {
+      // Sort sections by priority (Descending: highest first)
+      course.sections.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+    }
 
     for (const section of course.sections) {
       if (!section || !Array.isArray(section.lessons)) continue;
 
-      // Sort lessons by priority (Descending: highest first)
-      section.lessons.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+      if (sortByPriority) {
+        // Sort lessons by priority (Descending: highest first)
+        section.lessons.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+      }
 
       for (const lesson of section.lessons) {
         try {
