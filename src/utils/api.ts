@@ -15,6 +15,11 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  // Let the browser set the multipart Content-Type (it needs to include a
+  // boundary the server can parse against — one we can't generate here).
+  if (config.data instanceof FormData) {
+    config.headers.delete('Content-Type');
+  }
   return config;
 });
 
@@ -110,19 +115,13 @@ export const courseAPI = {
 
   // 7. Add Lesson
   addLesson: async (sectionIndex: number, lessonData: any) => {
-    const isFormData = lessonData instanceof FormData;
-    const response = await api.post(`/courses/admin/section/${sectionIndex}/lesson`, lessonData, {
-      headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : { 'Content-Type': 'application/json' },
-    });
+    const response = await api.post(`/courses/admin/section/${sectionIndex}/lesson`, lessonData);
     return response.data;
   },
 
   // 8. Update Lesson
   updateLesson: async (sectionIndex: number, lessonIndex: number, lessonData: any) => {
-    const isFormData = lessonData instanceof FormData;
-    const response = await api.put(`/courses/admin/section/${sectionIndex}/lesson/${lessonIndex}`, lessonData, {
-      headers: isFormData ? { 'Content-Type': 'multipart/form-data' } : { 'Content-Type': 'application/json' },
-    });
+    const response = await api.put(`/courses/admin/section/${sectionIndex}/lesson/${lessonIndex}`, lessonData);
     return response.data;
   },
 
@@ -190,9 +189,7 @@ export const docsAPI = {
   // Admin Endpoints
   // 1. Create Topic with Subtopics
   createTopic: async (formData: FormData) => {
-    const response = await api.post('/docs/admin/topic', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const response = await api.post('/docs/admin/topic', formData);
     return response.data;
   },
 
@@ -204,9 +201,7 @@ export const docsAPI = {
 
   // 3. Add Subtopic to Topic
   addSubtopic: async (id: string, formData: FormData) => {
-    const response = await api.post(`/docs/admin/topic/${id}/subtopic`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const response = await api.post(`/docs/admin/topic/${id}/subtopic`, formData);
     return response.data;
   },
 
@@ -224,9 +219,7 @@ export const docsAPI = {
 
   // 6. Update Subtopic
   updateSubtopic: async (topicId: string, subtopicName: string, formData: FormData) => {
-    const response = await api.put(`/docs/admin/topic/${topicId}/subtopic/${encodeURIComponent(subtopicName)}`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const response = await api.put(`/docs/admin/topic/${topicId}/subtopic/${encodeURIComponent(subtopicName)}`, formData);
     return response.data;
   },
 
@@ -337,9 +330,7 @@ export const assignmentAPI = {
   // Admin Endpoints
   // 1. Create Assignment
   createAssignment: async (formData: FormData) => {
-    const response = await api.post('/assignment/admin', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const response = await api.post('/assignment/admin', formData);
     return response.data;
   },
 
@@ -357,9 +348,7 @@ export const assignmentAPI = {
 
   // 4. Update Assignment
   updateAssignment: async (assignmentId: string, formData: FormData) => {
-    const response = await api.put(`/assignment/admin/${assignmentId}`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const response = await api.put(`/assignment/admin/${assignmentId}`, formData);
     return response.data;
   },
 
@@ -407,9 +396,7 @@ export const classActivityAPI = {
   // 1. Create Class Activity
   createClassActivity: async (formData: FormData) => {
     try {
-      const response = await api.post('/class-activity/admin', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const response = await api.post('/class-activity/admin', formData);
       return response.data;
     } catch (error: any) {
       const msg = error?.response?.data?.message;
@@ -418,9 +405,7 @@ export const classActivityAPI = {
         for (const [key, value] of (formData as any).entries()) {
           compatData.append(key === 'title' ? 'name' : key, value as any);
         }
-        const response = await api.post('/class-activity/admin', compatData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        const response = await api.post('/class-activity/admin', compatData);
         return response.data;
       }
       throw error;
@@ -442,9 +427,7 @@ export const classActivityAPI = {
   // 4. Update Class Activity
   updateClassActivity: async (activityId: string, formData: FormData) => {
     try {
-      const response = await api.put(`/class-activity/admin/${activityId}`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const response = await api.put(`/class-activity/admin/${activityId}`, formData);
       return response.data;
     } catch (error: any) {
       const msg = error?.response?.data?.message;
@@ -453,9 +436,7 @@ export const classActivityAPI = {
         for (const [key, value] of (formData as any).entries()) {
           compatData.append(key === 'title' ? 'name' : key, value as any);
         }
-        const response = await api.put(`/class-activity/admin/${activityId}`, compatData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
+        const response = await api.put(`/class-activity/admin/${activityId}`, compatData);
         return response.data;
       }
       throw error;
@@ -504,9 +485,7 @@ export const classActivityAPI = {
 export const mediaAPI = {
   // 1. Upload Media (File or URL)
   createMedia: async (formData: FormData) => {
-    const response = await api.post('/media', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const response = await api.post('/media', formData);
     return response.data;
   },
 
@@ -531,9 +510,7 @@ export const mediaAPI = {
 
   // 5. Update Media
   updateMedia: async (id: string, formData: FormData) => {
-    const response = await api.patch(`/media/${id}`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    const response = await api.patch(`/media/${id}`, formData);
     return response.data;
   },
 
