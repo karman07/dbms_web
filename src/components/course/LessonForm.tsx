@@ -297,11 +297,13 @@ const LessonForm: React.FC<LessonFormProps> = ({ isOpen, onClose, onSubmit, less
     savedOrder: Array<{ type: string; id: string }> | undefined,
     mediaIds: string[], subtopics: SubtopicItem[], resItems: { name: string; url: string }[],
     quizIds: string[], assignIds: string[], actIds: string[],
+    mediaItemsData: MediaItem[] = [],
   ) => {
     if (!savedOrder || savedOrder.length === 0) {
       // No saved order: append all available items in default order
+      const mediaMap = new Map(mediaItemsData.map(m => [m._id, m.title]));
       const items: ContentItem[] = [
-        ...mediaIds.map(id => ({ uid: makeUid('media', id), type: 'media', id, label: id })),
+        ...mediaIds.map(id => ({ uid: makeUid('media', id), type: 'media', id, label: mediaMap.get(id) || id })),
         ...subtopics.map(s => ({ uid: makeUid('doc', s._id), type: 'doc', id: s._id, label: s.subtopicName })),
         ...resItems.map(r => ({ uid: makeUid('resource', r.url), type: 'resource', id: r.url, label: r.name })),
         ...quizIds.map(id => ({ uid: makeUid('quiz', id), type: 'quiz', id, label: id })),
@@ -312,12 +314,26 @@ const LessonForm: React.FC<LessonFormProps> = ({ isOpen, onClose, onSubmit, less
       return;
     }
 
-    // Use saved order as the template
+    // Use saved order as the template, resolving a real label wherever we already
+    // have the data (doc/resource/media are all known synchronously by the time
+    // this runs). Quiz/assignment/activity titles aren't known yet at this point —
+    // they fall back to the raw ID and get patched in by loadLinkedItems() once its
+    // fetch resolves, via updateLabels(). That patch is safe now because this is the
+    // only place contentItems ever gets rebuilt wholesale for an existing lesson.
+    const mediaMap = new Map(mediaItemsData.map(m => [m._id, m.title]));
+    const docMap = new Map(subtopics.map(s => [s._id, s.subtopicName]));
+    const resourceMap = new Map(resItems.map(r => [r.url, r.name]));
+    const labelFor = (type: string, id: string): string => {
+      if (type === 'media') return mediaMap.get(id) || id;
+      if (type === 'doc') return docMap.get(id) || id;
+      if (type === 'resource') return resourceMap.get(id) || id;
+      return id; // quiz/assignment/activity — patched later once titles are loaded
+    };
     const items: ContentItem[] = savedOrder.map(entry => ({
       uid: makeUid(entry.type, entry.id),
       type: entry.type,
       id: entry.id,
-      label: entry.id, // label will be updated once we resolve display names
+      label: labelFor(entry.type, entry.id),
     }));
     setContentItems(items);
   };
@@ -367,12 +383,11 @@ const LessonForm: React.FC<LessonFormProps> = ({ isOpen, onClose, onSubmit, less
     }
   };
 
-  const loadSubtopicDetails = async (
-    subtopicIds: string[],
-    savedOrder?: Array<{ type: string; id: string }>,
-    quizIds?: string[], assignIds?: string[], actIds?: string[],
-    mediaIds?: string[], resItems?: { name: string; url: string }[],
-  ) => {
+  // Resolves subtopic IDs to their {topicTitle, subtopicName} details and returns
+  // them so callers can build correct labels immediately, instead of patching them
+  // in later (which races against — and can be wiped out by — building the
+  // content-order list).
+  const resolveSubtopics = async (subtopicIds: string[]): Promise<SubtopicItem[]> => {
     try {
       const topics = await docsAPI.getAllTopics();
       const topicList = Array.isArray(topics) ? topics : [];
@@ -383,16 +398,10 @@ const LessonForm: React.FC<LessonFormProps> = ({ isOpen, onClose, onSubmit, less
         .filter((s): s is SubtopicItem => s !== null);
 
       setSubtopicItems(resolved);
-      updateLabels(resolved.map(s => ({ uid: makeUid('doc', s._id), label: s.subtopicName })));
-
-      // Now rebuild the full contentItems from saved order
-      buildContentItemsFromOrder(
-        savedOrder,
-        mediaIds || [], resolved, resItems || [],
-        quizIds || [], assignIds || [], actIds || [],
-      );
+      return resolved;
     } catch (err) {
       console.error('Failed to load subtopics:', err);
+      return [];
     }
   };
 
