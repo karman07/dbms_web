@@ -268,12 +268,18 @@ const LessonForm: React.FC<LessonFormProps> = ({ isOpen, onClose, onSubmit, less
       setLinkedAssignmentIds(assignIds);
       setLinkedActivityIds(actIds);
 
-      if (mediaIds.length > 0) loadMediaDetails(mediaIds);
-      if (docIds.length > 0) loadSubtopicDetails(docIds, lesson.contentOrder, quizIds, assignIds, actIds, mediaIds, resItems);
-      else {
-        // Rebuild contentItems from saved contentOrder + available IDs (for non-doc types)
-        buildContentItemsFromOrder(lesson.contentOrder, mediaIds, [], resItems, quizIds, assignIds, actIds);
-      }
+      // Resolve everything we can name synchronously (media titles, subtopic names)
+      // BEFORE building the content-order list, so it renders with real labels on
+      // the first paint instead of raw IDs that a later patch may or may not catch.
+      (async () => {
+        const [mediaData, resolvedSubtopics] = await Promise.all([
+          mediaIds.length > 0 ? loadMediaDetails(mediaIds) : Promise.resolve([]),
+          docIds.length > 0 ? resolveSubtopics(docIds) : Promise.resolve([]),
+        ]);
+        buildContentItemsFromOrder(
+          lesson.contentOrder, mediaIds, resolvedSubtopics, resItems, quizIds, assignIds, actIds, mediaData,
+        );
+      })();
     } else {
       resetForm();
     }
